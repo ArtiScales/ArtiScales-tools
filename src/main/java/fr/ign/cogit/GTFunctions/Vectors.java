@@ -18,17 +18,52 @@ import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.GeoTools;
+import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.referencing.CRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.MultiPolygon;
+import com.vividsolutions.jts.geom.Polygon;
 
 public class Vectors {
+	
+	public static void main(String[] args) throws Exception {
+		
+		ShapefileDataStore shpDSCells = new ShapefileDataStore((new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
+		SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
+		
+		Geometry cellsUnion = unionSFC(cellsCollection);
+
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+		sfTypeBuilder.setName("testType");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.add("the_geom", MultiPolygon.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+
+		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
+		SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(featureType);
+		DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
+		
+		sfBuilder.add(cellsUnion);
+		SimpleFeature feature = sfBuilder.buildFeature("0");
+		toSplit.add(feature);
+
+		shpDSCells.dispose();
+		exportSFC(toSplit.collection(),new File ("/home/mcolomb/tmp/mergeSmth.shp"));
+	}
+	
+	
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileName) throws IOException {
 		if (toExport.isEmpty()){
 			System.out.println(fileName.getName()+" is empty");
