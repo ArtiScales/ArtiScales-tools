@@ -27,6 +27,8 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Geometry;
@@ -51,8 +53,7 @@ public class Vectors {
 		sfTypeBuilder.add("the_geom", MultiPolygon.class);
 		sfTypeBuilder.setDefaultGeometry("the_geom");
 
-		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
-		SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(featureType);
+		SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 		DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
 		
 		sfBuilder.add(cellsUnion);
@@ -63,6 +64,25 @@ public class Vectors {
 		exportSFC(toSplit.collection(),new File ("/home/mcolomb/tmp/mergeSmth.shp"));
 	}
 	
+	public static File exportGeom(Geometry geom, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+		sfTypeBuilder.setName("someGeom");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.add("the_geom", MultiPolygon.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+
+		SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+		DefaultFeatureCollection DFC = new DefaultFeatureCollection();
+		
+		sfBuilder.add(geom);
+		SimpleFeature feature = sfBuilder.buildFeature("0");
+		DFC.add(feature);
+		
+		
+		return exportSFC(DFC.collection(),fileName);
+	}
 	
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileName) throws IOException {
 		if (toExport.isEmpty()){
@@ -71,11 +91,15 @@ public class Vectors {
 		}
 		return exportSFC(toExport, fileName, toExport.getSchema());
 	}
-
+	
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileName, SimpleFeatureType ft) throws IOException {
 
 		ShapefileDataStoreFactory  dataStoreFactory = new ShapefileDataStoreFactory();
 
+		if (!fileName.getName().endsWith(".shp")) {
+			fileName = new File(fileName+".shp"); 
+		}
+		
 		Map<String, Serializable> params = new HashMap<>();
 		params.put("url", fileName.toURI().toURL());
 		params.put("create spatial index", Boolean.TRUE);
@@ -131,6 +155,8 @@ public class Vectors {
 		return inSFC.subCollection(filter);
 	}
 	
+	
+	
 	public static File snapDatas(File fileIn, File bBoxFile, File fileOut) throws Exception {
 
 		// load the input from the general folder
@@ -141,9 +167,18 @@ public class Vectors {
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(bBoxFile.toURI().toURL());
 		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
 		Geometry bBox = unionSFC(zoneCollection);
+		shpDSZone.dispose();		
 		return exportSFC(snapDatas(inCollection, bBox), fileOut);
 	}
+	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile) throws Exception {
 
+		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
+		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
+		Geometry bBox = unionSFC(zoneCollection);
+		shpDSZone.dispose();
+		return snapDatas(SFCIn, bBox);
+
+	}
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) throws Exception {
 
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());

@@ -1,0 +1,239 @@
+package fr.ign.cogit.GTFunctions;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+
+import org.geotools.coverage.grid.GridCoordinates2D;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.io.AbstractGridFormat;
+import org.geotools.coverage.grid.io.GridCoverage2DReader;
+import org.geotools.coverage.grid.io.OverviewPolicy;
+import org.geotools.gce.geotiff.GeoTiffReader;
+import org.opengis.coverage.grid.GridCoordinates;
+import org.opengis.coverage.grid.GridEnvelope;
+import org.opengis.parameter.GeneralParameterValue;
+import org.opengis.parameter.ParameterValue;
+
+/**
+ * Class that contains multiple methods to manipulate a .csv file
+ * 
+ * @author yo
+ *
+ */
+public class Csv {
+
+	public static void main(String[] args) {
+
+	}
+
+	/**
+	 * put the raw values of a .tif raster file cells to a .csv format
+	 * 
+	 * @param FileToConvert
+	 * @throws IOException
+	 */
+	public static void convertRasterToCsv(File FileToConvert) throws IOException {
+		File fileToConvert = new File("/home/mcolomb/informatique/MUP/explo/enveloppes/evalE-moy-NU.tif");
+		ParameterValue<OverviewPolicy> policy = AbstractGridFormat.OVERVIEW_POLICY.createValue();
+		policy.setValue(OverviewPolicy.IGNORE);
+		ParameterValue<String> gridsize = AbstractGridFormat.SUGGESTED_TILE_SIZE.createValue();
+		ParameterValue<Boolean> useJaiRead = AbstractGridFormat.USE_JAI_IMAGEREAD.createValue();
+		useJaiRead.setValue(false);
+		GeneralParameterValue[] params = new GeneralParameterValue[] { policy, gridsize, useJaiRead };
+
+		GridCoverage2DReader reader = new GeoTiffReader(fileToConvert);
+		GridCoverage2D coverage = reader.read(params);
+		GridEnvelope dimensions = reader.getOriginalGridRange();
+		GridCoordinates maxDimensions = dimensions.getHigh();
+
+		int w = maxDimensions.getCoordinateValue(0) + 1;
+		int h = maxDimensions.getCoordinateValue(1) + 1;
+		int numBands = reader.getGridCoverageCount();
+		double[] vals = new double[numBands];
+
+		// beginning of the all cells loop
+		int debI = 0;
+		int debJ = 0;
+		Hashtable<String, Double> cells = new Hashtable<String, Double>();
+
+		for (int i = debI; i < w; i++) {
+			for (int j = debJ; j < h; j++) {
+				GridCoordinates2D coord = new GridCoordinates2D(i, j);
+				double[] temp = coverage.evaluate(coord, vals);
+				if (temp[0] > 0.001) {
+					cells.put(coord.toString(), temp[0]);
+				}
+			}
+		}
+
+		// RasterAnalyse.generateCsvFileCol(cells,new File (rastFile.getParent()),);
+		File fileName = new File(fileToConvert + "-tocsv.csv");
+		FileWriter writer = new FileWriter(fileName, false);
+		writer.append("eval");
+		writer.append("\n");
+		for (String nomm : cells.keySet()) {
+			double tableau = cells.get(nomm);
+			for (int i = 0; i < tableau; i++) {
+				String in = Double.toString(tableau);
+				writer.append(in + "\n");
+			}
+		}
+		writer.close();
+	}
+
+	/**
+	 * generate a .csv from a collection Hashtable<String, Hashtable<String,
+	 * Double>> Used mainly for the MUP-City analysis objects RasterMergeResult
+	 * 
+	 * @param results
+	 * @param file
+	 * @param name
+	 * @throws IOException
+	 */
+	public static void generateCsvFileMultTab(Hashtable<String, Hashtable<String, Double>> results, File file,
+			String name) throws IOException {
+
+		File fileName = new File(file + "/" + name + ".csv");
+		FileWriter writer = new FileWriter(fileName, true);
+		for (String tab : results.keySet()) {
+			Hashtable<String, Double> intResult = results.get(tab);
+			writer.append("scenario " + tab + "\n");
+			for (String nomScenar : intResult.keySet()) {
+				writer.append(nomScenar + "," + intResult.get(nomScenar));
+				writer.append("\n");
+			}
+			writer.append("\n");
+		}
+		writer.close();
+	}
+
+	/**
+	 * for what is it used?
+	 * 
+	 * @param cellRepet
+	 * @param file
+	 * @param name
+	 * @throws IOException
+	 */
+	public static void generateCsvFile(Hashtable<String, Object[]> cellRepet, File file, String name)
+			throws IOException {
+		Hashtable<String, double[]> result = new Hashtable<String, double[]>();
+		for (Object[] ligne : cellRepet.values()) {
+			double[] aMettre = new double[ligne.length - 1];
+			for (int i = 1; i < ligne.length; i = i + 1) {
+				aMettre[i - 1] = (double) ligne[i];
+			}
+			result.put(String.valueOf(ligne[0]), aMettre);
+		}
+		generateCsvFileCol(result, file, name);
+	}
+
+//	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File file, String name,
+//			String[] premiereColonne) throws IOException {
+//		File fileName = new File(file + "/" + name + ".csv");
+//		boolean addAfter = true;
+//		FileWriter writer = new FileWriter(fileName, addAfter);
+//		if (premiereColonne != null) {
+//			for (String title : premiereColonne) {
+//				writer.append(title + ",");
+//			}
+//			writer.append("\n");
+//		}
+//
+//		for (String nomScenar : cellRepet.keySet()) {
+//			writer.append(nomScenar + ",");
+//			for (double val : cellRepet.get(nomScenar)) {
+//				writer.append(val + ",");
+//			}
+//			writer.append("\n");
+//		}
+//		writer.close();
+//	}
+
+	/**
+	 * 
+	 * @param cellRepet
+	 * @param file
+	 * @param name
+	 * @param premiereColonne
+	 * @throws IOException
+	 */
+	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File file, String name,
+			String[] premiereColonne) throws IOException {
+		String fLine = "";
+		if (premiereColonne != null) {
+			for (int i = 0; i < premiereColonne.length; i++) {
+				fLine = (fLine + "," + premiereColonne[i]);
+			}
+		}
+
+		List<String> lines = new ArrayList<String>();
+		for (String nomScenar : cellRepet.keySet()) {
+			String line = "";
+			line.concat(nomScenar + ",");
+			for (double val : cellRepet.get(nomScenar)) {
+				line.concat(val + ",");
+			}
+		}
+		simpleCSVWriter(lines, fLine, new File(file, name + ".csv"), true);
+	}
+
+	public static void generateCsvFileCol(Hashtable<String, double[]> cellRepet, File file, String name)
+			throws IOException {
+		File fileName = new File(file + "/" + name + ".csv");
+		FileWriter writer = new FileWriter(fileName, false);
+
+		// selec the longest tab
+		int longestTab = 0;
+		for (double[] tab : cellRepet.values()) {
+			if (tab.length > longestTab) {
+				longestTab = tab.length;
+			}
+		}
+		// put the main names
+		for (String nomm : cellRepet.keySet()) {
+			writer.append(nomm + ",");
+		}
+		writer.append("\n");
+
+		for (int i = 0; i <= longestTab - 1; i++) {
+			for (String nomm : cellRepet.keySet()) {
+				try {
+					writer.append(Double.toString(cellRepet.get(nomm)[i]) + ",");
+				} catch (ArrayIndexOutOfBoundsException a) {
+				}
+			}
+			writer.append("\n");
+		}
+
+		writer.close();
+	}
+
+	public static void simpleCSVWriter(List<String> lines, String firstLine, File f, boolean append)
+			throws IOException {
+		System.out.println(f);
+		if (!f.getName().endsWith(".csv")) {
+			f = new File(f + ".csv");
+		}
+		FileWriter writer = new FileWriter(f, append);
+
+		if (!firstLine.isEmpty()) {
+			writer.append(firstLine);
+			writer.append("\n");
+		}
+		for (String l : lines) {
+			writer.append(l);
+			writer.append("\n");
+		}
+		writer.close();
+	}
+
+	public static void simpleCSVWriter(List<String> lines, File f, boolean append) throws IOException {
+		simpleCSVWriter(lines, "", f, append);
+	}
+
+}
