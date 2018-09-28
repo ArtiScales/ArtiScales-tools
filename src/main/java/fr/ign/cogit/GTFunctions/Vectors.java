@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -14,6 +16,7 @@ import org.geotools.data.Transaction;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
@@ -35,6 +38,9 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
+import com.vividsolutions.jts.geom.PrecisionModel;
+import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
+import com.vividsolutions.jts.precision.SimpleGeometryPrecisionReducer;
 
 public class Vectors {
 	
@@ -62,6 +68,30 @@ public class Vectors {
 		shpDSCells.dispose();
 		exportSFC(toSplit.collection(),new File ("/home/mcolomb/tmp/mergeSmth.shp"));
 	}
+	
+	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws Exception {
+		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
+		for (File file : file2MergeIn) {
+			ShapefileDataStore SDSParcel = new ShapefileDataStore(file.toURI().toURL());
+			SimpleFeatureIterator parcelIt = SDSParcel.getFeatureSource().getFeatures().features();
+			try {
+				while (parcelIt.hasNext()) {
+					newParcel.add(parcelIt.next());
+				}
+			} catch (Exception problem) {
+				problem.printStackTrace();
+			} finally {
+				parcelIt.close();
+			}
+			SDSParcel.dispose();
+		}
+
+		if (!newParcel.isEmpty()) {
+			Vectors.exportSFC(newParcel.collection(), f);
+		}
+		return f;
+	}
+
 	
 	public static File exportGeom(Geometry geom, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
 
@@ -136,7 +166,14 @@ public class Vectors {
 
 	public static Geometry unionSFC(SimpleFeatureCollection collection) throws IOException {
 		GeometryFactory factory = new GeometryFactory();
-		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0])).map(sf -> (Geometry) sf.getDefaultGeometry());
+		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0])).map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(),	new PrecisionModel(1000)));
+		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
+		return geometryCollection.union();
+	}
+	
+	public static Geometry unionGeom(List<Geometry> lG) throws IOException {
+		GeometryFactory factory = new GeometryFactory();
+		Stream<Geometry> s = lG.stream();
 		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
 		return geometryCollection.union();
 	}
@@ -154,6 +191,70 @@ public class Vectors {
 		return inSFC.subCollection(filter);
 	}
 	
+	
+	public static Geometry unionGeom(Geometry g1, Geometry g2) {
+		if (g1 instanceof GeometryCollection) {
+			if (g2 instanceof GeometryCollection) {
+				return union((GeometryCollection) g1, (GeometryCollection) g2);
+			} else {
+				List<Geometry> ret = unionGeom((GeometryCollection) g1, g2);
+				return g1.getFactory().createGeometryCollection(GeometryFactory.toGeometryArray(ret));
+			}
+		} else {
+			if (g2 instanceof GeometryCollection) {
+				List<Geometry> ret = unionGeom((GeometryCollection) g2, g1);
+				return g1.getFactory().createGeometryCollection(GeometryFactory.toGeometryArray(ret));
+			} else {
+				return g1.intersection(g2);
+			}
+		}
+	}
+
+	private static List<Geometry> unionGeom(GeometryCollection gc, Geometry g) {
+		List<Geometry> ret = new ArrayList<Geometry>();
+		final int size = gc.getNumGeometries();
+		for (int i = 0; i < size; i++) {
+			Geometry g1 = (Geometry) gc.getGeometryN(i);
+			collect(g1.union(g), ret);
+		}
+		return ret;
+	}
+
+	/**
+	 * Helper method for {@link #union(Geometry, Geometry) union(Geometry, Geometry)}
+	 */
+	private static GeometryCollection union(GeometryCollection gc1, GeometryCollection gc2) {
+		List<Geometry> ret = new ArrayList<Geometry>();
+		final int size = gc1.getNumGeometries();
+		for (int i = 0; i < size; i++) {
+			Geometry g1 = (Geometry) gc1.getGeometryN(i);
+			List<Geometry> partial = unionGeom(gc2, g1);
+			ret.addAll(partial);
+		}
+		return gc1.getFactory().createGeometryCollection(GeometryFactory.toGeometryArray(ret));
+	}
+
+	/**
+	 * Adds into the <TT>collector</TT> the Geometry <TT>g</TT>, or, if <TT>g</TT> is a GeometryCollection, every geometry in it.
+	 *
+	 * @param g
+	 *            the Geometry (or GeometryCollection to unroll)
+	 * @param collector
+	 *            the Collection where the Geometries will be added into
+	 */
+	private static void collect(Geometry g, List<Geometry> collector) {
+		if (g instanceof GeometryCollection) {
+			GeometryCollection gc = (GeometryCollection) g;
+			for (int i = 0; i < gc.getNumGeometries(); i++) {
+				Geometry loop = gc.getGeometryN(i);
+				if (!loop.isEmpty())
+					collector.add(loop);
+			}
+		} else {
+			if (!g.isEmpty())
+				collector.add(g);
+		}
+	}
 	
 	
 	public static File snapDatas(File fileIn, File bBoxFile, File fileOut) throws Exception {
