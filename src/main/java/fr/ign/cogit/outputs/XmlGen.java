@@ -38,7 +38,4 @@ public class XmlGen {
 		writer.close();
 	}
 
-	public void close(String balise) {
-
-	}
 }
