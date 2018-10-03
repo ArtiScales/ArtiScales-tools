@@ -111,6 +111,23 @@ public class Csv {
 		writer.close();
 	}
 
+	public static void generateLatexMultTab(Hashtable<String, Hashtable<String, Double>> results, File file,
+			String name) throws IOException {
+
+		File fileName = new File(file + "/" + name + ".txt");
+		FileWriter writer = new FileWriter(fileName, true);
+		for (String tab : results.keySet()) {
+			Hashtable<String, Double> intResult = results.get(tab);
+			writer.append("scenario " + tab + "\n");
+			for (String nomScenar : intResult.keySet()) {
+				writer.append(nomScenar + "&" + intResult.get(nomScenar));
+				writer.append("\n");
+			}
+			writer.append("\n");
+		}
+		writer.close();
+	}
+	
 	/**
 	 * for what is it used?
 	 * 
