@@ -87,14 +87,16 @@ public class Csv {
 	}
 
 	/**
-	 * generate a .csv from a collection Hashtable<String, Hashtable<String, Double[]>> Used mainly for the MUP-City particular evaluation analysis
+	 * generate a .csv from a collection Hashtable<String, Hashtable<String,
+	 * Double[]>> Used mainly for the MUP-City particular evaluation analysis
 	 * 
 	 * @param results
 	 * @param file
 	 * @param name
 	 * @throws IOException
 	 */
-	public static void generateCsvFileMultTab(Hashtable<String, Hashtable<String, Double[]>> results, String name, String fLine, File file) throws IOException {
+	public static void generateCsvFileMultTab(Hashtable<String, Hashtable<String, Double[]>> results, String name,
+			String fLine, File file) throws IOException {
 
 		File fileName = new File(file + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, true);
@@ -115,14 +117,16 @@ public class Csv {
 	}
 
 	/**
-	 * generate a .csv from a collection Hashtable<String, Hashtable<String, Double>> Used mainly for the MUP-City analysis objects RasterMergeResult
+	 * generate a .csv from a collection Hashtable<String, Hashtable<String,
+	 * Double>> Used mainly for the MUP-City analysis objects RasterMergeResult
 	 * 
 	 * @param results
 	 * @param file
 	 * @param name
 	 * @throws IOException
 	 */
-	public static void generateCsvFileMultTab(Hashtable<String, Hashtable<String, Double>> results, File file, String name) throws IOException {
+	public static void generateCsvFileMultTab(Hashtable<String, Hashtable<String, Double>> results, File file,
+			String name) throws IOException {
 
 		File fileName = new File(file + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, true);
@@ -138,7 +142,8 @@ public class Csv {
 		writer.close();
 	}
 
-	public static void generateLatexMultTab(Hashtable<String, Hashtable<String, Double>> results, File file, String name) throws IOException {
+	public static void generateLatexMultTab(Hashtable<String, Hashtable<String, Double>> results, File file,
+			String name) throws IOException {
 
 		File fileName = new File(file + "/" + name + ".txt");
 		FileWriter writer = new FileWriter(fileName, true);
@@ -162,7 +167,8 @@ public class Csv {
 	 * @param name
 	 * @throws IOException
 	 */
-	public static void generateCsvFile(Hashtable<String, Object[]> cellRepet, File file, String name) throws IOException {
+	public static void generateCsvFile(Hashtable<String, Object[]> cellRepet, File file, String name)
+			throws IOException {
 		Hashtable<String, double[]> result = new Hashtable<String, double[]>();
 		for (Object[] ligne : cellRepet.values()) {
 			double[] aMettre = new double[ligne.length - 1];
@@ -174,7 +180,8 @@ public class Csv {
 		generateCsvFileCol(result, file, name);
 	}
 
-	// public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File file, String name,
+	// public static void generateCsvFile(Hashtable<String, double[]> cellRepet,
+	// File file, String name,
 	// String[] premiereColonne) throws IOException {
 	// File fileName = new File(file + "/" + name + ".csv");
 	// boolean addAfter = true;
@@ -204,7 +211,8 @@ public class Csv {
 	 * @param premiereColonne
 	 * @throws IOException
 	 */
-	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File file, String name, String[] premiereColonne) throws IOException {
+	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File file, String name,
+			String[] premiereColonne) throws IOException {
 		String fLine = "";
 		if (premiereColonne != null) {
 			for (int i = 0; i < premiereColonne.length; i++) {
@@ -213,17 +221,18 @@ public class Csv {
 		}
 
 		List<String> lines = new ArrayList<String>();
-		for (String nomScenar : cellRepet.keySet()) {
-			String line = "";
-			line.concat(nomScenar + ",");
-			for (double val : cellRepet.get(nomScenar)) {
+		for (String nom : cellRepet.keySet()) {
+			String line = nom + ",";
+			for (double val : cellRepet.get(nom)) {
 				line.concat(val + ",");
 			}
+			lines.add(line);
 		}
 		simpleCSVWriter(lines, fLine, new File(file, name + ".csv"), true);
 	}
 
-	public static void generateCsvFileCol(Hashtable<String, double[]> cellRepet, File file, String name) throws IOException {
+	public static void generateCsvFileCol(Hashtable<String, double[]> cellRepet, File file, String name)
+			throws IOException {
 		File fileName = new File(file + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, false);
 
@@ -253,16 +262,18 @@ public class Csv {
 		writer.close();
 	}
 
-	public static void simpleCSVWriter(List<String> lines, String firstLine, File f, boolean append) throws IOException {
-		System.out.println(f);
+	public static void simpleCSVWriter(List<String> lines, String firstLine, File f, boolean append)
+			throws IOException {
 		if (!f.getName().endsWith(".csv")) {
 			f = new File(f + ".csv");
 		}
+		f.getParentFile().mkdirs();
 		FileWriter writer = new FileWriter(f, append);
-
-		if (!firstLine.isEmpty()) {
+		boolean fL = true;
+		if (fL) {
 			writer.append(firstLine);
 			writer.append("\n");
+			fL = false;
 		}
 		for (String l : lines) {
 			writer.append(l);
