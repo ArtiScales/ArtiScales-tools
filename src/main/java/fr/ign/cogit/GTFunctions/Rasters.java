@@ -8,10 +8,16 @@ import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.GridCoverage2DReader;
 import org.geotools.coverage.grid.io.OverviewPolicy;
+import org.geotools.coverage.processing.CoverageProcessor;
+import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.geometry.Envelope2D;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.parameter.GeneralParameterValue;
 import org.opengis.parameter.ParameterValue;
+import org.opengis.parameter.ParameterValueGroup;
+
+import com.vividsolutions.jts.geom.Envelope;
 
 public class Rasters {
 	
@@ -27,6 +33,28 @@ public class Rasters {
 		return coverage;
 	}
 
+	public static File cut(File fileToCut, File Envelope) throws IOException {
+		ShapefileDataStore envDS = new ShapefileDataStore(Envelope.toURI().toURL());
+		ReferencedEnvelope env = envDS.getFeatureSource().getFeatures().getBounds();
+
+		GridCoverage2D rast = Rasters.importRaster(fileToCut);
+
+        GridCoverage2D finalCoverage = cropCoverage(rast, env);
+		File maskFile = new File("");
+		return null;
+	}
+	
+	  private static GridCoverage2D cropCoverage(GridCoverage2D gridCoverage, Envelope envelope) {
+	        CoverageProcessor processor = CoverageProcessor.getInstance();
+
+	        // An example of manually creating the operation and parameters we want
+	        final ParameterValueGroup param = processor.getOperation("CoverageCrop").getParameters();
+	        param.parameter("Source").setValue(gridCoverage);
+	        param.parameter("Envelope").setValue(envelope);
+
+	        return (GridCoverage2D) processor.doOperation(param);
+	    }
+	
 //	public static void writeGeotiff(File fileName, float[][] imagePixelData, Envelope2D env) {
 //		GridCoverage2D coverage = new GridCoverageFactory().create("OTPAnalyst", imagePixelData, env);
 //		writeGeotiff(fileName, coverage);

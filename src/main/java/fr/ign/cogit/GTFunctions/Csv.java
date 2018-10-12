@@ -203,6 +203,12 @@ public class Csv {
 	// writer.close();
 	// }
 
+	
+	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File file, String name,
+			String[] premiereColonne) throws IOException {
+		generateCsvFile(cellRepet, file, name, premiereColonne,true);
+	}
+	
 	/**
 	 * 
 	 * @param cellRepet
@@ -212,7 +218,7 @@ public class Csv {
 	 * @throws IOException
 	 */
 	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File file, String name,
-			String[] premiereColonne) throws IOException {
+			String[] premiereColonne,boolean append) throws IOException {
 		String fLine = "";
 		if (premiereColonne != null) {
 			for (int i = 0; i < premiereColonne.length; i++) {
@@ -224,11 +230,11 @@ public class Csv {
 		for (String nom : cellRepet.keySet()) {
 			String line = nom + ",";
 			for (double val : cellRepet.get(nom)) {
-				line.concat(val + ",");
+				line = line + val+",";
 			}
 			lines.add(line);
 		}
-		simpleCSVWriter(lines, fLine, new File(file, name + ".csv"), true);
+		simpleCSVWriter(lines, fLine, new File(file, name + ".csv"), append);
 	}
 
 	public static void generateCsvFileCol(Hashtable<String, double[]> cellRepet, File file, String name)
