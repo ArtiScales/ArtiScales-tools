@@ -166,7 +166,7 @@ public class Vectors {
 
 	public static Geometry unionSFC(SimpleFeatureCollection collection) throws IOException {
 		GeometryFactory factory = new GeometryFactory();
-		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0])).map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(),	new PrecisionModel(1000)));
+		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0])).map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(),	new PrecisionModel(100)));
 		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
 		return geometryCollection.union();
 	}
