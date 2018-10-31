@@ -1,9 +1,11 @@
 package fr.ign.cogit.GTFunctions;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,15 +42,14 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.PrecisionModel;
 import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
-import com.vividsolutions.jts.precision.SimpleGeometryPrecisionReducer;
 
 public class Vectors {
-	
+
 	public static void main(String[] args) throws Exception {
-		
+
 		ShapefileDataStore shpDSCells = new ShapefileDataStore((new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
 		SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
-		
+
 		Geometry cellsUnion = unionSFC(cellsCollection);
 
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
@@ -60,15 +61,15 @@ public class Vectors {
 
 		SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 		DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
-		
+
 		sfBuilder.add(cellsUnion);
 		SimpleFeature feature = sfBuilder.buildFeature("0");
 		toSplit.add(feature);
 
 		shpDSCells.dispose();
-		exportSFC(toSplit.collection(),new File ("/home/mcolomb/tmp/mergeSmth.shp"));
+		exportSFC(toSplit.collection(), new File("/home/mcolomb/tmp/mergeSmth.shp"));
 	}
-	
+
 	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws Exception {
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
 		for (File file : file2MergeIn) {
@@ -92,7 +93,6 @@ public class Vectors {
 		return f;
 	}
 
-	
 	public static File exportGeom(Geometry geom, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
 
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
@@ -104,31 +104,30 @@ public class Vectors {
 
 		SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 		DefaultFeatureCollection DFC = new DefaultFeatureCollection();
-		
+
 		sfBuilder.add(geom);
 		SimpleFeature feature = sfBuilder.buildFeature("0");
 		DFC.add(feature);
-		
-		
-		return exportSFC(DFC.collection(),fileName);
+
+		return exportSFC(DFC.collection(), fileName);
 	}
-	
+
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileName) throws IOException {
-		if (toExport.isEmpty()){
-			System.out.println(fileName.getName()+" is empty");
+		if (toExport.isEmpty()) {
+			System.out.println(fileName.getName() + " is empty");
 			return fileName;
 		}
 		return exportSFC(toExport, fileName, toExport.getSchema());
 	}
-	
+
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileName, SimpleFeatureType ft) throws IOException {
 
-		ShapefileDataStoreFactory  dataStoreFactory = new ShapefileDataStoreFactory();
+		ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
 
 		if (!fileName.getName().endsWith(".shp")) {
-			fileName = new File(fileName+".shp"); 
+			fileName = new File(fileName + ".shp");
 		}
-		
+
 		Map<String, Serializable> params = new HashMap<>();
 		params.put("url", fileName.toURI().toURL());
 		params.put("create spatial index", Boolean.TRUE);
@@ -166,18 +165,19 @@ public class Vectors {
 
 	public static Geometry unionSFC(SimpleFeatureCollection collection) throws IOException {
 		GeometryFactory factory = new GeometryFactory();
-		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0])).map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(),	new PrecisionModel(100)));
+		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
+				.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(100)));
 		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
 		return geometryCollection.union();
 	}
-	
+
 	public static Geometry unionGeom(List<Geometry> lG) throws IOException {
 		GeometryFactory factory = new GeometryFactory();
 		Stream<Geometry> s = lG.stream();
 		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
 		return geometryCollection.union();
 	}
-	
+
 	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, File empriseFile) throws MalformedURLException, IOException {
 		if (inSFC.isEmpty()) {
 			return inSFC;
@@ -190,8 +190,7 @@ public class Vectors {
 		envSDS.dispose();
 		return inSFC.subCollection(filter);
 	}
-	
-	
+
 	public static Geometry unionGeom(Geometry g1, Geometry g2) {
 		if (g1 instanceof GeometryCollection) {
 			if (g2 instanceof GeometryCollection) {
@@ -255,8 +254,7 @@ public class Vectors {
 				collector.add(g);
 		}
 	}
-	
-	
+
 	public static File snapDatas(File fileIn, File bBoxFile, File fileOut) throws Exception {
 
 		// load the input from the general folder
@@ -267,9 +265,10 @@ public class Vectors {
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(bBoxFile.toURI().toURL());
 		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
 		Geometry bBox = unionSFC(zoneCollection);
-		shpDSZone.dispose();		
+		shpDSZone.dispose();
 		return exportSFC(snapDatas(inCollection, bBox), fileOut);
 	}
+
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile) throws Exception {
 
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
@@ -279,6 +278,7 @@ public class Vectors {
 		return snapDatas(SFCIn, bBox);
 
 	}
+
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) throws Exception {
 
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
@@ -288,5 +288,13 @@ public class Vectors {
 
 		return inTown;
 
+	}
+	public static void copyShp(String name,File fromFile, File destinationFile) throws IOException {
+		for (File f : fromFile.listFiles()) {
+			if (f.getName().startsWith(name)) {
+				FileOutputStream out = new FileOutputStream(new File(destinationFile,f.getName()));
+				Files.copy(f.toPath(), out);
+			}
+		}
 	}
 }
