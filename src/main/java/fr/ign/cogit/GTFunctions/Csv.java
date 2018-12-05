@@ -221,7 +221,8 @@ public class Csv {
 			String[] premiereColonne,boolean append) throws IOException {
 		String fLine = "";
 		if (premiereColonne != null) {
-			for (int i = 0; i < premiereColonne.length; i++) {
+			fLine = premiereColonne[0];
+			for (int i = 1; i < premiereColonne.length; i++) {
 				fLine = (fLine + "," + premiereColonne[i]);
 			}
 		}
