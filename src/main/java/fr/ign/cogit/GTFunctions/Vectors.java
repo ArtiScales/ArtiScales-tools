@@ -45,30 +45,30 @@ import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
 
 public class Vectors {
 
-	public static void main(String[] args) throws Exception {
-
-		ShapefileDataStore shpDSCells = new ShapefileDataStore((new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
-		SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
-
-		Geometry cellsUnion = unionSFC(cellsCollection);
-
-		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
-		sfTypeBuilder.setName("testType");
-		sfTypeBuilder.setCRS(sourceCRS);
-		sfTypeBuilder.add("the_geom", MultiPolygon.class);
-		sfTypeBuilder.setDefaultGeometry("the_geom");
-
-		SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
-		DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
-
-		sfBuilder.add(cellsUnion);
-		SimpleFeature feature = sfBuilder.buildFeature("0");
-		toSplit.add(feature);
-
-		shpDSCells.dispose();
-		exportSFC(toSplit.collection(), new File("/home/mcolomb/tmp/mergeSmth.shp"));
-	}
+//	public static void main(String[] args) throws Exception {
+//
+//		ShapefileDataStore shpDSCells = new ShapefileDataStore((new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
+//		SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
+//
+//		Geometry cellsUnion = unionSFC(cellsCollection);
+//
+//		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+//		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+//		sfTypeBuilder.setName("testType");
+//		sfTypeBuilder.setCRS(sourceCRS);
+//		sfTypeBuilder.add("the_geom", MultiPolygon.class);
+//		sfTypeBuilder.setDefaultGeometry("the_geom");
+//
+//		SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+//		DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
+//
+//		sfBuilder.add(cellsUnion);
+//		SimpleFeature feature = sfBuilder.buildFeature("0");
+//		toSplit.add(feature);
+//
+//		shpDSCells.dispose();
+//		exportSFC(toSplit.collection(), new File("/home/mcolomb/tmp/mergeSmth.shp"));
+//	}
 
 	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws Exception {
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
@@ -127,7 +127,6 @@ public class Vectors {
 		if (!fileName.getName().endsWith(".shp")) {
 			fileName = new File(fileName + ".shp");
 		}
-
 		Map<String, Serializable> params = new HashMap<>();
 		params.put("url", fileName.toURI().toURL());
 		params.put("create spatial index", Boolean.TRUE);
@@ -146,6 +145,7 @@ public class Vectors {
 		if (featureSource instanceof SimpleFeatureStore) {
 			SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
 			featureStore.setTransaction(transaction);
+//			System.out.println(featureStore.getSchema());
 			try {
 				featureStore.addFeatures(toExport);
 				transaction.commit();
@@ -270,10 +270,17 @@ public class Vectors {
 	}
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile) throws Exception {
+		return snapDatas(SFCIn, boxFile, 0);
+	}
+	
+	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws Exception {
 
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
 		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
 		Geometry bBox = unionSFC(zoneCollection);
+		if(distance > 0) {
+			bBox = bBox.buffer(distance);
+		}
 		shpDSZone.dispose();
 		return snapDatas(SFCIn, bBox);
 
