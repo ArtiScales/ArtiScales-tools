@@ -45,30 +45,30 @@ import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
 
 public class Vectors {
 
-//	public static void main(String[] args) throws Exception {
-//
-//		ShapefileDataStore shpDSCells = new ShapefileDataStore((new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
-//		SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
-//
-//		Geometry cellsUnion = unionSFC(cellsCollection);
-//
-//		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-//		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
-//		sfTypeBuilder.setName("testType");
-//		sfTypeBuilder.setCRS(sourceCRS);
-//		sfTypeBuilder.add("the_geom", MultiPolygon.class);
-//		sfTypeBuilder.setDefaultGeometry("the_geom");
-//
-//		SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
-//		DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
-//
-//		sfBuilder.add(cellsUnion);
-//		SimpleFeature feature = sfBuilder.buildFeature("0");
-//		toSplit.add(feature);
-//
-//		shpDSCells.dispose();
-//		exportSFC(toSplit.collection(), new File("/home/mcolomb/tmp/mergeSmth.shp"));
-//	}
+	// public static void main(String[] args) throws Exception {
+	//
+	// ShapefileDataStore shpDSCells = new ShapefileDataStore((new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
+	// SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
+	//
+	// Geometry cellsUnion = unionSFC(cellsCollection);
+	//
+	// SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+	// CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+	// sfTypeBuilder.setName("testType");
+	// sfTypeBuilder.setCRS(sourceCRS);
+	// sfTypeBuilder.add("the_geom", MultiPolygon.class);
+	// sfTypeBuilder.setDefaultGeometry("the_geom");
+	//
+	// SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	// DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
+	//
+	// sfBuilder.add(cellsUnion);
+	// SimpleFeature feature = sfBuilder.buildFeature("0");
+	// toSplit.add(feature);
+	//
+	// shpDSCells.dispose();
+	// exportSFC(toSplit.collection(), new File("/home/mcolomb/tmp/mergeSmth.shp"));
+	// }
 
 	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws Exception {
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
@@ -77,7 +77,9 @@ public class Vectors {
 			SimpleFeatureIterator parcelIt = SDSParcel.getFeatureSource().getFeatures().features();
 			try {
 				while (parcelIt.hasNext()) {
-					newParcel.add(parcelIt.next());
+					SimpleFeature feat = parcelIt.next();
+					newParcel.add(feat);
+					// System.out.println("schema of merged shape : "+feat.getFeatureType());
 				}
 			} catch (Exception problem) {
 				problem.printStackTrace();
@@ -145,7 +147,7 @@ public class Vectors {
 		if (featureSource instanceof SimpleFeatureStore) {
 			SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
 			featureStore.setTransaction(transaction);
-//			System.out.println(featureStore.getSchema());
+			// System.out.println(featureStore.getSchema());
 			try {
 				featureStore.addFeatures(toExport);
 				transaction.commit();
@@ -182,12 +184,20 @@ public class Vectors {
 		if (inSFC.isEmpty()) {
 			return inSFC;
 		}
-		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		ShapefileDataStore envSDS = new ShapefileDataStore(empriseFile.toURI().toURL());
-		ReferencedEnvelope env = (envSDS.getFeatureSource().getFeatures()).getBounds();
+		SimpleFeatureCollection result = cropSFC(inSFC, envSDS.getFeatureSource().getFeatures()) ;
+		envSDS.dispose();
+		return result;
+	}
+	
+	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, SimpleFeatureCollection empriseSFC) throws MalformedURLException, IOException {
+		if (inSFC.isEmpty()) {
+			return inSFC;
+		}
+		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+		ReferencedEnvelope env = empriseSFC.getBounds();
 		String geometryPropertyName = inSFC.getSchema().getGeometryDescriptor().getLocalName();
 		Filter filter = ff.bbox(ff.property(geometryPropertyName), env);
-		envSDS.dispose();
 		return inSFC.subCollection(filter);
 	}
 
@@ -272,13 +282,13 @@ public class Vectors {
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile) throws Exception {
 		return snapDatas(SFCIn, boxFile, 0);
 	}
-	
+
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws Exception {
 
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
 		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
 		Geometry bBox = unionSFC(zoneCollection);
-		if(distance > 0) {
+		if (distance > 0) {
 			bBox = bBox.buffer(distance);
 		}
 		shpDSZone.dispose();
@@ -296,10 +306,11 @@ public class Vectors {
 		return inTown;
 
 	}
-	public static void copyShp(String name,File fromFile, File destinationFile) throws IOException {
+
+	public static void copyShp(String name, File fromFile, File destinationFile) throws IOException {
 		for (File f : fromFile.listFiles()) {
 			if (f.getName().startsWith(name)) {
-				FileOutputStream out = new FileOutputStream(new File(destinationFile,f.getName()));
+				FileOutputStream out = new FileOutputStream(new File(destinationFile, f.getName()));
 				Files.copy(f.toPath(), out);
 			}
 		}
