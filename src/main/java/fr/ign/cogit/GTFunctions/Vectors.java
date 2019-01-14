@@ -95,6 +95,45 @@ public class Vectors {
 		return f;
 	}
 
+	/**
+	 * clean the shapefile of feature which area is inferior to areaMin
+	 * 
+	 * @param fileIn
+	 * @param areaMin
+	 * @return
+	 * @throws Exception
+	 */
+	public static File delTinyParcels(File fileIn, double areaMin) throws Exception {
+		ShapefileDataStore SDSParcel = new ShapefileDataStore(fileIn.toURI().toURL());
+		SimpleFeatureCollection sfc = SDSParcel.getFeatureSource().getFeatures();
+		SimpleFeatureCollection result = delTinyParcels(sfc, areaMin);
+		Vectors.exportSFC(result, fileIn);
+		SDSParcel.dispose();
+		return fileIn;
+	}
+
+	public static SimpleFeatureCollection delTinyParcels(SimpleFeatureCollection collecIn, double areaMin) throws Exception {
+
+		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
+		SimpleFeatureIterator it = collecIn.features();
+
+		try {
+			while (it.hasNext()) {
+				SimpleFeature feat = it.next();
+				if (((Geometry) feat.getDefaultGeometry()).getArea() > areaMin) {
+					newParcel.add(feat);
+				}
+				// System.out.println("schema of merged shape : "+feat.getFeatureType());
+			}
+		} catch (Exception problem) {
+			problem.printStackTrace();
+		} finally {
+			it.close();
+		}
+
+		return newParcel.collection();
+	}
+
 	public static File exportGeom(Geometry geom, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
 
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
@@ -185,11 +224,11 @@ public class Vectors {
 			return inSFC;
 		}
 		ShapefileDataStore envSDS = new ShapefileDataStore(empriseFile.toURI().toURL());
-		SimpleFeatureCollection result = cropSFC(inSFC, envSDS.getFeatureSource().getFeatures()) ;
+		SimpleFeatureCollection result = cropSFC(inSFC, envSDS.getFeatureSource().getFeatures());
 		envSDS.dispose();
 		return result;
 	}
-	
+
 	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, SimpleFeatureCollection empriseSFC) throws MalformedURLException, IOException {
 		if (inSFC.isEmpty()) {
 			return inSFC;
