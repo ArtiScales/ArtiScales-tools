@@ -327,7 +327,7 @@ public class Vectors {
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
 		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
 		Geometry bBox = unionSFC(zoneCollection);
-		if (distance > 0) {
+		if (distance != 0) {
 			bBox = bBox.buffer(distance);
 		}
 		shpDSZone.dispose();
