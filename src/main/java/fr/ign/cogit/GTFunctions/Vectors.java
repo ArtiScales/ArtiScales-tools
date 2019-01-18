@@ -120,10 +120,13 @@ public class Vectors {
 		try {
 			while (it.hasNext()) {
 				SimpleFeature feat = it.next();
-				if (((Geometry) feat.getDefaultGeometry()).getArea() > areaMin) {
-					newParcel.add(feat);
+				try {
+					if (((Geometry) feat.getDefaultGeometry()).getArea() > areaMin) {
+						newParcel.add(feat);
+					}
+				} catch (NullPointerException np) {
+					System.out.println("this feature has no gemoetry : TODO check if normal " + feat);
 				}
-				// System.out.println("schema of merged shape : "+feat.getFeatureType());
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
@@ -207,7 +210,7 @@ public class Vectors {
 	public static Geometry unionSFC(SimpleFeatureCollection collection) throws IOException {
 		GeometryFactory factory = new GeometryFactory();
 		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-				.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(100)));
+				.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(1000)));
 		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
 		return geometryCollection.union();
 	}
@@ -316,6 +319,17 @@ public class Vectors {
 		Geometry bBox = unionSFC(zoneCollection);
 		shpDSZone.dispose();
 		return exportSFC(snapDatas(inCollection, bBox), fileOut);
+	}
+
+	public static SimpleFeatureCollection snapDatas(File fileIn, SimpleFeatureCollection collec) throws Exception {
+
+		// load the input from the general folder
+		ShapefileDataStore shpDSIn = new ShapefileDataStore(fileIn.toURI().toURL());
+		SimpleFeatureCollection inCollection = shpDSIn.getFeatureSource().getFeatures();
+
+		Geometry bBox = unionSFC(collec);
+
+		return snapDatas(inCollection, bBox);
 	}
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile) throws Exception {
