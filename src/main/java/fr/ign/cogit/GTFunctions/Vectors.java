@@ -41,6 +41,7 @@ import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.PrecisionModel;
+import com.vividsolutions.jts.geom.TopologyException;
 import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
 
 public class Vectors {
@@ -208,11 +209,30 @@ public class Vectors {
 	}
 
 	public static Geometry unionSFC(SimpleFeatureCollection collection) throws IOException {
-		GeometryFactory factory = new GeometryFactory();
-		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-				.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(1000)));
-		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-		return geometryCollection.union();
+		try {
+			GeometryFactory factory = new GeometryFactory();
+			Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
+					.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(1000)));
+			GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
+			Geometry union = geometryCollection.union();
+			return union;
+		} catch (TopologyException e ) {
+			try {
+			System.out.println("precision reduced");
+			GeometryFactory factory = new GeometryFactory();
+			Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
+					.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(10)));
+			GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
+			return geometryCollection.union();
+			}  catch (TopologyException ee ) {
+				System.out.println("precision reduced again");
+				GeometryFactory factory = new GeometryFactory();
+				Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
+						.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(1)));
+				GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
+				return geometryCollection.union();
+			}
+		}
 	}
 
 	public static Geometry unionGeom(List<Geometry> lG) throws IOException {
