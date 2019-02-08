@@ -221,14 +221,14 @@ public class Vectors {
 			System.out.println("precision reduced");
 			GeometryFactory factory = new GeometryFactory();
 			Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-					.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(10)));
+					.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(100)));
 			GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
 			return geometryCollection.union();
 			}  catch (TopologyException ee ) {
 				System.out.println("precision reduced again");
 				GeometryFactory factory = new GeometryFactory();
 				Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-						.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(1)));
+						.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(10)));
 				GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
 				return geometryCollection.union();
 			}
