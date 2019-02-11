@@ -40,6 +40,7 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
+import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.PrecisionModel;
 import com.vividsolutions.jts.geom.TopologyException;
 import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
@@ -72,20 +73,48 @@ public class Vectors {
 	// }
 
 	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws Exception {
+		return mergeVectFiles(file2MergeIn, f, true);
+	}
+
+	public static File mergeVectFiles(List<File> file2MergeIn, File f, boolean keepAttribute) throws Exception {
+
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+		sfTypeBuilder.setName("merge");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.add("the_geom", Polygon.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+		SimpleFeatureBuilder bt = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+
+
 		for (File file : file2MergeIn) {
 			ShapefileDataStore SDSParcel = new ShapefileDataStore(file.toURI().toURL());
 			SimpleFeatureIterator parcelIt = SDSParcel.getFeatureSource().getFeatures().features();
-			try {
-				while (parcelIt.hasNext()) {
-					SimpleFeature feat = parcelIt.next();
-					newParcel.add(feat);
-					// System.out.println("schema of merged shape : "+feat.getFeatureType());
+			if (keepAttribute) {
+				try {
+					while (parcelIt.hasNext()) {
+						SimpleFeature feat = parcelIt.next();
+						newParcel.add(feat);
+						// System.out.println("schema of merged shape : "+feat.getFeatureType());
+					}
+				} catch (Exception problem) {
+					problem.printStackTrace();
+				} finally {
+					parcelIt.close();
 				}
-			} catch (Exception problem) {
-				problem.printStackTrace();
-			} finally {
-				parcelIt.close();
+			} else {
+				try {
+					while (parcelIt.hasNext()) {
+						SimpleFeature feat = parcelIt.next();
+						bt.set("the_geom", feat.getDefaultGeometry());
+						newParcel.add(bt.buildFeature(null));
+					}
+				} catch (Exception problem) {
+					problem.printStackTrace();
+				} finally {
+					parcelIt.close();
+				}
 			}
 			SDSParcel.dispose();
 		}
@@ -216,15 +245,15 @@ public class Vectors {
 			GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
 			Geometry union = geometryCollection.union();
 			return union;
-		} catch (TopologyException e ) {
+		} catch (TopologyException e) {
 			try {
-			System.out.println("precision reduced");
-			GeometryFactory factory = new GeometryFactory();
-			Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-					.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(100)));
-			GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-			return geometryCollection.union();
-			}  catch (TopologyException ee ) {
+				System.out.println("precision reduced");
+				GeometryFactory factory = new GeometryFactory();
+				Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
+						.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(100)));
+				GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
+				return geometryCollection.union();
+			} catch (TopologyException ee) {
 				System.out.println("precision reduced again");
 				GeometryFactory factory = new GeometryFactory();
 				Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
@@ -252,7 +281,8 @@ public class Vectors {
 		return result;
 	}
 
-	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, SimpleFeatureCollection empriseSFC) throws MalformedURLException, IOException {
+	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, SimpleFeatureCollection empriseSFC)
+			throws MalformedURLException, IOException {
 		if (inSFC.isEmpty()) {
 			return inSFC;
 		}
