@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 
 import org.geotools.data.DefaultTransaction;
@@ -77,6 +78,7 @@ public class Vectors {
 	}
 
 	public static File mergeVectFiles(List<File> file2MergeIn, File f, boolean keepAttribute) throws Exception {
+		org.geotools.util.logging.Logging.getLogger("org.geotools.feature").setLevel(Level.OFF);
 
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
@@ -86,7 +88,6 @@ public class Vectors {
 		sfTypeBuilder.add("the_geom", Polygon.class);
 		sfTypeBuilder.setDefaultGeometry("the_geom");
 		SimpleFeatureBuilder bt = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
-
 
 		for (File file : file2MergeIn) {
 			ShapefileDataStore SDSParcel = new ShapefileDataStore(file.toURI().toURL());
