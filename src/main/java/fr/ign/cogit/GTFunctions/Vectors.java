@@ -215,7 +215,7 @@ public class Vectors {
 		SimpleFeatureSource featureSource = newDataStore.getFeatureSource(typeName);
 
 		SimpleFeatureType SHAPE_TYPE = featureSource.getSchema();
-		System.out.println("SHAPE:" + SHAPE_TYPE);
+	//	System.out.println("SHAPE:" + SHAPE_TYPE);
 
 		if (featureSource instanceof SimpleFeatureStore) {
 			SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
