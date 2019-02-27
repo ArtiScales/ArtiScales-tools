@@ -143,6 +143,28 @@ public class Vectors {
 		return fileIn;
 	}
 
+	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result, String geometryOutputName, Geometry geom) {
+		if (geom instanceof MultiPolygon) {
+			for (int i = 0; i < geom.getNumGeometries(); i++) {
+				sfBuilder.set(geometryOutputName, geom.getGeometryN(i));
+				result.add(sfBuilder.buildFeature(null));
+			}
+		} else if (geom instanceof GeometryCollection) {
+			for (int i = 0; i < geom.getNumGeometries(); i++) {
+				Geometry g = geom.getGeometryN(i);
+				if (g instanceof Polygon) {
+					sfBuilder.set("the_geom", g.buffer(1).buffer(-1));
+					result.add(sfBuilder.buildFeature(null));
+				}
+			}
+		} else  if (geom instanceof Polygon)  {
+			sfBuilder.set(geometryOutputName, geom);
+			result.add(sfBuilder.buildFeature(null));
+		}
+		return result;
+
+	}
+
 	public static SimpleFeatureCollection delTinyParcels(SimpleFeatureCollection collecIn, double areaMin) throws Exception {
 
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
