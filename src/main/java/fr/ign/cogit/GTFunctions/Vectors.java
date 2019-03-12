@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
+import org.geotools.data.DataUtilities;
 import org.geotools.data.DefaultTransaction;
 import org.geotools.data.Transaction;
 import org.geotools.data.shapefile.ShapefileDataStore;
@@ -304,29 +305,26 @@ public class Vectors {
 		}
 	}
 
+	public static Geometry unionPrecisionReduce(SimpleFeatureCollection collection, int scale) {
+    GeometryFactory factory = new GeometryFactory();
+    Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[collection.size()]))
+        .map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(scale)));
+    GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
+    return geometryCollection.union();	  
+	}
 	public static Geometry unionSFC(SimpleFeatureCollection collection) throws IOException {
 		try {
-			GeometryFactory factory = new GeometryFactory();
-			Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-					.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(1000)));
-			GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-			Geometry union = geometryCollection.union();
+			Geometry union = unionPrecisionReduce(collection, 1000);
 			return union;
 		} catch (TopologyException e) {
 			try {
 				System.out.println("precision reduced");
-				GeometryFactory factory = new GeometryFactory();
-				Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-						.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(100)));
-				GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-				return geometryCollection.union();
+				Geometry union = unionPrecisionReduce(collection, 100);
+				return union;
 			} catch (TopologyException ee) {
 				System.out.println("precision reduced again");
-				GeometryFactory factory = new GeometryFactory();
-				Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-						.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(10)));
-				GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-				return geometryCollection.union();
+				Geometry union = unionPrecisionReduce(collection, 10);
+				return union;
 			}
 		}
 	}
@@ -454,7 +452,6 @@ public class Vectors {
 	}
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws Exception {
-
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
 		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
 		Geometry bBox = unionSFC(zoneCollection);
@@ -463,18 +460,14 @@ public class Vectors {
 		}
 		shpDSZone.dispose();
 		return snapDatas(SFCIn, bBox);
-
 	}
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) throws Exception {
-
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		String geometryInPropertyName = SFCIn.getSchema().getGeometryDescriptor().getLocalName();
 		Filter filterIn = ff.intersects(ff.property(geometryInPropertyName), ff.literal(bBox));
-		SimpleFeatureCollection inTown = SFCIn.subCollection(filterIn);
-
+		SimpleFeatureCollection inTown = DataUtilities.collection(SFCIn.subCollection(filterIn));
 		return inTown;
-
 	}
 
 	public static void copyShp(String name, File fromFile, File destinationFile) throws IOException {
