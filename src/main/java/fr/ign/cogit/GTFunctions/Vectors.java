@@ -49,7 +49,15 @@ import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
 public class Vectors {
 
 	// public static void main(String[] args) throws Exception {
+	// List<File> zob = new ArrayList<File>();
+	// File root = new File("/home/ubuntu/boulot/these/result0313/ParcelSelectionDepot/DDense/variantMvGrid1/");
+	// for (File f : root.listFiles()) {
+	// zob.add(new File(f, "parcelOut-" + f.getName() + ".shp"));
 	//
+	// }
+	// mergeVectFiles(zob, new File("/tmp/dqz.shp"), true);
+	// }
+
 	// ShapefileDataStore shpDSCells = new ShapefileDataStore((new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
 	// SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
 	//
@@ -91,7 +99,14 @@ public class Vectors {
 
 		for (File file : file2MergeIn) {
 			ShapefileDataStore SDSParcel = new ShapefileDataStore(file.toURI().toURL());
-			SimpleFeatureIterator parcelIt = SDSParcel.getFeatureSource().getFeatures().features();
+			SimpleFeatureIterator parcelIt;
+			try {
+				parcelIt = SDSParcel.getFeatureSource().getFeatures().features();
+			} catch (Exception e) {
+				System.out.println("magic number wrong : " + file);
+				SDSParcel.dispose();
+				continue;
+			}
 			if (keepAttribute) {
 				try {
 					while (parcelIt.hasNext()) {
@@ -143,7 +158,8 @@ public class Vectors {
 		return fileIn;
 	}
 
-	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result, String geometryOutputName, Geometry geom) {
+	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
+			String geometryOutputName, Geometry geom) {
 		if (geom instanceof MultiPolygon) {
 			for (int i = 0; i < geom.getNumGeometries(); i++) {
 				sfBuilder.set(geometryOutputName, geom.getGeometryN(i));
@@ -157,7 +173,7 @@ public class Vectors {
 					result.add(sfBuilder.buildFeature(null));
 				}
 			}
-		} else  if (geom instanceof Polygon)  {
+		} else if (geom instanceof Polygon) {
 			sfBuilder.set(geometryOutputName, geom);
 			result.add(sfBuilder.buildFeature(null));
 		}
@@ -485,5 +501,59 @@ public class Vectors {
 				Files.copy(f.toPath(), out);
 			}
 		}
+	}
+
+	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String attribute) throws IOException {
+		String[] attributes = {attribute};
+
+		return getSFCPart(sFCToDivide, code, attributes);
+	}
+
+	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String[] attributes) throws IOException {
+		DefaultFeatureCollection result = new DefaultFeatureCollection();
+		SimpleFeatureIterator it = sFCToDivide.features();
+		try {
+			while (it.hasNext()) {
+				SimpleFeature ft = it.next();
+				String attribute ="";
+				for (String a : attributes) {
+					attribute= attribute + ((String) ft.getAttribute(a)); 
+				}
+				if (attribute.equals(code)) {
+					result.add(ft);
+				}
+			}
+		} catch (Exception problem) {
+			problem.printStackTrace();
+		} finally {
+			it.close();
+		}
+		return result.collection();
+	}
+
+	public static HashMap<String, SimpleFeatureCollection> divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {
+		HashMap<String, SimpleFeatureCollection> result = new HashMap<String, SimpleFeatureCollection>();
+
+		SimpleFeatureIterator it = sFCToDivide.features();
+		try {
+			while (it.hasNext()) {
+				SimpleFeature ft = it.next();
+				String key = (String) ft.getAttribute(attribute);
+				DefaultFeatureCollection temp = new DefaultFeatureCollection();
+				if (result.containsKey(key)) {
+					temp.addAll(result.remove(key));
+					temp.add(ft);
+					result.put(key, temp.collection());
+				} else {
+					temp.add(ft);
+					result.put(key, temp.collection());
+				}
+			}
+		} catch (Exception problem) {
+			problem.printStackTrace();
+		} finally {
+			it.close();
+		}
+		return result;
 	}
 }
