@@ -38,10 +38,12 @@ import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.geom.TopologyException;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
+import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.filter.FilterVisitor;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -243,11 +245,22 @@ public class Vectors {
 			featureStore.setTransaction(transaction);
 			// System.out.println(featureStore.getSchema());
 			try {
-				featureStore.addFeatures(toExport);
+				featureStore.addFeatures(toExport.subCollection(new Filter() {
+          @Override
+          public boolean evaluate(Object object) {
+            SimpleFeature feature = (SimpleFeature) object;
+            return !((Geometry) feature.getDefaultGeometry()).isEmpty();
+          }
+          @Override
+          public Object accept(FilterVisitor visitor, Object extraData) {
+            return visitor.visit(Filter.INCLUDE, extraData);
+          }
+				}));
 				transaction.commit();
 			} catch (Exception problem) {
 				problem.printStackTrace();
 				transaction.rollback();
+				toExport.accepts((Feature f) -> System.out.println(((SimpleFeature)f).getDefaultGeometry()), null);
 			} finally {
 				transaction.close();
 			}
