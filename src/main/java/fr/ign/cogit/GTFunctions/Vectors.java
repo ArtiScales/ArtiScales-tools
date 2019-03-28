@@ -25,11 +25,14 @@ import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.util.factory.GeoTools;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateXY;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -38,7 +41,6 @@ import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.geom.TopologyException;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
-import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
@@ -235,6 +237,9 @@ public class Vectors {
 		return exportSFC(toExport, fileName, toExport.getSchema());
 	}
 
+	private static void coord2D(Coordinate c) {
+	  if (!CoordinateXY.class.isInstance(c)) c.setZ(Double.NaN);
+	}
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileName, SimpleFeatureType ft) throws IOException {
 
 		ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
@@ -254,14 +259,11 @@ public class Vectors {
 		String typeName = newDataStore.getTypeNames()[0];
 		SimpleFeatureSource featureSource = newDataStore.getFeatureSource(typeName);
 
-		// System.out.println("SHAPE:" + featureSource.getSchema());
-
 		if (featureSource instanceof SimpleFeatureStore) {
 			SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
 			featureStore.setTransaction(transaction);
-			// System.out.println(featureStore.getSchema());
 			try {
-				featureStore.addFeatures(toExport.subCollection(new Filter() {
+			  SimpleFeatureCollection features = toExport.subCollection(new Filter() {
           @Override
           public boolean evaluate(Object object) {
             SimpleFeature feature = (SimpleFeature) object;
@@ -271,12 +273,27 @@ public class Vectors {
           public Object accept(FilterVisitor visitor, Object extraData) {
             return visitor.visit(Filter.INCLUDE, extraData);
           }
-				}));
+        });
+			  DefaultFeatureCollection featureCollection = new DefaultFeatureCollection("internal",ft);
+			  // FIXME Horrible Horrible Horrible hack to get the writer to work!!!
+			  GeometryFactory f = new GeometryFactory();
+			  try (FeatureIterator<SimpleFeature> iterator = features.features()){
+			     while( iterator.hasNext() ){
+			       SimpleFeature feature = iterator.next();
+			       SimpleFeature newFeature = SimpleFeatureBuilder.build(ft, feature.getAttributes(), null);
+			       Geometry g = f.createGeometry((Geometry) feature.getDefaultGeometry());
+			       g.apply((Coordinate c)->coord2D(c));
+			       g.geometryChanged();
+			       newFeature.setDefaultGeometry(g);
+			       featureCollection.add(newFeature);
+			     }
+			  }
+				featureStore.addFeatures(featureCollection);
 				transaction.commit();
 			} catch (Exception problem) {
 				problem.printStackTrace();
 				transaction.rollback();
-				toExport.accepts((Feature f) -> System.out.println(((SimpleFeature)f).getDefaultGeometry()), null);
+//				toExport.accepts((Feature f) -> System.out.println(((SimpleFeature)f).getDefaultGeometry()), null);
 			} finally {
 				transaction.close();
 			}
