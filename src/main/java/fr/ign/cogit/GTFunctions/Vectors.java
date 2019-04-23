@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
+import org.geotools.data.DataUtilities;
 import org.geotools.data.DefaultTransaction;
 import org.geotools.data.Transaction;
 import org.geotools.data.shapefile.ShapefileDataStore;
@@ -355,6 +356,18 @@ public class Vectors {
 		return geometryCollection.union();
 	}
 
+	public static File cropSFC(File inFile, File empriseFile, File tmpFile) throws MalformedURLException, IOException {
+	
+		ShapefileDataStore envSDS = new ShapefileDataStore(empriseFile.toURI().toURL());
+		ShapefileDataStore inSDS = new ShapefileDataStore(inFile.toURI().toURL());
+
+		SimpleFeatureCollection result = cropSFC(inSDS.getFeatureSource().getFeatures(), envSDS.getFeatureSource().getFeatures());
+		envSDS.dispose();
+		inSDS.dispose();
+//		return exportSFC(result, new File(tmpFile, inFile.getName().replace(".shp", "")+"-croped.shp"));
+		return exportSFC(result, new File(tmpFile, inFile.getName()));
+	}
+	
 	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, File empriseFile) throws MalformedURLException, IOException {
 		if (inSFC.isEmpty()) {
 			return inSFC;
@@ -374,7 +387,7 @@ public class Vectors {
 		ReferencedEnvelope env = empriseSFC.getBounds();
 		String geometryPropertyName = inSFC.getSchema().getGeometryDescriptor().getLocalName();
 		Filter filter = ff.bbox(ff.property(geometryPropertyName), env);
-		return inSFC.subCollection(filter);
+		return DataUtilities.collection(inSFC.subCollection(filter));
 	}
 
 	public static Geometry unionGeom(Geometry g1, Geometry g2) {
@@ -499,6 +512,17 @@ public class Vectors {
 			if (f.getName().startsWith(name)) {
 				FileOutputStream out = new FileOutputStream(new File(destinationFile, f.getName()));
 				Files.copy(f.toPath(), out);
+				out.close();
+			}
+		}
+	}
+	
+	public static void copyShp(String name, String nameOut, File fromFile, File destinationFile) throws IOException {
+		for (File f : fromFile.listFiles()) {
+			if (f.getName().startsWith(name)) {
+				FileOutputStream out = new FileOutputStream(new File(destinationFile, f.getName()));
+				Files.copy(f.toPath(), out);
+				out.close();
 			}
 		}
 	}
@@ -531,29 +555,29 @@ public class Vectors {
 		return result.collection();
 	}
 
-	public static HashMap<String, SimpleFeatureCollection> divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {
-		HashMap<String, SimpleFeatureCollection> result = new HashMap<String, SimpleFeatureCollection>();
-
-		SimpleFeatureIterator it = sFCToDivide.features();
-		try {
-			while (it.hasNext()) {
-				SimpleFeature ft = it.next();
-				String key = (String) ft.getAttribute(attribute);
-				DefaultFeatureCollection temp = new DefaultFeatureCollection();
-				if (result.containsKey(key)) {
-					temp.addAll(result.remove(key));
-					temp.add(ft);
-					result.put(key, temp.collection());
-				} else {
-					temp.add(ft);
-					result.put(key, temp.collection());
-				}
-			}
-		} catch (Exception problem) {
-			problem.printStackTrace();
-		} finally {
-			it.close();
-		}
-		return result;
-	}
+//	public static HashMap<String, SimpleFeatureCollection> divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {
+//		HashMap<String, SimpleFeatureCollection> result = new HashMap<String, SimpleFeatureCollection>();
+//
+//		SimpleFeatureIterator it = sFCToDivide.features();
+//		try {
+//			while (it.hasNext()) {
+//				SimpleFeature ft = it.next();
+//				String key = (String) ft.getAttribute(attribute);
+//				DefaultFeatureCollection temp = new DefaultFeatureCollection();
+//				if (result.containsKey(key)) {
+//					temp.addAll(result.remove(key));
+//					temp.add(ft);
+//					result.put(key, temp.collection());
+//				} else {
+//					temp.add(ft);
+//					result.put(key, temp.collection());
+//				}
+//			}
+//		} catch (Exception problem) {
+//			problem.printStackTrace();
+//		} finally {
+//			it.close();
+//		}
+//		return result;
+//	}
 }
