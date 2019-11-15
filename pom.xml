@@ -10,7 +10,8 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<geotools.version>18.4</geotools.version>
+		<geotools.version>21.0</geotools.version>
+		<geoxygene.version>1.10-SNAPSHOT</geoxygene.version>
 	</properties>
 
 	<name>ArtiScales-tools</name>
@@ -91,27 +92,27 @@
 			<artifactId>gt-grid</artifactId>
 			<version>${geotools.version}</version>
 		</dependency>
-						<dependency>
+		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-graph</artifactId>
 			<version>${geotools.version}</version>
 		</dependency>
-				<dependency>
+		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-shapefile</artifactId>
 			<version>${geotools.version}</version>
 		</dependency>
-				<dependency>
+		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-arcgrid</artifactId>
 			<version>${geotools.version}</version>
 		</dependency>
-				<dependency>
+		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-coverage</artifactId>
 			<version>${geotools.version}</version>
 		</dependency>
-				<dependency>
+		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-geotiff</artifactId>
 			<version>${geotools.version}</version>
@@ -121,18 +122,58 @@
 			<artifactId>gt-image</artifactId>
 			<version>${geotools.version}</version>
 		</dependency>
-				<dependency>
+		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-epsg-hsql</artifactId>
 			<version>${geotools.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>geoxygene-api</artifactId>
+			<version>${geoxygene.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>geoxygene-spatial</artifactId>
+			<version>${geoxygene.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>geoxygene-feature</artifactId>
+			<version>${geoxygene.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>geoxygene-style</artifactId>
+			<version>${geoxygene.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>geoxygene-io</artifactId>
+			<version>${geoxygene.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>geoxygene-contrib</artifactId>
+			<version>${geoxygene.version}</version>
+		</dependency>
+		<dependency>
+		<groupId>fr.ign.cogit</groupId>
+			<artifactId>geoxygene-sig3d</artifactId>
+			<version>${geoxygene.version}</version>
+		</dependency> 
+		<dependency>
+		    <groupId>com.opencsv</groupId>
+		    <artifactId>opencsv</artifactId>
+		    <version>4.0</version>
+		</dependency>
 	</dependencies>
 	<repositories>
-		<repository>
+		<!--<repository>
 			<id>maven2-repository.dev.java.net</id>
 			<name>Java.net repository</name>
 			<url>http://download.java.net/maven/2</url>
-		</repository>
+		</repository> -->
 		<repository>
 			<id>osgeo</id>
 			<name>Open Source Geospatial Foundation Repository</name>
@@ -148,16 +189,16 @@
 			<name>Cogit Releases Repository</name>
 			<url>https://forge-cogit.ign.fr/nexus/content/repositories/releases/</url>
 		</repository>
-	    	 <repository>
+	 <!--   	 <repository>
 			<id>thema-sf</id>
 			<name>ThéMA libs Repository</name>
 			<url>http://themalibs.sourceforge.net/repository/</url>
 		</repository>
-     <repository>
-		<id>mupcity</id>
-            <name>ThéMA libs Repository</name>
-            <url>http://sourcesup.renater.fr/nexus/content/repositories/mupcity-releases/</url>
-        </repository>
+		<repository>
+			<id>mupcity</id>
+			<name>ThéMA libs Repository</name>
+			<url>http://sourcesup.renater.fr/nexus/content/repositories/mupcity-releases/</url>
+		</repository> -->
 	</repositories>
 	<reporting>
 		<plugins>

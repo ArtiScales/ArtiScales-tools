@@ -24,12 +24,20 @@ import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.factory.GeoTools;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
+import org.geotools.util.factory.GeoTools;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.TopologyException;
+import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
@@ -38,49 +46,39 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryCollection;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.MultiPolygon;
-import com.vividsolutions.jts.geom.Polygon;
-import com.vividsolutions.jts.geom.PrecisionModel;
-import com.vividsolutions.jts.geom.TopologyException;
-import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
 
 public class Vectors {
 
-	// public static void main(String[] args) throws Exception {
-	// List<File> zob = new ArrayList<File>();
-	// File root = new File("/home/ubuntu/boulot/these/result0313/ParcelSelectionDepot/DDense/variantMvGrid1/");
-	// for (File f : root.listFiles()) {
-	// zob.add(new File(f, "parcelOut-" + f.getName() + ".shp"));
-	//
-	// }
-	// mergeVectFiles(zob, new File("/tmp/dqz.shp"), true);
-	// }
+	public static void main(String[] args) throws Exception {
+		List<File> zob = new ArrayList<File>();
+		File root = new File("/home/ubuntu/boulot/these/result0313/ParcelSelectionDepot/DDense/variantMvGrid1/");
+		for (File f : root.listFiles()) {
+			zob.add(new File(f, "parcelOut-" + f.getName() + ".shp"));
 
-	// ShapefileDataStore shpDSCells = new ShapefileDataStore((new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
-	// SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
-	//
-	// Geometry cellsUnion = unionSFC(cellsCollection);
-	//
-	// SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-	// CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
-	// sfTypeBuilder.setName("testType");
-	// sfTypeBuilder.setCRS(sourceCRS);
-	// sfTypeBuilder.add("the_geom", MultiPolygon.class);
-	// sfTypeBuilder.setDefaultGeometry("the_geom");
-	//
-	// SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
-	// DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
-	//
-	// sfBuilder.add(cellsUnion);
-	// SimpleFeature feature = sfBuilder.buildFeature("0");
-	// toSplit.add(feature);
-	//
-	// shpDSCells.dispose();
-	// exportSFC(toSplit.collection(), new File("/home/mcolomb/tmp/mergeSmth.shp"));
-	// }
+		}
+		mergeVectFiles(zob, new File("/tmp/dqz.shp"), true);
+	}
+
+//	ShapefileDataStore shpDSCells = new ShapefileDataStore(
+//			(new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
+//	SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
+//
+//	Geometry cellsUnion = unionSFC(cellsCollection);
+//
+//	SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+//	CoordinateReferenceSystem sourceCRS = CRS.decode(
+//			"EPSG:2154");sfTypeBuilder.setName("testType");sfTypeBuilder.setCRS(sourceCRS);sfTypeBuilder.add("the_geom",MultiPolygon.class);sfTypeBuilder.setDefaultGeometry("the_geom");
+//
+//	SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+//	DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
+//
+//	sfBuilder.add(cellsUnion);
+//	SimpleFeature feature = sfBuilder.buildFeature("0");toSplit.add(feature);
+//
+//	shpDSCells.dispose();
+//
+//	exportSFC(toSplit.collection(), new File("/home/mcolomb/tmp/mergeSmth.shp"));
+//	 }
 
 	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws Exception {
 		return mergeVectFiles(file2MergeIn, f, true);
@@ -357,17 +355,17 @@ public class Vectors {
 	}
 
 	public static File cropSFC(File inFile, File empriseFile, File tmpFile) throws MalformedURLException, IOException {
-	
+
 		ShapefileDataStore envSDS = new ShapefileDataStore(empriseFile.toURI().toURL());
 		ShapefileDataStore inSDS = new ShapefileDataStore(inFile.toURI().toURL());
 
 		SimpleFeatureCollection result = cropSFC(inSDS.getFeatureSource().getFeatures(), envSDS.getFeatureSource().getFeatures());
 		envSDS.dispose();
 		inSDS.dispose();
-//		return exportSFC(result, new File(tmpFile, inFile.getName().replace(".shp", "")+"-croped.shp"));
+		// return exportSFC(result, new File(tmpFile, inFile.getName().replace(".shp", "")+"-croped.shp"));
 		return exportSFC(result, new File(tmpFile, inFile.getName()));
 	}
-	
+
 	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, File empriseFile) throws MalformedURLException, IOException {
 		if (inSFC.isEmpty()) {
 			return inSFC;
@@ -516,7 +514,7 @@ public class Vectors {
 			}
 		}
 	}
-	
+
 	public static void copyShp(String name, String nameOut, File fromFile, File destinationFile) throws IOException {
 		for (File f : fromFile.listFiles()) {
 			if (f.getName().startsWith(name)) {
@@ -528,7 +526,7 @@ public class Vectors {
 	}
 
 	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String attribute) throws IOException {
-		String[] attributes = {attribute};
+		String[] attributes = { attribute };
 
 		return getSFCPart(sFCToDivide, code, attributes);
 	}
@@ -539,9 +537,9 @@ public class Vectors {
 		try {
 			while (it.hasNext()) {
 				SimpleFeature ft = it.next();
-				String attribute ="";
+				String attribute = "";
 				for (String a : attributes) {
-					attribute= attribute + ((String) ft.getAttribute(a)); 
+					attribute = attribute + ((String) ft.getAttribute(a));
 				}
 				if (attribute.equals(code)) {
 					result.add(ft);
@@ -555,29 +553,29 @@ public class Vectors {
 		return result.collection();
 	}
 
-//	public static HashMap<String, SimpleFeatureCollection> divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {
-//		HashMap<String, SimpleFeatureCollection> result = new HashMap<String, SimpleFeatureCollection>();
-//
-//		SimpleFeatureIterator it = sFCToDivide.features();
-//		try {
-//			while (it.hasNext()) {
-//				SimpleFeature ft = it.next();
-//				String key = (String) ft.getAttribute(attribute);
-//				DefaultFeatureCollection temp = new DefaultFeatureCollection();
-//				if (result.containsKey(key)) {
-//					temp.addAll(result.remove(key));
-//					temp.add(ft);
-//					result.put(key, temp.collection());
-//				} else {
-//					temp.add(ft);
-//					result.put(key, temp.collection());
-//				}
-//			}
-//		} catch (Exception problem) {
-//			problem.printStackTrace();
-//		} finally {
-//			it.close();
-//		}
-//		return result;
-//	}
+	// public static HashMap<String, SimpleFeatureCollection> divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {
+	// HashMap<String, SimpleFeatureCollection> result = new HashMap<String, SimpleFeatureCollection>();
+	//
+	// SimpleFeatureIterator it = sFCToDivide.features();
+	// try {
+	// while (it.hasNext()) {
+	// SimpleFeature ft = it.next();
+	// String key = (String) ft.getAttribute(attribute);
+	// DefaultFeatureCollection temp = new DefaultFeatureCollection();
+	// if (result.containsKey(key)) {
+	// temp.addAll(result.remove(key));
+	// temp.add(ft);
+	// result.put(key, temp.collection());
+	// } else {
+	// temp.add(ft);
+	// result.put(key, temp.collection());
+	// }
+	// }
+	// } catch (Exception problem) {
+	// problem.printStackTrace();
+	// } finally {
+	// it.close();
+	// }
+	// return result;
+	// }
 }
