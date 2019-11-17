@@ -5,9 +5,8 @@ import java.util.List;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
-import org.opengis.feature.simple.SimpleFeature;
-
 import org.locationtech.jts.geom.Geometry;
+import org.opengis.feature.simple.SimpleFeature;
 
 public class ParcelAttribute {
 	public static String makeParcelCode(SimpleFeature feat) {
@@ -64,7 +63,23 @@ public class ParcelAttribute {
 		}
 		return result;
 	}
-	
+
+	// public static List<String> getCodeParcelsStream(SimpleFeatureCollection parcels) {
+	//
+	// List<String> result = Arrays.stream(parcels.toArray(new SimpleFeature[0]))
+	// // .map(feat -> ((String) feat.getAttribute("CODE")))
+	// .forEach( feat -> {
+	// code = ((String) feat.getAttribute("CODE"));
+	// if (code == null || code.isEmpty()) {
+	// code = makeParcelCode(feat);
+	// }
+	//// -> code;
+	// })
+	// .collect(Collectors.toList());
+	//
+	// return result;
+	// }
+
 	/**
 	 * get the parcel codes (Attribute CODE of the given SimpleFeatureCollection)
 	 * 
@@ -72,6 +87,7 @@ public class ParcelAttribute {
 	 * @return
 	 */
 	public static List<String> getCodeParcels(SimpleFeatureCollection parcels) {
+
 		List<String> result = new ArrayList<String>();
 		SimpleFeatureIterator parcelIt = parcels.features();
 		try {
@@ -116,7 +132,7 @@ public class ParcelAttribute {
 		}
 		return result;
 	}
-	
+
 	public static String normalizeNameBigZone(String nameZone) throws Exception {
 		System.out.println(nameZone);
 		switch (nameZone) {

@@ -36,6 +36,32 @@ import fr.ign.cogit.geoxygene.util.conversion.GeOxygeneGeoToolsTypes;
 
 public class ParcelState {
 
+	public static void main(String[] args) throws Exception {
+		File geoFile = new File("/home/ubuntu/boulot/these/result2903/dataGeo/");
+		File batiFile = new File(geoFile, "building.shp");
+		File parcelFile = new File("/tmp/parcelTested.shp");
+		ShapefileDataStore sds = new ShapefileDataStore(parcelFile.toURI().toURL());
+		SimpleFeatureIterator sfc = sds.getFeatureSource().getFeatures().features();
+
+		try {
+			while (sfc.hasNext()) {
+				SimpleFeature sf = sfc.next();
+				System.out.println("sf " + sf.getAttribute("NUMERO"));
+				long startTime2 = System.currentTimeMillis();
+
+				isAlreadyBuilt(batiFile, sf);
+				long endTime2 = System.nanoTime();
+				System.out.println("duration for isAlreadyBuilt : " + (endTime2 - startTime2) * 1000);
+			}
+
+		} catch (Exception problem) {
+			problem.printStackTrace();
+		} finally {
+			sfc.close();
+		}
+		sds.dispose();
+	}
+
 	/**
 	 * return false if the parcel mandatory needs a contact with the road to be urbanized. return true otherwise TODO haven't done it for the zones because I only found communities
 	 * that set the same rule regardless of the zone, but that could be done
@@ -82,65 +108,6 @@ public class ParcelState {
 		rule.close();
 		return true;
 	}
-	// public static boolean isParcelBuilt(SimpleFeature parcelIn, File geoFile) throws Exception {
-	// return isParcelBuilt(FromGeom.getBuild(geoFile), parcelIn);
-	// }
-
-	/**
-	 * return true if there's a building on the input parcel
-	 * 
-	 * @return the same collection without the parcels that intersects a building
-	 * @throws Exception
-	 */
-	public static boolean isParcelBuilt(File batiFile, SimpleFeature parcelIn) throws Exception {
-		ShapefileDataStore shpDSBati = new ShapefileDataStore(batiFile.toURI().toURL());
-		SimpleFeatureCollection batiCollection = shpDSBati.getFeatureSource().getFeatures();
-		batiCollection = Vectors.snapDatas(batiCollection, (Geometry) parcelIn.getDefaultGeometry());
-		Geometry emprise;
-		try {
-			emprise = Vectors.unionSFC(batiCollection);
-		} catch (ClassCastException cce) {
-			System.out.println("isParceBuilt.batiCollection : " + batiCollection.size());
-			emprise = (Geometry) batiCollection.features().next().getDefaultGeometry();
-		}
-		boolean result = isParcelBuilt(batiFile, parcelIn, emprise);
-		shpDSBati.dispose();
-		return result;
-	}
-
-	// public static boolean isParcelBuilt(SimpleFeature parcelIn, Geometry emprise, File geoFile) throws Exception {
-	// return isParcelBuilt(FromGeom.getBuild(geoFile), parcelIn, emprise);
-	// }
-
-	/**
-	 * return true if there's a building on the input parcel
-	 * 
-	 * @return the same collection without the parcels that intersects a building
-	 * @throws Exception
-	 */
-	public static boolean isParcelBuilt(File batiFile, SimpleFeature parcelIn, Geometry emprise) throws Exception {
-		// couche de batiment
-		ShapefileDataStore shpDSBati = new ShapefileDataStore(batiFile.toURI().toURL());
-		SimpleFeatureCollection batiCollection = shpDSBati.getFeatureSource().getFeatures();
-		// on snap la couche de batiment et la met dans une géométrie unique
-		Geometry batiUnion;
-		try {
-			batiUnion = Vectors.unionSFC(batiCollection);
-		} catch (ClassCastException cce) {
-			System.out.println("isParceBuilt.batiCollection : " + batiCollection.size());
-			batiUnion = (Geometry) batiCollection.features().next().getDefaultGeometry();
-		}
-		shpDSBati.dispose();
-		// if (((Geometry) parcelIn.getDefaultGeometry()).contains(batiUnion)) {
-		if (((Geometry) parcelIn.getDefaultGeometry()).intersects(batiUnion.buffer(-0.5))) {
-			return true;
-		}
-		return false;
-	}
-
-	// public static boolean isAlreadyBuilt(SimpleFeature feature, File geoFile) throws IOException {
-	// return isAlreadyBuilt(FromGeom.getBuild(geoFile), feature);
-	// }
 
 	/**
 	 * same as just up but in a different way TODO compare perf
@@ -161,6 +128,35 @@ public class ParcelState {
 	public static boolean isAlreadyBuilt(SimpleFeatureCollection batiSFC, SimpleFeature feature) throws IOException {
 		return isAlreadyBuilt(batiSFC, feature, 0.0);
 	}
+
+	/**
+	 * overload to select only a selection of buildings
+	 * 
+	 * @param buildingFile
+	 * @param parcel
+	 * @param emprise
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean isAlreadyBuilt(File buildingFile, SimpleFeature parcel, Geometry emprise) throws Exception {
+		ShapefileDataStore batiSDS = new ShapefileDataStore(buildingFile.toURI().toURL());
+		SimpleFeatureCollection batiFeatures = batiSDS.getFeatureSource().getFeatures();
+		boolean result = isAlreadyBuilt(Vectors.snapDatas(batiFeatures, emprise), parcel, 0.0);
+		batiSDS.dispose();
+		return result;
+
+	}
+
+	// public static boolean isAlreadyBuiltStream(SimpleFeatureCollection batiSFC, SimpleFeature feature, double bufferBati) throws IOException {
+	// boolean res = false;
+	// List<String> result = Arrays.stream(batiSFC.toArray(new SimpleFeature[0]))
+	// .forEach(batiFeature -> {
+	// if (((Geometry) feature.getDefaultGeometry()).intersects(((Geometry) batiFeature.getDefaultGeometry()).buffer(bufferBati))) {
+	// res = true ;
+	// }
+	// }
+	// );
+	// }
 
 	public static boolean isAlreadyBuilt(SimpleFeatureCollection batiSFC, SimpleFeature feature, double bufferBati) throws IOException {
 		boolean isContent = false;
@@ -562,5 +558,4 @@ public class ParcelState {
 		}
 		return result;
 	}
-
 }
