@@ -466,13 +466,13 @@ public class Vectors {
 		return exportSFC(snapDatas(inCollection, bBox), fileOut);
 	}
 
-	public static SimpleFeatureCollection snapDatas(File fileIn, SimpleFeatureCollection collec) throws Exception {
+	public static SimpleFeatureCollection snapDatas(File fileIn, SimpleFeatureCollection box) throws Exception {
 
 		// load the input from the general folder
 		ShapefileDataStore shpDSIn = new ShapefileDataStore(fileIn.toURI().toURL());
 		SimpleFeatureCollection inCollection = shpDSIn.getFeatureSource().getFeatures();
 
-		Geometry bBox = unionSFC(collec);
+		Geometry bBox = unionSFC(box);
 
 		return snapDatas(inCollection, bBox);
 	}
@@ -493,6 +493,12 @@ public class Vectors {
 		return snapDatas(SFCIn, bBox);
 
 	}
+	
+	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox) throws Exception {
+		Geometry geomBBox = unionSFC(bBox);
+		return snapDatas(SFCIn, geomBBox);
+	}
+
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) throws Exception {
 

@@ -37,7 +37,7 @@ public class ParcelGetter {
 		
 	}
 	
-	public static SimpleFeatureCollection getParcelByBigZone(String zone, SimpleFeatureCollection parcelles, File rootFile, File zoningFile)
+	public static SimpleFeatureCollection getParcelByBigZone(String zone, SimpleFeatureCollection parcelles, File zoningFile)
 			throws IOException {
 		ShapefileDataStore zonesSDS = new ShapefileDataStore(zoningFile.toURI().toURL());
 		SimpleFeatureCollection zonesSFCBig = zonesSDS.getFeatureSource().getFeatures();
@@ -173,6 +173,8 @@ public class ParcelGetter {
 		communitiesSDS.dispose();
 		return result.collection();
 	}
+	
+	
 
 	public static IFeatureCollection<IFeature> getParcelByCode(IFeatureCollection<IFeature> parcelles, List<String> parcelsWanted)
 			throws IOException {
