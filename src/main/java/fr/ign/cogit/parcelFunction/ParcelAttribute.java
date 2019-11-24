@@ -1,6 +1,7 @@
 package fr.ign.cogit.parcelFunction;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -107,29 +108,47 @@ public class ParcelAttribute {
 		}
 		return result;
 	}
-
+/**
+ * get a list of all the INSEE numbers of the parcels in the collection
+ * @param parcels : a collection of parcels
+ * TODO to test with the stream
+ * @return
+ */
 	public static List<String> getInseeParcels(SimpleFeatureCollection parcels) {
-		List<String> result = new ArrayList<String>();
-		SimpleFeatureIterator parcelIt = parcels.features();
-		try {
-			while (parcelIt.hasNext()) {
-				SimpleFeature feat = parcelIt.next();
-				String code = ((String) feat.getAttribute("INSEE"));
-				if (code != null && !code.isEmpty()) {
-					result.add(code);
-				} else {
-					String c = makeINSEECode(feat);
-					if (!result.contains(c)) {
-						result.add(makeINSEECode(feat));
-					}
+		List<String> result = new ArrayList<String>();	
+		Arrays.stream(parcels.toArray(new SimpleFeature[0])).forEach(feat -> {
+			String code = ((String) feat.getAttribute("INSEE"));
+			if (code != null && !code.isEmpty()) {
+				result.add(code);
+			} else {
+				String c = makeINSEECode(feat);
+				if (!result.contains(c)) {
+					result.add(makeINSEECode(feat));
 				}
-
 			}
-		} catch (Exception problem) {
-			problem.printStackTrace();
-		} finally {
-			parcelIt.close();
-		}
+		});		
+		
+//		List<String> result = new ArrayList<String>();
+//		SimpleFeatureIterator parcelIt = parcels.features();
+//		try {
+//			while (parcelIt.hasNext()) {
+//				SimpleFeature feat = parcelIt.next();
+//				String code = ((String) feat.getAttribute("INSEE"));
+//				if (code != null && !code.isEmpty()) {
+//					result.add(code);
+//				} else {
+//					String c = makeINSEECode(feat);
+//					if (!result.contains(c)) {
+//						result.add(makeINSEECode(feat));
+//					}
+//				}
+//
+//			}
+//		} catch (Exception problem) {
+//			problem.printStackTrace();
+//		} finally {
+//			parcelIt.close();
+//		}
 		return result;
 	}
 

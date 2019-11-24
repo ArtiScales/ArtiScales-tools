@@ -62,31 +62,7 @@ public class ParcelSchema {
 		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 	}
 	
-	public static SimpleFeatureBuilder getParcelMergeSFBuilder() throws NoSuchAuthorityCodeException, FactoryException {
-		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
-		sfTypeBuilder.setName("testType");
-		sfTypeBuilder.setCRS(sourceCRS);
-		sfTypeBuilder.add("the_geom", Polygon.class);
-		sfTypeBuilder.setDefaultGeometry("the_geom");
-		sfTypeBuilder.add("CODE", String.class);
-		sfTypeBuilder.add("CODE_DEP", String.class);
-		sfTypeBuilder.add("CODE_COM", String.class);
-		sfTypeBuilder.add("COM_ABS", String.class);
-		sfTypeBuilder.add("SECTION", String.class);
-		sfTypeBuilder.add("NUMERO", String.class);
-		sfTypeBuilder.add("INSEE", String.class);
-		sfTypeBuilder.add("eval", String.class);
-		sfTypeBuilder.add("DoWeSimul", String.class);
-		sfTypeBuilder.add("MERGE", Integer.class);
-		sfTypeBuilder.add("IsBuild", Boolean.class);
-		sfTypeBuilder.add("U", Boolean.class);
-		sfTypeBuilder.add("AU", Boolean.class);
-		sfTypeBuilder.add("NC", Boolean.class);
-
-		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
-	}
-
+	
 	public static SimpleFeatureBuilder getSimpleParcelSFBuilder() throws NoSuchAuthorityCodeException, FactoryException {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");

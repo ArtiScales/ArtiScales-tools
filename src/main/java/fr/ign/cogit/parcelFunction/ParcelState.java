@@ -360,6 +360,7 @@ public class ParcelState {
 						result.remove("NC");
 						break zoneLoop;
 					case "AU":
+					case "TBU":
 						result.add("AU");
 						result.remove("U");
 						result.remove("NC");
@@ -387,6 +388,7 @@ public class ParcelState {
 						}
 						break;
 					case "AU":
+					case "TBU":
 						if (repart.containsKey("AU")) {
 							repart.put("AU", repart.get("AU") + area);
 						} else {
