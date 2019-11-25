@@ -183,7 +183,7 @@ public class ParcelCollection {
 		try {
 			while (parcelCutedIt.hasNext()) {
 				SimpleFeature featCut = parcelCutedIt.next();
-				SimpleFeatureBuilder fit = ParcelSchema.setSFBParcelWithFeat(featCut, schema);
+				SimpleFeatureBuilder fit = ParcelSchema.setSFBParcelWithFeatAsAS(featCut, schema);
 				result.add(fit.buildFeature(null));
 			}
 		} catch (Exception problem) {
@@ -204,7 +204,7 @@ public class ParcelCollection {
 					}
 				}
 				if (add) {
-					SimpleFeatureBuilder fit = ParcelSchema.setSFBParcelWithFeat(featTot, schema);
+					SimpleFeatureBuilder fit = ParcelSchema.setSFBParcelWithFeatAsAS(featTot, schema);
 					result.add(fit.buildFeature(null));
 				}
 			}

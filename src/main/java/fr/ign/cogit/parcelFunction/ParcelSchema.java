@@ -85,10 +85,11 @@ public class ParcelSchema {
 	 * 
 	 * @param feat
 	 * @param schema
+	 * @overload
 	 * @return
 	 */
 	public static SimpleFeatureBuilder setSFBParcelWithFeat(SimpleFeature feat) {
-		return setSFBParcelWithFeat(feat, feat.getFeatureType(), feat.getFeatureType().getGeometryDescriptor().getName().toString());
+		return setSFBParcelWithFeatAsAS(feat, feat.getFeatureType(), feat.getFeatureType().getGeometryDescriptor().getName().toString());
 	}
 
 	/**
@@ -98,12 +99,12 @@ public class ParcelSchema {
 	 * @param schema
 	 * @return
 	 */
-	public static SimpleFeatureBuilder setSFBParcelWithFeat(SimpleFeature feat, SimpleFeatureType schema) {
-		return setSFBParcelWithFeat(feat, schema, schema.getGeometryDescriptor().getName().toString());
+	public static SimpleFeatureBuilder setSFBParcelWithFeatAsAS(SimpleFeature feat, SimpleFeatureType schema) {
+		return setSFBParcelWithFeatAsAS(feat, schema, schema.getGeometryDescriptor().getName().toString());
 
 	}
 
-	public static SimpleFeatureBuilder setSFBParcelWithFeat(SimpleFeature feat, SimpleFeatureType schema, String geometryOutputName) {
+	public static SimpleFeatureBuilder setSFBParcelWithFeatAsAS(SimpleFeature feat, SimpleFeatureType schema, String geometryOutputName) {
 		SimpleFeatureBuilder finalParcelBuilder = new SimpleFeatureBuilder(schema);
 		finalParcelBuilder.set(geometryOutputName, (Geometry) feat.getDefaultGeometry());
 		finalParcelBuilder.set("CODE", feat.getAttribute("CODE"));
@@ -122,17 +123,23 @@ public class ParcelSchema {
 
 		return finalParcelBuilder;
 	}
-
-	public static SimpleFeatureBuilder setSFBOriginalParcelWithFeat(SimpleFeature feat, SimpleFeatureType schema) {
+	
+	public static SimpleFeatureBuilder setSFBWithFeatOriginalParcelAsAS(SimpleFeature feat) {
+		return setSFBWithFeatOriginalParcelAsAS(feat, feat.getFeatureType(), feat.getFeatureType().getGeometryDescriptor().getName().toString());
+	}
+	public static SimpleFeatureBuilder setSFBWithFeatOriginalParcelAsAS(SimpleFeature feat, SimpleFeatureType schema) {
+		return setSFBWithFeatOriginalParcelAsAS(feat, schema, schema.getGeometryDescriptor().getName().toString());
+	}
+	public static SimpleFeatureBuilder setSFBWithFeatOriginalParcelAsAS(SimpleFeature feat, SimpleFeatureType schema, String geometryOutputName ) {
 		SimpleFeatureBuilder finalParcelBuilder = new SimpleFeatureBuilder(schema);
-		finalParcelBuilder.set(schema.getGeometryDescriptor().getName().toString(), (Geometry) feat.getDefaultGeometry());
+		finalParcelBuilder.set(geometryOutputName, (Geometry) feat.getDefaultGeometry());
 		finalParcelBuilder.set("CODE", ParcelAttribute.makeParcelCode(feat));
 		finalParcelBuilder.set("CODE_DEP", feat.getAttribute("CODE_DEP"));
 		finalParcelBuilder.set("CODE_COM", feat.getAttribute("CODE_COM"));
 		finalParcelBuilder.set("COM_ABS", feat.getAttribute("COM_ABS"));
 		finalParcelBuilder.set("SECTION", feat.getAttribute("SECTION"));
 		finalParcelBuilder.set("NUMERO", feat.getAttribute("NUMERO"));
-		finalParcelBuilder.set("INSEE", (String) feat.getAttribute("CODE_DEP") + (String) feat.getAttribute("CODE_COM"));
+		finalParcelBuilder.set("INSEE",ParcelAttribute.makeINSEECode(feat));
 		finalParcelBuilder.set("eval", "0");
 		finalParcelBuilder.set("DoWeSimul", "false");
 		finalParcelBuilder.set("IsBuild", "false");
@@ -140,6 +147,17 @@ public class ParcelSchema {
 		finalParcelBuilder.set("AU", "false");
 		finalParcelBuilder.set("NC", "false");
 
+		return finalParcelBuilder;
+	}
+	
+	public static SimpleFeatureBuilder setSFBNormalParcelWithFeat(SimpleFeature feat, SimpleFeatureType schema) {
+		SimpleFeatureBuilder finalParcelBuilder = new SimpleFeatureBuilder(schema);
+		finalParcelBuilder.set(schema.getGeometryDescriptor().getName().toString(), (Geometry) feat.getDefaultGeometry());
+		finalParcelBuilder.set("CODE_DEP", feat.getAttribute("CODE_DEP"));
+		finalParcelBuilder.set("CODE_COM", feat.getAttribute("CODE_COM"));
+		finalParcelBuilder.set("COM_ABS", feat.getAttribute("COM_ABS"));
+		finalParcelBuilder.set("SECTION", feat.getAttribute("SECTION"));
+		finalParcelBuilder.set("NUMERO", feat.getAttribute("NUMERO"));
 		return finalParcelBuilder;
 	}
 }

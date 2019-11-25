@@ -108,16 +108,32 @@ public class ParcelAttribute {
 		}
 		return result;
 	}
-/**
- * get a list of all the INSEE numbers of the parcels in the collection
- * @param parcels : a collection of parcels
- * TODO to test with the stream
- * @return
- */
-	public static List<String> getInseeParcels(SimpleFeatureCollection parcels) {
-		List<String> result = new ArrayList<String>();	
+
+	/**
+	 * get a list of all the INSEE numbers of the parcels in the collection
+	 * 
+	 * @overload for automatic INSEE name field in the French case
+	 * @param parcels
+	 *            : a collection of parcels TODO to test with the stream
+	 * @return
+	 */
+	public static List<String> getCityCodeFromParcels(SimpleFeatureCollection parcels) {
+		return getCityCodeFromParcels(parcels, "INSEE");
+	}
+
+	/**
+	 * get a list of all the INSEE numbers of the parcels in the collection
+	 * 
+	 * @param parcels
+	 *            : a collection of parcels
+	 * @param String
+	 *            containing the name of the field containing the city's code TODO to test with the stream
+	 * @return
+	 */
+	public static List<String> getCityCodeFromParcels(SimpleFeatureCollection parcels, String cityField) {
+		List<String> result = new ArrayList<String>();
 		Arrays.stream(parcels.toArray(new SimpleFeature[0])).forEach(feat -> {
-			String code = ((String) feat.getAttribute("INSEE"));
+			String code = ((String) feat.getAttribute(cityField));
 			if (code != null && !code.isEmpty()) {
 				result.add(code);
 			} else {
@@ -126,29 +142,29 @@ public class ParcelAttribute {
 					result.add(makeINSEECode(feat));
 				}
 			}
-		});		
-		
-//		List<String> result = new ArrayList<String>();
-//		SimpleFeatureIterator parcelIt = parcels.features();
-//		try {
-//			while (parcelIt.hasNext()) {
-//				SimpleFeature feat = parcelIt.next();
-//				String code = ((String) feat.getAttribute("INSEE"));
-//				if (code != null && !code.isEmpty()) {
-//					result.add(code);
-//				} else {
-//					String c = makeINSEECode(feat);
-//					if (!result.contains(c)) {
-//						result.add(makeINSEECode(feat));
-//					}
-//				}
-//
-//			}
-//		} catch (Exception problem) {
-//			problem.printStackTrace();
-//		} finally {
-//			parcelIt.close();
-//		}
+		});
+
+		// List<String> result = new ArrayList<String>();
+		// SimpleFeatureIterator parcelIt = parcels.features();
+		// try {
+		// while (parcelIt.hasNext()) {
+		// SimpleFeature feat = parcelIt.next();
+		// String code = ((String) feat.getAttribute("INSEE"));
+		// if (code != null && !code.isEmpty()) {
+		// result.add(code);
+		// } else {
+		// String c = makeINSEECode(feat);
+		// if (!result.contains(c)) {
+		// result.add(makeINSEECode(feat));
+		// }
+		// }
+		//
+		// }
+		// } catch (Exception problem) {
+		// problem.printStackTrace();
+		// } finally {
+		// parcelIt.close();
+		// }
 		return result;
 	}
 
