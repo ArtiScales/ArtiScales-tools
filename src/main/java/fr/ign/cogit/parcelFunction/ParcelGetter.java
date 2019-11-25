@@ -377,7 +377,7 @@ public class ParcelGetter {
 			List<String> codeParcelsTot = new ArrayList<String>();
 
 			// auto parcel feature builder
-			SimpleFeatureBuilder sfSimpleBuilder = ParcelSchema.getSimpleParcelSFBuilder();
+			SimpleFeatureBuilder sfSimpleBuilder = ParcelSchema.getSFBFrenchParcel();
 
 			DefaultFeatureCollection write = new DefaultFeatureCollection();
 
@@ -456,7 +456,7 @@ public class ParcelGetter {
 		// Vectors.snapDatas(shpDSBati.getFeatureSource().getFeatures(),
 		// Vectors.unionSFC(parcels));
 
-		SimpleFeatureBuilder finalParcelBuilder = ParcelSchema.getParcelSFBuilder();
+		SimpleFeatureBuilder finalParcelBuilder = ParcelSchema.getSFBParcelAsAS();
 
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
 

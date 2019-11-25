@@ -46,7 +46,6 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
-
 public class Vectors {
 
 	public static void main(String[] args) throws Exception {
@@ -59,26 +58,26 @@ public class Vectors {
 		mergeVectFiles(zob, new File("/tmp/dqz.shp"), true);
 	}
 
-//	ShapefileDataStore shpDSCells = new ShapefileDataStore(
-//			(new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
-//	SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
-//
-//	Geometry cellsUnion = unionSFC(cellsCollection);
-//
-//	SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-//	CoordinateReferenceSystem sourceCRS = CRS.decode(
-//			"EPSG:2154");sfTypeBuilder.setName("testType");sfTypeBuilder.setCRS(sourceCRS);sfTypeBuilder.add("the_geom",MultiPolygon.class);sfTypeBuilder.setDefaultGeometry("the_geom");
-//
-//	SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
-//	DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
-//
-//	sfBuilder.add(cellsUnion);
-//	SimpleFeature feature = sfBuilder.buildFeature("0");toSplit.add(feature);
-//
-//	shpDSCells.dispose();
-//
-//	exportSFC(toSplit.collection(), new File("/home/mcolomb/tmp/mergeSmth.shp"));
-//	 }
+	// ShapefileDataStore shpDSCells = new ShapefileDataStore(
+	// (new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
+	// SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
+	//
+	// Geometry cellsUnion = unionSFC(cellsCollection);
+	//
+	// SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+	// CoordinateReferenceSystem sourceCRS = CRS.decode(
+	// "EPSG:2154");sfTypeBuilder.setName("testType");sfTypeBuilder.setCRS(sourceCRS);sfTypeBuilder.add("the_geom",MultiPolygon.class);sfTypeBuilder.setDefaultGeometry("the_geom");
+	//
+	// SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	// DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
+	//
+	// sfBuilder.add(cellsUnion);
+	// SimpleFeature feature = sfBuilder.buildFeature("0");toSplit.add(feature);
+	//
+	// shpDSCells.dispose();
+	//
+	// exportSFC(toSplit.collection(), new File("/home/mcolomb/tmp/mergeSmth.shp"));
+	// }
 
 	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws Exception {
 		return mergeVectFiles(file2MergeIn, f, true);
@@ -159,22 +158,27 @@ public class Vectors {
 
 	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
 			String geometryOutputName, Geometry geom) {
+		return addSimpleGeometry(sfBuilder, result, geometryOutputName, geom, null);
+	}
+
+	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
+			String geometryOutputName, Geometry geom, String id) {
 		if (geom instanceof MultiPolygon) {
 			for (int i = 0; i < geom.getNumGeometries(); i++) {
 				sfBuilder.set(geometryOutputName, geom.getGeometryN(i));
-				result.add(sfBuilder.buildFeature(null));
+				result.add(sfBuilder.buildFeature(id));
 			}
 		} else if (geom instanceof GeometryCollection) {
 			for (int i = 0; i < geom.getNumGeometries(); i++) {
 				Geometry g = geom.getGeometryN(i);
 				if (g instanceof Polygon) {
 					sfBuilder.set("the_geom", g.buffer(1).buffer(-1));
-					result.add(sfBuilder.buildFeature(null));
+					result.add(sfBuilder.buildFeature(id));
 				}
 			}
 		} else if (geom instanceof Polygon) {
 			sfBuilder.set(geometryOutputName, geom);
-			result.add(sfBuilder.buildFeature(null));
+			result.add(sfBuilder.buildFeature(id));
 		}
 		return result;
 
@@ -493,12 +497,11 @@ public class Vectors {
 		return snapDatas(SFCIn, bBox);
 
 	}
-	
+
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox) throws Exception {
 		Geometry geomBBox = unionSFC(bBox);
 		return snapDatas(SFCIn, geomBBox);
 	}
-
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) throws Exception {
 

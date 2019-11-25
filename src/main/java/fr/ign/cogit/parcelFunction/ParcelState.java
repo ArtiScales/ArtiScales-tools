@@ -73,14 +73,14 @@ public class ParcelState {
 	 * @return
 	 * @throws IOException
 	 */
-	public static boolean isArt3AllowsIsolatedParcel(IFeature feat, File regulFile) throws IOException {
+	public static boolean isArt3AllowsIsolatedParcel(SimpleFeature feat, File predicateFile) throws IOException {
 		// get Insee Number
 		String insee = ((String) feat.getAttribute("CODE_DEP")) + ((String) feat.getAttribute("CODE_COM"));
 
 		int nInsee = 0;
 		int nArt3 = 0;
 		// get rule file
-		CSVReader rule = new CSVReader(new FileReader(new File(regulFile, "predicate.csv")));
+		CSVReader rule = new CSVReader(new FileReader(predicateFile));
 
 		// seek for attribute numbers
 		String[] firstLine = rule.readNext();
