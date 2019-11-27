@@ -74,8 +74,10 @@ public class ParcelState {
 	 * @throws IOException
 	 */
 	public static boolean isArt3AllowsIsolatedParcel(SimpleFeature feat, File predicateFile) throws IOException {
-		// get Insee Number
-		String insee = ((String) feat.getAttribute("CODE_DEP")) + ((String) feat.getAttribute("CODE_COM"));
+		return isArt3AllowsIsolatedParcel(((String) feat.getAttribute("CODE_DEP")) + ((String) feat.getAttribute("CODE_COM")), predicateFile);
+	}
+
+	public static boolean isArt3AllowsIsolatedParcel(String insee, File predicateFile) throws IOException {
 
 		int nInsee = 0;
 		int nArt3 = 0;
