@@ -25,11 +25,14 @@ import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.util.factory.GeoTools;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateXY;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -42,6 +45,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.filter.FilterVisitor;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -236,6 +240,9 @@ public class Vectors {
 		return exportSFC(toExport, fileName, toExport.getSchema());
 	}
 
+	private static void coord2D(Coordinate c) {
+	  if (!CoordinateXY.class.isInstance(c)) c.setZ(Double.NaN);
+	}
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileName, SimpleFeatureType ft) throws IOException {
 
 		ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
@@ -255,18 +262,41 @@ public class Vectors {
 		String typeName = newDataStore.getTypeNames()[0];
 		SimpleFeatureSource featureSource = newDataStore.getFeatureSource(typeName);
 
-		// System.out.println("SHAPE:" + featureSource.getSchema());
-
 		if (featureSource instanceof SimpleFeatureStore) {
 			SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
 			featureStore.setTransaction(transaction);
-			// System.out.println(featureStore.getSchema());
 			try {
-				featureStore.addFeatures(toExport);
+			  SimpleFeatureCollection features = toExport.subCollection(new Filter() {
+          @Override
+          public boolean evaluate(Object object) {
+            SimpleFeature feature = (SimpleFeature) object;
+            return !((Geometry) feature.getDefaultGeometry()).isEmpty();
+          }
+          @Override
+          public Object accept(FilterVisitor visitor, Object extraData) {
+            return visitor.visit(Filter.INCLUDE, extraData);
+          }
+        });
+			  DefaultFeatureCollection featureCollection = new DefaultFeatureCollection("internal",ft);
+			  // FIXME Horrible Horrible Horrible hack to get the writer to work!!!
+			  GeometryFactory f = new GeometryFactory();
+			  try (FeatureIterator<SimpleFeature> iterator = features.features()){
+			     while( iterator.hasNext() ){
+			       SimpleFeature feature = iterator.next();
+			       SimpleFeature newFeature = SimpleFeatureBuilder.build(ft, feature.getAttributes(), null);
+			       Geometry g = f.createGeometry((Geometry) feature.getDefaultGeometry());
+			       g.apply((Coordinate c)->coord2D(c));
+			       g.geometryChanged();
+			       newFeature.setDefaultGeometry(g);
+			       featureCollection.add(newFeature);
+			     }
+			  }
+				featureStore.addFeatures(featureCollection);
 				transaction.commit();
 			} catch (Exception problem) {
 				problem.printStackTrace();
 				transaction.rollback();
+//				toExport.accepts((Feature f) -> System.out.println(((SimpleFeature)f).getDefaultGeometry()), null);
 			} finally {
 				transaction.close();
 			}
@@ -324,29 +354,26 @@ public class Vectors {
 		}
 	}
 
+	public static Geometry unionPrecisionReduce(SimpleFeatureCollection collection, int scale) {
+    GeometryFactory factory = new GeometryFactory();
+    Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[collection.size()]))
+        .map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(scale)));
+    GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
+    return geometryCollection.union();	  
+	}
 	public static Geometry unionSFC(SimpleFeatureCollection collection) throws IOException {
 		try {
-			GeometryFactory factory = new GeometryFactory();
-			Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-					.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(1000)));
-			GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-			Geometry union = geometryCollection.union();
+			Geometry union = unionPrecisionReduce(collection, 1000);
 			return union;
 		} catch (TopologyException e) {
 			try {
 				System.out.println("precision reduced");
-				GeometryFactory factory = new GeometryFactory();
-				Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-						.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(100)));
-				GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-				return geometryCollection.union();
+				Geometry union = unionPrecisionReduce(collection, 100);
+				return union;
 			} catch (TopologyException ee) {
 				System.out.println("precision reduced again");
-				GeometryFactory factory = new GeometryFactory();
-				Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[0]))
-						.map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(10)));
-				GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-				return geometryCollection.union();
+				Geometry union = unionPrecisionReduce(collection, 10);
+				return union;
 			}
 		}
 	}
@@ -486,7 +513,6 @@ public class Vectors {
 	}
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws Exception {
-
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
 		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
 		Geometry bBox = unionSFC(zoneCollection);
@@ -495,7 +521,6 @@ public class Vectors {
 		}
 		shpDSZone.dispose();
 		return snapDatas(SFCIn, bBox);
-
 	}
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox) throws Exception {
@@ -504,14 +529,11 @@ public class Vectors {
 	}
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) throws Exception {
-
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		String geometryInPropertyName = SFCIn.getSchema().getGeometryDescriptor().getLocalName();
 		Filter filterIn = ff.intersects(ff.property(geometryInPropertyName), ff.literal(bBox));
-		SimpleFeatureCollection inTown = SFCIn.subCollection(filterIn);
-
+		SimpleFeatureCollection inTown = DataUtilities.collection(SFCIn.subCollection(filterIn));
 		return inTown;
-
 	}
 
 	public static void copyShp(String name, File fromFile, File destinationFile) throws IOException {
