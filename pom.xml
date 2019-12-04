@@ -128,41 +128,6 @@
 			<version>${geotools.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>geoxygene-api</artifactId>
-			<version>${geoxygene.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>geoxygene-spatial</artifactId>
-			<version>${geoxygene.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>geoxygene-feature</artifactId>
-			<version>${geoxygene.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>geoxygene-style</artifactId>
-			<version>${geoxygene.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>geoxygene-io</artifactId>
-			<version>${geoxygene.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>geoxygene-contrib</artifactId>
-			<version>${geoxygene.version}</version>
-		</dependency>
-		<dependency>
-		<groupId>fr.ign.cogit</groupId>
-			<artifactId>geoxygene-sig3d</artifactId>
-			<version>${geoxygene.version}</version>
-		</dependency> 
-		<dependency>
 		    <groupId>com.opencsv</groupId>
 		    <artifactId>opencsv</artifactId>
 		    <version>4.0</version>

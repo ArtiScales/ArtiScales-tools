@@ -24,10 +24,6 @@ import org.opengis.filter.FilterFactory2;
 
 import fr.ign.cogit.FeaturePolygonizer;
 import fr.ign.cogit.GTFunctions.Vectors;
-import fr.ign.cogit.geoxygene.api.feature.IFeature;
-import fr.ign.cogit.geoxygene.api.feature.IFeatureCollection;
-import fr.ign.cogit.geoxygene.feature.FT_FeatureCollection;
-import fr.ign.cogit.geoxygene.spatial.coordgeom.DirectPosition;
 
 
 
@@ -176,18 +172,18 @@ public class ParcelGetter {
 	
 	
 
-	public static IFeatureCollection<IFeature> getParcelByCode(IFeatureCollection<IFeature> parcelles, List<String> parcelsWanted)
-			throws IOException {
-		IFeatureCollection<IFeature> result = new FT_FeatureCollection<>();
-		for (IFeature parcelle : parcelles) {
-			for (String s : parcelsWanted) {
-				if (s.equals((String) parcelle.getAttribute("CODE"))) {
-					result.add(parcelle);
-				}
-			}
-		}
-		return result;
-	}
+//	public static IFeatureCollection<IFeature> getParcelByCode(IFeatureCollection<IFeature> parcelles, List<String> parcelsWanted)
+//			throws IOException {
+//		IFeatureCollection<IFeature> result = new FT_FeatureCollection<>();
+//		for (IFeature parcelle : parcelles) {
+//			for (String s : parcelsWanted) {
+//				if (s.equals((String) parcelle.getAttribute("CODE"))) {
+//					result.add(parcelle);
+//				}
+//			}
+//		}
+//		return result;
+//	}
 
 	public static File getParcelByZip(File parcelIn, List<String> vals, File fileOut) throws IOException {
 		ShapefileDataStore sds = new ShapefileDataStore(parcelIn.toURI().toURL());
@@ -313,8 +309,8 @@ public class ParcelGetter {
 	public static File getParcels(File buildingFile, File zoningFile, File parcelFile, File tmpFile, List<String> listZip, File specificParcelsToSimul,
 			boolean preCutParcels) throws Exception {
 
-		DirectPosition.PRECISION = 3;
-
+//		DirectPosition.PRECISION = 3;
+//
 //		File result = new File("");
 //		for (File f : geoFile.listFiles()) {
 //			if (f.toString().contains("parcel.shp")) {
