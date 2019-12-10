@@ -60,18 +60,19 @@ public class ParcelState {
 	}
 
 	/**
-	 * return false if the parcel mandatory needs a contact with the road to be urbanized. return true otherwise TODO haven't done it for the zones because I only found communities
-	 * that set the same rule regardless of the zone, but that could be done
+	 * return false if the parcel mandatory needs a contact with the road to be
+	 * urbanized. return true otherwise TODO haven't done it for the zones because I
+	 * only found communities that set the same rule regardless of the zone, but
+	 * that could be done
 	 * 
-	 * @param feat
-	 *            : the parcel
-	 * @param rootFile
-	 *            : the rootFile of ArtiScales's project
+	 * @param feat     : the parcel
+	 * @param rootFile : the rootFile of ArtiScales's project
 	 * @return
 	 * @throws IOException
 	 */
 	public static boolean isArt3AllowsIsolatedParcel(SimpleFeature feat, File predicateFile) throws IOException {
-		return isArt3AllowsIsolatedParcel(((String) feat.getAttribute("CODE_DEP")) + ((String) feat.getAttribute("CODE_COM")), predicateFile);
+		return isArt3AllowsIsolatedParcel(
+				((String) feat.getAttribute("CODE_DEP")) + ((String) feat.getAttribute("CODE_COM")), predicateFile);
 	}
 
 	public static boolean isArt3AllowsIsolatedParcel(String insee, File predicateFile) throws IOException {
@@ -146,24 +147,28 @@ public class ParcelState {
 
 	}
 
-	// public static boolean isAlreadyBuiltStream(SimpleFeatureCollection batiSFC, SimpleFeature feature, double bufferBati) throws IOException {
+	// public static boolean isAlreadyBuiltStream(SimpleFeatureCollection batiSFC,
+	// SimpleFeature feature, double bufferBati) throws IOException {
 	// boolean res = false;
 	// List<String> result = Arrays.stream(batiSFC.toArray(new SimpleFeature[0]))
 	// .forEach(batiFeature -> {
-	// if (((Geometry) feature.getDefaultGeometry()).intersects(((Geometry) batiFeature.getDefaultGeometry()).buffer(bufferBati))) {
+	// if (((Geometry) feature.getDefaultGeometry()).intersects(((Geometry)
+	// batiFeature.getDefaultGeometry()).buffer(bufferBati))) {
 	// res = true ;
 	// }
 	// }
 	// );
 	// }
 
-	public static boolean isAlreadyBuilt(SimpleFeatureCollection batiSFC, SimpleFeature feature, double bufferBati) throws IOException {
+	public static boolean isAlreadyBuilt(SimpleFeatureCollection batiSFC, SimpleFeature feature, double bufferBati)
+			throws IOException {
 		boolean isContent = false;
 		SimpleFeatureIterator iterator = batiSFC.features();
 		try {
 			while (iterator.hasNext()) {
 				SimpleFeature batiFeature = iterator.next();
-				if (((Geometry) feature.getDefaultGeometry()).intersects(((Geometry) batiFeature.getDefaultGeometry()).buffer(bufferBati))) {
+				if (((Geometry) feature.getDefaultGeometry())
+						.intersects(((Geometry) batiFeature.getDefaultGeometry()).buffer(bufferBati))) {
 					isContent = true;
 					break;
 				}
@@ -242,8 +247,10 @@ public class ParcelState {
 	}
 
 	/**
-	 * If we want an evaluation for a parcel that is not intersected by a MUP-City cell, we will increasly seek for a cell around The seeking is made 5 meters by 5 meters and the
-	 * first cell found is chosen The evaluation of this cell is then sent
+	 * If we want an evaluation for a parcel that is not intersected by a MUP-City
+	 * cell, we will increasly seek for a cell around The seeking is made 5 meters
+	 * by 5 meters and the first cell found is chosen The evaluation of this cell is
+	 * then sent
 	 * 
 	 * @param parcel
 	 * @param mupSFC
@@ -254,7 +261,8 @@ public class ParcelState {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		String geometryCellPropertyName = mupSFC.getSchema().getGeometryDescriptor().getLocalName();
 
-		Filter inter = ff.intersects(ff.property(geometryCellPropertyName), ff.literal(((Geometry) parcel.getDefaultGeometry()).buffer(100.0)));
+		Filter inter = ff.intersects(ff.property(geometryCellPropertyName),
+				ff.literal(((Geometry) parcel.getDefaultGeometry()).buffer(100.0)));
 		SimpleFeatureCollection onlyCells = mupSFC.subCollection(inter);
 		Double bestEval = 0.0;
 
@@ -283,7 +291,8 @@ public class ParcelState {
 		return bestEval;
 	}
 
-	public static boolean isParcelInCell(SimpleFeature parcelIn, SimpleFeatureCollection cellsCollection) throws Exception {
+	public static boolean isParcelInCell(SimpleFeature parcelIn, SimpleFeatureCollection cellsCollection)
+			throws Exception {
 
 		cellsCollection = Vectors.snapDatas(cellsCollection, (Geometry) parcelIn.getDefaultGeometry());
 
@@ -306,7 +315,8 @@ public class ParcelState {
 	}
 
 	/**
-	 * return a single TYPEZONE that a parcels intersect if the parcel intersects multiple, we select the one that covers the most area
+	 * return a single TYPEZONE that a parcels intersect if the parcel intersects
+	 * multiple, we select the one that covers the most area
 	 * 
 	 * @param parcelIn
 	 * @param zoningFile
@@ -325,7 +335,8 @@ public class ParcelState {
 //	}
 
 	/**
-	 * return the TYPEZONEs that a parcels intersect result is sorted by the largest interdected zone to the lowest
+	 * return the TYPEZONEs that a parcels intersect result is sorted by the largest
+	 * interdected zone to the lowest
 	 * 
 	 * @param parcelIn
 	 * @param zoningFile
@@ -348,7 +359,8 @@ public class ParcelState {
 				SimpleFeature feat = featuresZones.next();
 				PrecisionModel precMod = new PrecisionModel(100);
 				Geometry featGeometry = GeometryPrecisionReducer.reduce((Geometry) feat.getDefaultGeometry(), precMod);
-				Geometry parcelInGeometry = GeometryPrecisionReducer.reduce((Geometry) parcelIn.getDefaultGeometry(), precMod);
+				Geometry parcelInGeometry = GeometryPrecisionReducer.reduce((Geometry) parcelIn.getDefaultGeometry(),
+						precMod);
 				if (featGeometry.buffer(0.5).contains(parcelInGeometry)) {
 					twoZones = false;
 					switch ((String) feat.getAttribute("TYPEZONE")) {
@@ -376,7 +388,9 @@ public class ParcelState {
 				// maybe the parcel is in between two zones (less optimized) intersection
 				else if ((featGeometry).intersects(parcelInGeometry)) {
 					twoZones = true;
-					double area = Vectors.scaledGeometryReductionIntersection(Arrays.asList(featGeometry, parcelInGeometry)).getArea();
+					double area = Vectors
+							.scaledGeometryReductionIntersection(Arrays.asList(featGeometry, parcelInGeometry))
+							.getArea();
 					switch ((String) feat.getAttribute("TYPEZONE")) {
 					case "U":
 					case "ZC":
@@ -430,7 +444,8 @@ public class ParcelState {
 	}
 
 	/**
-	 * return a single typology that a parcels intersect if the parcel intersects multiple, we select the one that covers the most area
+	 * return a single typology that a parcels intersect if the parcel intersects
+	 * multiple, we select the one that covers the most area
 	 * 
 	 * @param parcelIn
 	 * @param regulFile
@@ -499,7 +514,9 @@ public class ParcelState {
 				// maybe the parcel is in between two cities
 				else if (featGeometry.intersects(parcelInGeometry)) {
 					twoZones = true;
-					double area = Vectors.scaledGeometryReductionIntersection(Arrays.asList(featGeometry, parcelInGeometry)).getArea();
+					double area = Vectors
+							.scaledGeometryReductionIntersection(Arrays.asList(featGeometry, parcelInGeometry))
+							.getArea();
 					switch ((String) feat.getAttribute("typo")) {
 					case "rural":
 						if (repart.containsKey("rural")) {
