@@ -16,7 +16,6 @@ import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.referencing.CRS;
 import org.geotools.util.factory.GeoTools;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -31,8 +30,6 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 import com.opencsv.CSVReader;
 
 import fr.ign.cogit.GTFunctions.Vectors;
-import fr.ign.cogit.geoxygene.api.feature.IFeature;
-import fr.ign.cogit.geoxygene.util.conversion.GeOxygeneGeoToolsTypes;
 
 public class ParcelState {
 
@@ -179,13 +176,13 @@ public class ParcelState {
 		return isContent;
 	}
 
-	public static Double getEvalInParcel(IFeature parcel, File outMup)
-			throws NoSuchAuthorityCodeException, ParseException, FactoryException, IOException, Exception {
-		if (outMup == null) {
-			return 0.0;
-		}
-		return getEvalInParcel(GeOxygeneGeoToolsTypes.convert2SimpleFeature(parcel, CRS.decode("EPSG:2154")), outMup);
-	}
+//	public static Double getEvalInParcel(IFeature parcel, File outMup)
+//			throws NoSuchAuthorityCodeException, ParseException, FactoryException, IOException, Exception {
+//		if (outMup == null) {
+//			return 0.0;
+//		}
+//		return getEvalInParcel(GeOxygeneGeoToolsTypes.convert2SimpleFeature(parcel, CRS.decode("EPSG:2154")), outMup);
+//	}
 
 	/**
 	 * 
@@ -323,9 +320,9 @@ public class ParcelState {
 		return yo.get(0);
 	}
 
-	public static List<String> parcelInBigZone(IFeature parcelIn, File zoningFile) throws Exception {
-		return parcelInBigZone(GeOxygeneGeoToolsTypes.convert2SimpleFeature(parcelIn, CRS.decode("EPSG:2154")), zoningFile);
-	}
+//	public static List<String> parcelInBigZone(IFeature parcelIn, File zoningFile) throws Exception {
+//		return parcelInBigZone(GeOxygeneGeoToolsTypes.convert2SimpleFeature(parcelIn, CRS.decode("EPSG:2154")), zoningFile);
+//	}
 
 	/**
 	 * return the TYPEZONEs that a parcels intersect result is sorted by the largest interdected zone to the lowest
