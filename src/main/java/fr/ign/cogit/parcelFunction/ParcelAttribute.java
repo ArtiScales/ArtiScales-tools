@@ -10,32 +10,56 @@ import org.locationtech.jts.geom.Geometry;
 import org.opengis.feature.simple.SimpleFeature;
 
 public class ParcelAttribute {
-	public static String makeParcelCode(SimpleFeature feat) {
-		return ((String) feat.getAttribute("CODE_DEP")) + ((String) feat.getAttribute("CODE_COM")) + ((String) feat.getAttribute("COM_ABS"))
-				+ ((String) feat.getAttribute("SECTION")) + ((String) feat.getAttribute("NUMERO"));
-	}
-
-	public static String makeINSEECode(SimpleFeature feat) {
-		return ((String) feat.getAttribute("CODE_DEP")) + ((String) feat.getAttribute("CODE_COM"));
+	
+	/**
+	 * Construct a french parcel code
+	 * @param parcel : French parcel feature
+	 * @return the string code
+	 */
+	public static String makeParcelCode(SimpleFeature parcel) {
+		return ((String) parcel.getAttribute("CODE_DEP")) + ((String) parcel.getAttribute("CODE_COM")) + ((String) parcel.getAttribute("COM_ABS"))
+				+ ((String) parcel.getAttribute("SECTION")) + ((String) parcel.getAttribute("NUMERO"));
 	}
 
 	/**
-	 * get the insee number from a Simplefeature (that is most of the time, a parcel or building)
-	 * 
-	 * @param cities
+	 * Construct the french community code number (INSEE) from a french parcel
 	 * @param parcel
-	 * @return
+	 * @return the INSEE number
 	 */
-	public static String getInseeFromParcel(SimpleFeatureCollection cities, SimpleFeature parcel) {
-		return getCommunityStuffFromParcel(cities, parcel, "DEPCOM");
+	public static String makeINSEECode(SimpleFeature parcel) {
+		return ((String) parcel.getAttribute("CODE_DEP")) + ((String) parcel.getAttribute("CODE_COM"));
 	}
 
-	public static String getArmatureFromParcel(SimpleFeatureCollection cities, SimpleFeature parcel) {
-		return getCommunityStuffFromParcel(cities, parcel, "armature");
+	/**
+	 * get the Community Code numbers from a Simplefeature (that is most of the time, a parcel or building)
+	 * 
+	 * @param community : Collection of cities. Must contain the <i>DEPCOM</i> field with the city code
+	 * @param parcel : Collection of parcels to get city codes from
+	 * @return 
+	 */
+	public static String getCommunityCodeFromSFC(SimpleFeatureCollection community, SimpleFeature parcel) {
+		return getAttributeFromSFC(community, parcel, "DEPCOM");
 	}
 
-	public static String getCommunityStuffFromParcel(SimpleFeatureCollection cities, SimpleFeature parcel, String code) {
+	/**
+	 * get the type of community from a Simplefeature (that is most of the time, a parcel or building)
+	 * 
+	 * @param community : Collection of cities. Must contain the <i>armature</i> field with the city code
+	 * @param parcel : Collection of parcels to get city codes from
+	 * @return 
+	 */
+	public static String getArmatureFromSFC(SimpleFeatureCollection community, SimpleFeature parcel) {
+		return getAttributeFromSFC(community, parcel, "armature");
+	}
 
+	/**
+	 * get the Community Code numbers from a Simplefeature (that is most of the time, a parcel or building)
+	 * 
+	 * @param community : Collection of cities. Must contain the <i>DEPCOM</i> field with the city code
+	 * @param parcel : Collection of parcels to get city codes from
+	 * @return 
+	 */
+	public static String getAttributeFromSFC(SimpleFeatureCollection cities, SimpleFeature parcel, String code) {
 		SimpleFeature city = null;
 		SimpleFeatureIterator citIt = cities.features();
 		String result = "";
@@ -57,7 +81,6 @@ public class ParcelAttribute {
 		} finally {
 			citIt.close();
 		}
-
 		String attribute = (String) city.getAttribute(code);
 		if (attribute != null && !attribute.isEmpty()) {
 			result = attribute;
@@ -88,7 +111,6 @@ public class ParcelAttribute {
 	 * @return
 	 */
 	public static List<String> getCodeParcels(SimpleFeatureCollection parcels) {
-
 		List<String> result = new ArrayList<String>();
 		SimpleFeatureIterator parcelIt = parcels.features();
 		try {
@@ -113,8 +135,7 @@ public class ParcelAttribute {
 	 * get a list of all the INSEE numbers of the parcels in the collection
 	 * 
 	 * @overload for automatic INSEE name field in the French case
-	 * @param parcels
-	 *            : a collection of parcels TODO to test with the stream
+	 * @param parcels : a collection of parcels TODO to test with the stream
 	 * @return
 	 */
 	public static List<String> getCityCodeFromParcels(SimpleFeatureCollection parcels) {
@@ -168,14 +189,20 @@ public class ParcelAttribute {
 		return result;
 	}
 
+	/**
+	 * translate some big zone labels coming from different urban documents to a normalized one
+	 * @param nameZone
+	 * @return
+	 * @throws Exception
+	 */
 	public static String normalizeNameBigZone(String nameZone) throws Exception {
-		System.out.println(nameZone);
 		switch (nameZone) {
 		case "U":
 		case "ZC":
 		case "C":
 			return "U";
 		case "AU":
+		case "TBU":
 			return "AU";
 		case "N":
 		case "A":

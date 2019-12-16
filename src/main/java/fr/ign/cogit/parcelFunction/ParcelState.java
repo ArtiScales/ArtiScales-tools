@@ -110,7 +110,7 @@ public class ParcelState {
 	}
 
 	/**
-	 * same as just up but in a different way TODO compare perf
+	 * Return true if the parcel is already built 
 	 * 
 	 * @param feature
 	 * @param geoFile
