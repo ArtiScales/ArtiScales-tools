@@ -8,6 +8,8 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.FeatureWriter;
@@ -171,6 +173,65 @@ public class FeaturePolygonizer {
 		writer.close();
 		dataStore.dispose();
 	}
+	
+  public static Geometry getIntersection(List<Geometry> features) throws IOException, SchemaException {
+    List<Polygon> polygons = getPolygons(features);
+    List<Polygon> buffer = new ArrayList<>();
+    for (Polygon p : polygons) {
+      Point point = p.getInteriorPoint();
+      if (features.stream().allMatch(g->g.intersects(point))) {
+        buffer.add(p);
+      }
+    }
+    return fact.createGeometryCollection(buffer.toArray(new Geometry[buffer.size()])).union();
+  }
+  @SuppressWarnings("unchecked")
+  public static Geometry getDifference(List<Geometry> features, List<Geometry> featuresToRemove) throws MalformedURLException, IOException, SchemaException {
+    Polygonizer polygonizer = new Polygonizer();
+    List<Geometry> allFeatures = new ArrayList<>(features);
+    allFeatures.addAll(featuresToRemove);
+    addFeatures(polygonizer, allFeatures);
+//    addFeatures(polygonizer, features);
+//    addFeatures(polygonizer, featuresToRemove);
+    List<Polygon> polygons = new ArrayList<>();
+    polygons.addAll(polygonizer.getPolygons());
+    List<Polygon> buffer = new ArrayList<>();
+    for (Polygon p : polygons) {
+      Point point = p.getInteriorPoint();
+      if (features.stream().anyMatch(g->g.intersects(point)) && featuresToRemove.stream().allMatch(g->!g.intersects(point))) {
+        buffer.add(p);
+      }
+    }
+    return fact.createGeometryCollection(buffer.toArray(new Geometry[buffer.size()])).union();
+  }
+  @SuppressWarnings("unchecked")
+  public static Pair<Geometry,Geometry> getIntersectionDifference(List<Geometry> features, List<Geometry> featuresToRemove) throws MalformedURLException, IOException, SchemaException {
+    Polygonizer polygonizer = new Polygonizer();
+    List<Geometry> allFeatures = new ArrayList<>(features);
+    allFeatures.addAll(featuresToRemove);
+    addFeatures(polygonizer, allFeatures);
+//    addFeatures(polygonizer, features);
+//    addFeatures(polygonizer, featuresToRemove);
+    List<Polygon> polygons = new ArrayList<>();
+    polygons.addAll(polygonizer.getPolygons());
+    List<Polygon> intersectionBuffer = new ArrayList<>();
+    List<Polygon> differenceBuffer = new ArrayList<>();
+    for (Polygon p : polygons) {
+      Point point = p.getInteriorPoint();
+      if (features.stream().anyMatch(g->g.intersects(point))) {
+        if (featuresToRemove.stream().anyMatch(g->g.intersects(point))) {
+          intersectionBuffer.add(p);
+        } else { //if (featuresToRemove.stream().noneMatch(g->g.intersects(point))) {
+          differenceBuffer.add(p);
+        }
+      }
+    }
+    Geometry[] reducedIntersection = intersectionBuffer.stream().map(g->GeometryPrecisionReducer.reduce(g, new PrecisionModel(100))).toArray(Geometry[]::new);
+    Geometry[] reducedDifference = differenceBuffer.stream().map(g->GeometryPrecisionReducer.reduce(g, new PrecisionModel(100))).toArray(Geometry[]::new);
+    Geometry intersection = fact.createGeometryCollection(reducedIntersection).union();
+    Geometry difference = fact.createGeometryCollection(reducedDifference).union();
+    return new ImmutablePair<Geometry, Geometry>(intersection, difference);
+  }
 
 	public static void main(String[] args) throws MalformedURLException, IOException, SchemaException {
 		// input folder for shapefiles
