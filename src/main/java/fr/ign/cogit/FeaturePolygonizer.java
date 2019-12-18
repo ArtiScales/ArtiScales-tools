@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -85,9 +86,7 @@ public class FeaturePolygonizer {
 	private static void addFeatures(Polygonizer p, List<Geometry> inputFeatures) throws MalformedURLException, IOException, SchemaException {
 		if (DEBUG)
 			System.out.println(Calendar.getInstance().getTime() + " node lines");
-		List<Geometry> reduced = new ArrayList<Geometry>();
-		for (Geometry g : inputFeatures)
-			reduced.add(GeometryPrecisionReducer.reduce(g, new PrecisionModel(100)));
+		List<Geometry> reduced = inputFeatures.stream().map(g->GeometryPrecisionReducer.reduce(g, new PrecisionModel(100))).collect(Collectors.toList());
 		// extract linear components from input geometries
 		List<Geometry> lines = getLines(reduced);
 		// node all geometries together
