@@ -35,6 +35,10 @@ public class ParcelSchema {
 
 		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 	}
+	
+	public static SimpleFeatureBuilder setSFBFrenchParcelWithFeat(SimpleFeature feat) {
+		return  setSFBFrenchParcelWithFeat(feat, feat.getFeatureType()) ;
+	}
 
 	public static SimpleFeatureBuilder setSFBFrenchParcelWithFeat(SimpleFeature feat, SimpleFeatureType schema) {
 		SimpleFeatureBuilder finalParcelBuilder = new SimpleFeatureBuilder(schema);

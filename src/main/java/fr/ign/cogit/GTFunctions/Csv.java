@@ -237,6 +237,27 @@ public class Csv {
 		}
 		simpleCSVWriter(lines, fLine, new File(file, name + ".csv"), append);
 	}
+	
+	public static void generateCsvFile(Hashtable<String, String[]> cellRepet, File file, String name, boolean append, String[] premiereColonne)
+			throws IOException {
+		String fLine = "";
+		if (premiereColonne != null) {
+			fLine = premiereColonne[0];
+			for (int i = 1; i < premiereColonne.length; i++) {
+				fLine = (fLine + "," + premiereColonne[i]);
+			}
+		}
+
+		List<String> lines = new ArrayList<String>();
+		for (String nom : cellRepet.keySet()) {
+			String line = nom + ",";
+			for (String val : cellRepet.get(nom)) {
+				line = line + val + ",";
+			}
+			lines.add(line);
+		}
+		simpleCSVWriter(lines, fLine, new File(file, name + ".csv"), append);
+	}
 
 	public static void generateCsvFileCol(Hashtable<String, double[]> cellRepet, File file, String name)
 			throws IOException {
