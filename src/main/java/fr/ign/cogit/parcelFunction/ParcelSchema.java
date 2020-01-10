@@ -13,6 +13,29 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 public class ParcelSchema {
 
+	
+	
+	/////////////////////
+	/////////////////////
+	//// FrenchZoning Schemas : basic parcels schema used in the french IGN norm
+	/////////////////////
+	/////////////////////
+
+	public static SimpleFeatureBuilder getSFBFrenchZoning() throws NoSuchAuthorityCodeException, FactoryException {
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+		sfTypeBuilder.setName("testType");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.add("the_geom", Polygon.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.add("LIBELLE", String.class);
+		sfTypeBuilder.add("TYPEZONE", String.class);
+		sfTypeBuilder.add("TYPLEPLAN", String.class);
+		sfTypeBuilder.add("INSEE", String.class);
+		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	}
+	
+	
 	/////////////////////
 	/////////////////////
 	//// FrenchParcel Schemas : basic parcels schema used in the french IGN norm

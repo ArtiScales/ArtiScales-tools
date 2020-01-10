@@ -2,23 +2,39 @@ package fr.ign.cogit.parameter;
 
 public class ProfileBuilding {
 
-	int maximalArea;
-	int minimalArea;
-	int maximalWidth;
-	int streetWidth;
+	double maximalArea;
+	double minimalArea;
+	double maximalWidth;
+	double streetWidth;
+	double largeStreetWidth;
+	int largeStreetLevel;
 	int decompositionLevelWithoutStreet;
-	int lenDriveway;
+	double lenDriveway;
 
 	static String profileFolder;
 
-	
+	public ProfileBuilding(double maximalArea, double minimalArea, double maximalWidth, double smallStreetWidth,
+			double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet, double lenDriveway) {
+		super();
+		this.maximalArea = maximalArea;
+		this.minimalArea = minimalArea;
+		this.maximalWidth = maximalWidth;
+		this.streetWidth = smallStreetWidth;
+		this.largeStreetWidth = largeStreetWidth;
+		this.largeStreetLevel = largeStreetLevel;
+		this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
+		this.lenDriveway = lenDriveway;
+	}
+
 	public ProfileBuilding(int maximalArea, int minimalArea, int maximalWidth, int streetWidth,
 			int decompositionLevelWithoutStreet, int lenDriveway) {
 		super();
 		this.maximalArea = maximalArea;
 		this.minimalArea = minimalArea;
 		this.maximalWidth = maximalWidth;
+		this.largeStreetWidth = streetWidth;
 		this.streetWidth = streetWidth;
+		this.largeStreetLevel = 999;
 		this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
 		this.lenDriveway = lenDriveway;
 	}
@@ -26,36 +42,28 @@ public class ProfileBuilding {
 	public ProfileBuilding() {
 	}
 
-	public int getMaximalArea() {
+	public double getMaximalArea() {
 		return maximalArea;
 	}
 
-	public void setMaximalArea(int maximalArea) {
+	public void setMaximalArea(double maximalArea) {
 		this.maximalArea = maximalArea;
 	}
 
-	public int getMinimalArea() {
+	public double getMinimalArea() {
 		return minimalArea;
 	}
 
-	public void setMinimalArea(int minimalArea) {
+	public void setMinimalArea(double minimalArea) {
 		this.minimalArea = minimalArea;
 	}
 
-	public int getMaximalWidth() {
+	public double getMaximalWidth() {
 		return maximalWidth;
 	}
 
-	public void setMaximalWidth(int maximalWidth) {
+	public void setMaximalWidth(double maximalWidth) {
 		this.maximalWidth = maximalWidth;
-	}
-
-	public int getStreetWidth() {
-		return streetWidth;
-	}
-
-	public void setStreetWidth(int streetWidth) {
-		this.streetWidth = streetWidth;
 	}
 
 	public int getDecompositionLevelWithoutStreet() {
@@ -66,11 +74,11 @@ public class ProfileBuilding {
 		this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
 	}
 
-	public int getLenDriveway() {
+	public double getLenDriveway() {
 		return lenDriveway;
 	}
 
-	public void setLenDriveway(int lenDriveway) {
+	public void setLenDriveway(double lenDriveway) {
 		this.lenDriveway = lenDriveway;
 	}
 
@@ -82,10 +90,43 @@ public class ProfileBuilding {
 		ProfileBuilding.profileFolder = profileFolder;
 	}
 
+	public double getStreetWidth() {
+		return streetWidth;
+	}
+
+	public void setStreetWidth(double smallStreetWidth) {
+		this.streetWidth = smallStreetWidth;
+	}
+
+	public double getLargeStreetWidth() {
+		if (largeStreetWidth != 0.0) {
+			return largeStreetWidth;
+		} else {
+			return streetWidth;
+		}
+	}
+
+	public void setLargeStreetWidth(double largeStreetWidth) {
+		this.largeStreetWidth = largeStreetWidth;
+	}
+
+	public int getLargeStreetLevel() {
+		if (largeStreetLevel != 0) {
+			return largeStreetLevel;
+		} else {
+			return 999;
+		}
+	}
+
+	public void setLargeStreetLevel(int largeStreetLevel) {
+		this.largeStreetLevel = largeStreetLevel;
+	}
+
 	@Override
 	public String toString() {
 		return "ProfileBuilding [maximalArea=" + maximalArea + ", minimalArea=" + minimalArea + ", maximalWidth="
-				+ maximalWidth + ", streetWidth=" + streetWidth + ", decompositionLevelWithoutStreet="
+				+ maximalWidth + ", smallStreetWidth=" + streetWidth + ", largeStreetWidth=" + largeStreetWidth
+				+ ", largeStreetLevel=" + largeStreetLevel + ", decompositionLevelWithoutStreet="
 				+ decompositionLevelWithoutStreet + ", lenDriveway=" + lenDriveway + "]";
 	}
 
