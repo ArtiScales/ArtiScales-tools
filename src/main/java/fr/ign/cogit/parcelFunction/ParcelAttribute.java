@@ -9,6 +9,8 @@ import org.geotools.data.simple.SimpleFeatureIterator;
 import org.locationtech.jts.geom.Geometry;
 import org.opengis.feature.simple.SimpleFeature;
 
+import fr.ign.cogit.GTFunctions.Attribute;
+
 public class ParcelAttribute {
 	
 	/**
@@ -19,15 +21,6 @@ public class ParcelAttribute {
 	public static String makeParcelCode(SimpleFeature parcel) {
 		return ((String) parcel.getAttribute("CODE_DEP")) + ((String) parcel.getAttribute("CODE_COM")) + ((String) parcel.getAttribute("COM_ABS"))
 				+ ((String) parcel.getAttribute("SECTION")) + ((String) parcel.getAttribute("NUMERO"));
-	}
-
-	/**
-	 * Construct the french community code number (INSEE) from a french parcel
-	 * @param parcel
-	 * @return the INSEE number
-	 */
-	public static String makeINSEECode(SimpleFeature parcel) {
-		return ((String) parcel.getAttribute("CODE_DEP")) + ((String) parcel.getAttribute("CODE_COM"));
 	}
 
 	/**
@@ -158,9 +151,9 @@ public class ParcelAttribute {
 			if (code != null && !code.isEmpty()) {
 				result.add(code);
 			} else {
-				String c = makeINSEECode(feat);
+				String c = Attribute.makeINSEECode(feat);
 				if (!result.contains(c)) {
-					result.add(makeINSEECode(feat));
+					result.add(Attribute.makeINSEECode(feat));
 				}
 			}
 		});
