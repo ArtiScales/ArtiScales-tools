@@ -11,9 +11,10 @@ import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.expression.PropertyName;
 import org.opengis.referencing.FactoryException;
@@ -23,6 +24,12 @@ import fr.ign.cogit.GTFunctions.Vectors;
 
 public class ParcelCollection {
 
+	public static void main(String[] args) throws Exception {
+		markDiffParcel(new File("/tmp/brie98.shp"),new File("/tmp/brie12.shp"), new File("/tmp/"));
+//		markDiffParcel(new File("/tmp/a.shp"),new File("/tmp/b.shp"), new File("/tmp/"));
+
+	}
+	
 	/**
 	 * add a given collection of parcels to another collection of parcel, for which the schema is kept. 
 	 * @param parcelIn : Parcels that receive the other parcels
@@ -217,37 +224,40 @@ public class ParcelCollection {
 	}
 	
 	/**
-	 * method that compares two set of parcels and export only the ones that are in common Useless for not but will be used to determine the cleaned parcels
+	 * method that compares two set of parcels and export only the ones that are in common 
 	 * 
-	 * @param parcelOG
+	 * @param parcelRef
 	 * @param parcelToSort
-	 * @param parcelOut
+	 * @param parcelOutFolder
 	 * @throws IOException
 	 */
-	public static void diffParcel(File parcelOG, File parcelToSort, File parcelOut) throws IOException {
+	public static void markDiffParcel(File parcelRef, File parcelToSort, File parcelOutFolder) throws IOException {
 		ShapefileDataStore sds = new ShapefileDataStore(parcelToSort.toURI().toURL());
 		SimpleFeatureCollection parcelUnclean = sds.getFeatureSource().getFeatures();
 
-		ShapefileDataStore sdsclean = new ShapefileDataStore(parcelOG.toURI().toURL());
-		SimpleFeatureCollection parcelClean = sdsclean.getFeatureSource().getFeatures();
+		ShapefileDataStore sdsRef = new ShapefileDataStore(parcelRef.toURI().toURL());
+		SimpleFeatureCollection parcelClean = sdsRef.getFeatureSource().getFeatures();
 		SimpleFeatureIterator itClean = parcelClean.features();
 
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
 		PropertyName pName = ff.property(parcelUnclean.getSchema().getGeometryDescriptor().getLocalName());
 
-		DefaultFeatureCollection result = new DefaultFeatureCollection();
-		int i = 0;
+		DefaultFeatureCollection same = new DefaultFeatureCollection();
+		DefaultFeatureCollection notSame = new DefaultFeatureCollection();
+
+		int i = 1;
 		try {
 			while (itClean.hasNext()) {
 				SimpleFeature clean = itClean.next();
-
-				Filter filter = ff.bbox(pName, clean.getBounds());
-				SimpleFeatureIterator itUnclean = parcelUnclean.subCollection(filter).features();
+				boolean not = true;
+				SimpleFeatureIterator itUnclean = parcelUnclean.subCollection(ff.bbox(pName, clean.getBounds())).features();
 				try {
 					while (itUnclean.hasNext()) {
 						SimpleFeature unclean = itUnclean.next();
-						if (clean.getDefaultGeometry().equals(unclean.getDefaultGeometry())) {
-							result.add(unclean);
+						if (GeometryPrecisionReducer.reduce(((Geometry) clean.getDefaultGeometry()).buffer(0), new PrecisionModel(1)).equals(
+								GeometryPrecisionReducer.reduce(((Geometry) unclean.getDefaultGeometry()).buffer(0), new PrecisionModel(1)))) {
+							same.add(clean);
+							not = false;
 							break;
 						}
 					}
@@ -256,16 +266,40 @@ public class ParcelCollection {
 				} finally {
 					itUnclean.close();
 				}
-				System.out.println(i + " on " + parcelClean.size());
-				i++;
+				if (not) {
+					// seek if it is close to (as tiny geometry changes
+					SimpleFeatureIterator itUnclean2 = parcelUnclean
+							.subCollection(ff.crosses(pName, ff.literal((Geometry) clean.getDefaultGeometry()))).features();
+					try {
+						while (itUnclean2.hasNext()) {
+							SimpleFeature unclean = itUnclean2.next();
+							if (Math.abs(((Geometry) clean.getDefaultGeometry()).intersection(((Geometry) unclean.getDefaultGeometry())).getArea()) < 10) {
+								same.add(clean);
+								not = false;
+								break;
+							}
+						}
+					} catch (Exception problem) {
+						problem.printStackTrace();
+					} finally {
+						itUnclean2.close();
+					}
+					if(not) {
+						notSame.add(clean);
+					}
+				}
+				System.out.println(i++ + " on " + parcelClean.size());
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
 		} finally {
 			itClean.close();
 		}
+		sds.dispose();
+		sdsRef.dispose();
+		Vectors.exportSFC(same, new File(parcelOutFolder, "same.shp"));
+		Vectors.exportSFC(notSame, new File(parcelOutFolder, "notSame.shp"));
 
-		Vectors.exportSFC(result, parcelOut);
 	}
 	
 	public static List<String> dontAddParcel(List<String> parcelToNotAdd, SimpleFeatureCollection bigZoned) {
