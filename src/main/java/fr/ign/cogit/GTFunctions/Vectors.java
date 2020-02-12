@@ -11,12 +11,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.stream.Stream;
 
+import org.geotools.coverage.util.IntersectUtils;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.DefaultTransaction;
 import org.geotools.data.Transaction;
+import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -29,6 +30,7 @@ import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.grid.Grids;
 import org.geotools.referencing.CRS;
 import org.geotools.util.factory.GeoTools;
 import org.locationtech.jts.geom.Coordinate;
@@ -46,25 +48,25 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.FilterVisitor;
+import org.opengis.filter.spatial.BBOX;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 public class Vectors {
 
-	public static void main(String[] args) throws Exception {
-		List<File> zob = new ArrayList<File>();
-		File root = new File("/home/ubuntu/boulot/these/result0313/ParcelSelectionDepot/DDense/variantMvGrid1/");
-		for (File f : root.listFiles()) {
-			zob.add(new File(f, "parcelOut-" + f.getName() + ".shp"));
-
-		}
-		mergeVectFiles(zob, new File("/tmp/dqz.shp"), true);
-	}
+//	public static void main(String[] args) throws Exception {
+//		ShapefileDataStore sds = new ShapefileDataStore(new File("/home/thema/donnees/dataGeo/nonUrbaSys.shp").toURI().toURL());
+//	SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
+//		exportGeom(unionSFC(sfc), new File("/home/thema/donnees/dataGeo/nonUrbaSysUnion.shp"));
+//		sds.dispose();
+//	}
 
 	// ShapefileDataStore shpDSCells = new ShapefileDataStore(
-	// (new File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
-	// SimpleFeatureCollection cellsCollection = shpDSCells.getFeatureSource().getFeatures();
+	// (new
+	// File("/media/mcolomb/Data_2/resultFinal/stab/extra/intersecNU-ZC/NUManuPhyDecoup.shp")).toURI().toURL());
+	// SimpleFeatureCollection cellsCollection =
+	// shpDSCells.getFeatureSource().getFeatures();
 	//
 	// Geometry cellsUnion = unionSFC(cellsCollection);
 	//
@@ -72,7 +74,8 @@ public class Vectors {
 	// CoordinateReferenceSystem sourceCRS = CRS.decode(
 	// "EPSG:2154");sfTypeBuilder.setName("testType");sfTypeBuilder.setCRS(sourceCRS);sfTypeBuilder.add("the_geom",MultiPolygon.class);sfTypeBuilder.setDefaultGeometry("the_geom");
 	//
-	// SimpleFeatureBuilder sfBuilder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	// SimpleFeatureBuilder sfBuilder = new
+	// SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 	// DefaultFeatureCollection toSplit = new DefaultFeatureCollection();
 	//
 	// sfBuilder.add(cellsUnion);
@@ -86,47 +89,129 @@ public class Vectors {
 	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws Exception {
 		return mergeVectFiles(file2MergeIn, f, true);
 	}
+	
+	public static File mergeVectFiles(List<File> file2MergeIn,File fileOut, boolean keepAttributes) throws Exception {
+		return  mergeVectFiles(file2MergeIn, fileOut, null, keepAttributes) ;
+	}
 
-	public static File mergeVectFiles(List<File> file2MergeIn, File f, boolean keepAttribute) throws Exception {
-		org.geotools.util.logging.Logging.getLogger("org.geotools.feature").setLevel(Level.OFF);
+
+	public static File mergeVectFiles(List<File> file2MergeIn, File fileOut, File empriseFile, boolean keepAttributes) throws Exception {
+//		org.geotools.util.logging.Logging.getLogger("org.geotools.feature").setLevel(Level.OFF);
+		// stupid basic checkout
+		if (file2MergeIn.isEmpty()) {
+			System.out.println("mergeVectFiles: list empty, " + fileOut + " null");
+			return null;
+		}
+
+		// verify that every shapefile exists and remove them from the list if not
+		int nbFile = file2MergeIn.size();
+		for (int i = 0; i < nbFile; i++) {
+			if (!file2MergeIn.get(i).exists()) {
+				System.out.println(file2MergeIn.get(i) + " doesn't exists");
+				file2MergeIn.remove(i);
+				i--;
+				nbFile--;
+			}
+		}
 
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
+
+		// check to prevent event in case of a willing of keeping attributes
+		File fRef = file2MergeIn.get(0);
+
+		ShapefileDataStore dSref = new ShapefileDataStore(fRef.toURI().toURL());
+		SimpleFeatureType schemaRef = dSref.getFeatureSource().getFeatures().getSchema();
+
+		dSref.dispose();
+		
+		// sfBuilder used only if number of attributes's the same but with different
+		// schemas
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
-		sfTypeBuilder.setName("merge");
-		sfTypeBuilder.setCRS(sourceCRS);
-		sfTypeBuilder.add("the_geom", Polygon.class);
-		sfTypeBuilder.setDefaultGeometry("the_geom");
-		SimpleFeatureBuilder bt = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+		sfTypeBuilder.init(schemaRef);
+		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
+		SimpleFeatureBuilder defaultSFBuilder = new SimpleFeatureBuilder(featureType);
+		boolean sameSchemas = true;
+		lookOutAttribute: if (keepAttributes) {
+			// check if the schemas of the shape are the same and if not, if they have the
+			// same number of attributes
+			int nbAttr = schemaRef.getAttributeCount();
+			for (File f : file2MergeIn) {
+				if (f.equals(fRef)) {
+					continue;
+				}
+				ShapefileDataStore dSComp = new ShapefileDataStore(f.toURI().toURL());
+				SimpleFeatureType schemaComp = dSComp.getFeatureSource().getFeatures().getSchema();
+				if (!schemaRef.equals(schemaComp)) {
+					System.out.println(f + " have not the same schema as " + fRef
+							+ ". Try to still add attribute if number is the same but output may be fuzzy");
+					sameSchemas = false;
+				}
+				if (nbAttr != schemaComp.getAttributeCount()) {
+					System.out.println(
+							"Not the same amount of attributes in the shapefile : Output won't have any attributes");
+					keepAttributes = false;
+					break lookOutAttribute;
+				}
+				dSComp.dispose();
+			}
+		}
+		dSref.dispose();
 
 		for (File file : file2MergeIn) {
 			ShapefileDataStore SDSParcel = new ShapefileDataStore(file.toURI().toURL());
+			SimpleFeatureCollection SFCParcel = SDSParcel.getFeatureSource().getFeatures();
 			SimpleFeatureIterator parcelIt;
 			try {
-				parcelIt = SDSParcel.getFeatureSource().getFeatures().features();
+				parcelIt = SFCParcel.features();
 			} catch (Exception e) {
 				System.out.println("magic number wrong : " + file);
 				SDSParcel.dispose();
 				continue;
 			}
-			if (keepAttribute) {
-				try {
-					while (parcelIt.hasNext()) {
-						SimpleFeature feat = parcelIt.next();
-						newParcel.add(feat);
-						// System.out.println("schema of merged shape : "+feat.getFeatureType());
+			if (keepAttributes) {
+				// easy way
+				if (sameSchemas) {
+					System.out.println("keep attribute & same schema");
+					try {
+						while (parcelIt.hasNext()) {					
+							SimpleFeature feat = parcelIt.next();
+							newParcel.add(feat);
+							// System.out.println("schema of merged shape : "+feat.getFeatureType());
+						}
+					} catch (Exception problem) {
+						problem.printStackTrace();
+					} finally {
+						parcelIt.close();
 					}
-				} catch (Exception problem) {
-					problem.printStackTrace();
-				} finally {
-					parcelIt.close();
+				}
+				// complicate case : if they doesn't have the exactly same schema but the same
+				// number of attributes, we add every attribute regarding their position
+				else {
+					try {
+						while (parcelIt.hasNext()) {
+							SimpleFeature feat = parcelIt.next();
+							Object[] attr = new Object[feat.getAttributeCount() - 1];
+							for (int h = 1; h < feat.getAttributeCount(); h++) {
+								attr[h - 1] = feat.getAttribute(h);
+							}
+							defaultSFBuilder.add((Geometry) feat.getDefaultGeometry());
+							SimpleFeature feature = defaultSFBuilder.buildFeature(null, attr);
+							newParcel.add(feature);
+						}
+					} catch (Exception problem) {
+						problem.printStackTrace();
+					} finally {
+						parcelIt.close();
+					}
 				}
 			} else {
+				// if we don't want to keep attributes, we create features out of new features
+				// containing only geometry
 				try {
 					while (parcelIt.hasNext()) {
 						SimpleFeature feat = parcelIt.next();
-						bt.set("the_geom", feat.getDefaultGeometry());
-						newParcel.add(bt.buildFeature(null));
+						defaultSFBuilder.set("the_geom", feat.getDefaultGeometry());
+						newParcel.add(defaultSFBuilder.buildFeature(null));
 					}
 				} catch (Exception problem) {
 					problem.printStackTrace();
@@ -137,10 +222,91 @@ public class Vectors {
 			SDSParcel.dispose();
 		}
 
-		if (!newParcel.isEmpty()) {
-			Vectors.exportSFC(newParcel.collection(), f);
+		SimpleFeatureCollection output = newParcel.collection();
+		Vectors.exportSFC(output, new File("/tmp/saqs"));
+		if (empriseFile != null && empriseFile.exists()) {
+			output = Vectors.cropSFC(output, empriseFile);
 		}
-		return f;
+		return Vectors.exportSFC(output, fileOut);
+	}
+
+	/**
+	 * TODO look that algo and make a description
+	 * 
+	 * @param input
+	 * @return
+	 * @throws IOException
+	 * @throws NoSuchAuthorityCodeException
+	 * @throws FactoryException
+	 */
+	public static File discretizeShp(File inFile, File outFile, String name)
+			throws IOException, NoSuchAuthorityCodeException, FactoryException {
+		
+		ShapefileDataStore sds = new ShapefileDataStore(inFile.toURI().toURL());
+		SimpleFeatureCollection input = sds.getFeatureSource().getFeatures();
+		
+		DefaultFeatureCollection dfCuted = new DefaultFeatureCollection();
+		
+//		SimpleFeatureTypeBuilder finalBuilder = new SimpleFeatureTypeBuilder();
+//		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+//		finalBuilder.setName("road");
+//		finalBuilder.setCRS(sourceCRS);
+//		finalBuilder.add("the_geom", MultiPolygon.class);
+//		finalBuilder.setDefaultGeometry("the_geom");
+//
+//		SimpleFeatureType featureFinalType = finalBuilder.buildFeatureType();
+		SimpleFeatureBuilder finalFeatureBuilder = Schemas.getBasicSchemaMultiPolygon(name+"-discretized");
+
+		SpatialIndexFeatureCollection sifc = new SpatialIndexFeatureCollection(input);
+		SimpleFeatureCollection gridFeatures = Grids.createSquareGrid(input.getBounds(), 500).getFeatures();
+		SimpleFeatureIterator iterator = gridFeatures.features();
+		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
+		int finalId = 0;
+		try {
+			while (iterator.hasNext()) {
+				SimpleFeature featureGrid = iterator.next();
+				Geometry gridGeometry = (Geometry) featureGrid.getDefaultGeometry();
+				BBOX boundsCheck = ff.bbox(ff.property("the_geom"), featureGrid.getBounds());
+				SimpleFeatureIterator chosenFeatIterator = sifc.subCollection(boundsCheck).features();
+				Geometry unionGeom = null;
+				List<Geometry> list = new ArrayList<>();
+				while (chosenFeatIterator.hasNext()) {
+					SimpleFeature f = chosenFeatIterator.next();
+					Geometry g = (Geometry) f.getDefaultGeometry();
+
+					if (g.intersects(gridGeometry)) {
+
+						list.add(g);
+					}
+				}
+				Geometry coll = gridGeometry.getFactory()
+						.createGeometryCollection(list.toArray(new Geometry[list.size()]));
+				try {
+					Geometry y = coll.union();
+					if (y.isValid())
+						coll = y;
+				} catch (Exception e) {
+				}
+				unionGeom = IntersectUtils.intersection(coll, gridGeometry);
+				try {
+					Geometry y = unionGeom.buffer(0);
+					if (y.isValid()) {
+						unionGeom = y;
+					}
+				} catch (Exception e) {
+				}
+				if (unionGeom != null) {
+					finalFeatureBuilder.add(unionGeom);
+					SimpleFeature feature = finalFeatureBuilder.buildFeature(String.valueOf(finalId++));
+					dfCuted.add(feature);
+				}
+			}
+		} catch (Exception problem) {
+			problem.printStackTrace();
+		} finally {
+			iterator.close();
+		}
+		return exportSFC(dfCuted.collection(), outFile);
 	}
 
 	/**
@@ -160,13 +326,13 @@ public class Vectors {
 		return fileIn;
 	}
 
-	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
-			String geometryOutputName, Geometry geom) {
+	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder,
+			DefaultFeatureCollection result, String geometryOutputName, Geometry geom) {
 		return addSimpleGeometry(sfBuilder, result, geometryOutputName, geom, null);
 	}
 
-	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
-			String geometryOutputName, Geometry geom, String id) {
+	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder,
+			DefaultFeatureCollection result, String geometryOutputName, Geometry geom, String id) {
 		if (geom instanceof MultiPolygon) {
 			for (int i = 0; i < geom.getNumGeometries(); i++) {
 				sfBuilder.set(geometryOutputName, geom.getGeometryN(i));
@@ -188,7 +354,8 @@ public class Vectors {
 
 	}
 
-	public static SimpleFeatureCollection delTinyParcels(SimpleFeatureCollection collecIn, double areaMin) throws Exception {
+	public static SimpleFeatureCollection delTinyParcels(SimpleFeatureCollection collecIn, double areaMin)
+			throws Exception {
 
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
 		SimpleFeatureIterator it = collecIn.features();
@@ -213,7 +380,8 @@ public class Vectors {
 		return newParcel.collection();
 	}
 
-	public static File exportGeom(Geometry geom, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+	public static File exportGeom(Geometry geom, File fileName)
+			throws IOException, NoSuchAuthorityCodeException, FactoryException {
 
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
@@ -241,9 +409,12 @@ public class Vectors {
 	}
 
 	private static void coord2D(Coordinate c) {
-	  if (!CoordinateXY.class.isInstance(c)) c.setZ(Double.NaN);
+		if (!CoordinateXY.class.isInstance(c))
+			c.setZ(Double.NaN);
 	}
-	public static File exportSFC(SimpleFeatureCollection toExport, File fileName, SimpleFeatureType ft) throws IOException {
+
+	public static File exportSFC(SimpleFeatureCollection toExport, File fileName, SimpleFeatureType ft)
+			throws IOException {
 
 		ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
 
@@ -266,31 +437,32 @@ public class Vectors {
 			SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
 			featureStore.setTransaction(transaction);
 			try {
-			  SimpleFeatureCollection features = toExport.subCollection(new Filter() {
-          @Override
-          public boolean evaluate(Object object) {
-            SimpleFeature feature = (SimpleFeature) object;
-            return !((Geometry) feature.getDefaultGeometry()).isEmpty();
-          }
-          @Override
-          public Object accept(FilterVisitor visitor, Object extraData) {
-            return visitor.visit(Filter.INCLUDE, extraData);
-          }
-        });
-			  DefaultFeatureCollection featureCollection = new DefaultFeatureCollection("internal",ft);
-			  // FIXME Horrible Horrible Horrible hack to get the writer to work!!!
-			  GeometryFactory f = new GeometryFactory();
-			  try (FeatureIterator<SimpleFeature> iterator = features.features()){
-			     while( iterator.hasNext() ){
-			       SimpleFeature feature = iterator.next();
-			       SimpleFeature newFeature = SimpleFeatureBuilder.build(ft, feature.getAttributes(), null);
-			       Geometry g = f.createGeometry((Geometry) feature.getDefaultGeometry());
-			       g.apply((Coordinate c)->coord2D(c));
-			       g.geometryChanged();
-			       newFeature.setDefaultGeometry(g);
-			       featureCollection.add(newFeature);
-			     }
-			  }
+				SimpleFeatureCollection features = toExport.subCollection(new Filter() {
+					@Override
+					public boolean evaluate(Object object) {
+						SimpleFeature feature = (SimpleFeature) object;
+						return !((Geometry) feature.getDefaultGeometry()).isEmpty();
+					}
+
+					@Override
+					public Object accept(FilterVisitor visitor, Object extraData) {
+						return visitor.visit(Filter.INCLUDE, extraData);
+					}
+				});
+				DefaultFeatureCollection featureCollection = new DefaultFeatureCollection("internal", ft);
+				// FIXME Horrible Horrible Horrible hack to get the writer to work!!!
+				GeometryFactory f = new GeometryFactory();
+				try (FeatureIterator<SimpleFeature> iterator = features.features()) {
+					while (iterator.hasNext()) {
+						SimpleFeature feature = iterator.next();
+						SimpleFeature newFeature = SimpleFeatureBuilder.build(ft, feature.getAttributes(), null);
+						Geometry g = f.createGeometry((Geometry) feature.getDefaultGeometry());
+						g.apply((Coordinate c) -> coord2D(c));
+						g.geometryChanged();
+						newFeature.setDefaultGeometry(g);
+						featureCollection.add(newFeature);
+					}
+				}
 				featureStore.addFeatures(featureCollection);
 				transaction.commit();
 			} catch (Exception problem) {
@@ -320,21 +492,24 @@ public class Vectors {
 			try {
 				Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(1000));
 				for (int i = 1; i < geoms.size(); i++) {
-					geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(1000)));
+					geomResult = geomResult
+							.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(1000)));
 				}
 				return geomResult;
 			} catch (TopologyException ex) {
 				try {
 					Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(100));
 					for (int i = 1; i < geoms.size(); i++) {
-						geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(100)));
+						geomResult = geomResult
+								.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(100)));
 					}
 					return geomResult;
 				} catch (TopologyException ee) {
 					try {
 						Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(10));
 						for (int i = 1; i < geoms.size(); i++) {
-							geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(10)));
+							geomResult = geomResult.intersection(
+									GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(10)));
 						}
 						return geomResult;
 					} catch (TopologyException eee) {
@@ -342,7 +517,8 @@ public class Vectors {
 							System.out.println("last hope for precision reduction");
 							Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(1));
 							for (int i = 1; i < geoms.size(); i++) {
-								geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(1)));
+								geomResult = geomResult.intersection(
+										GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(1)));
 							}
 							return geomResult;
 						} catch (TopologyException eeee) {
@@ -355,12 +531,13 @@ public class Vectors {
 	}
 
 	public static Geometry unionPrecisionReduce(SimpleFeatureCollection collection, int scale) {
-    GeometryFactory factory = new GeometryFactory();
-    Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[collection.size()]))
-        .map(sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(scale)));
-    GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-    return geometryCollection.union();	  
+		GeometryFactory factory = new GeometryFactory();
+		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[collection.size()])).map(
+				sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(scale)));
+		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
+		return geometryCollection.union();
 	}
+
 	public static Geometry unionSFC(SimpleFeatureCollection collection) throws IOException {
 		try {
 			Geometry union = unionPrecisionReduce(collection, 1000);
@@ -390,14 +567,17 @@ public class Vectors {
 		ShapefileDataStore envSDS = new ShapefileDataStore(empriseFile.toURI().toURL());
 		ShapefileDataStore inSDS = new ShapefileDataStore(inFile.toURI().toURL());
 
-		SimpleFeatureCollection result = cropSFC(inSDS.getFeatureSource().getFeatures(), envSDS.getFeatureSource().getFeatures());
+		SimpleFeatureCollection result = cropSFC(inSDS.getFeatureSource().getFeatures(),
+				envSDS.getFeatureSource().getFeatures());
 		envSDS.dispose();
 		inSDS.dispose();
-		// return exportSFC(result, new File(tmpFile, inFile.getName().replace(".shp", "")+"-croped.shp"));
+		// return exportSFC(result, new File(tmpFile, inFile.getName().replace(".shp",
+		// "")+"-croped.shp"));
 		return exportSFC(result, new File(tmpFile, inFile.getName()));
 	}
 
-	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, File empriseFile) throws MalformedURLException, IOException {
+	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, File empriseFile)
+			throws MalformedURLException, IOException {
 		if (inSFC.isEmpty()) {
 			return inSFC;
 		}
@@ -448,7 +628,8 @@ public class Vectors {
 	}
 
 	/**
-	 * Helper method for {@link #union(Geometry, Geometry) union(Geometry, Geometry)}
+	 * Helper method for {@link #union(Geometry, Geometry) union(Geometry,
+	 * Geometry)}
 	 */
 	private static GeometryCollection union(GeometryCollection gc1, GeometryCollection gc2) {
 		List<Geometry> ret = new ArrayList<Geometry>();
@@ -462,12 +643,11 @@ public class Vectors {
 	}
 
 	/**
-	 * Adds into the <TT>collector</TT> the Geometry <TT>g</TT>, or, if <TT>g</TT> is a GeometryCollection, every geometry in it.
+	 * Adds into the <TT>collector</TT> the Geometry <TT>g</TT>, or, if <TT>g</TT>
+	 * is a GeometryCollection, every geometry in it.
 	 *
-	 * @param g
-	 *            the Geometry (or GeometryCollection to unroll)
-	 * @param collector
-	 *            the Collection where the Geometries will be added into
+	 * @param g         the Geometry (or GeometryCollection to unroll)
+	 * @param collector the Collection where the Geometries will be added into
 	 */
 	private static void collect(Geometry g, List<Geometry> collector) {
 		if (g instanceof GeometryCollection) {
@@ -512,7 +692,8 @@ public class Vectors {
 		return snapDatas(SFCIn, boxFile, 0);
 	}
 
-	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws Exception {
+	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance)
+			throws Exception {
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
 		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
 		Geometry bBox = unionSFC(zoneCollection);
@@ -523,7 +704,8 @@ public class Vectors {
 		return snapDatas(SFCIn, bBox);
 	}
 
-	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox) throws Exception {
+	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox)
+			throws Exception {
 		Geometry geomBBox = unionSFC(bBox);
 		return snapDatas(SFCIn, geomBBox);
 	}
@@ -556,13 +738,15 @@ public class Vectors {
 		}
 	}
 
-	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String attribute) throws IOException {
+	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String attribute)
+			throws IOException {
 		String[] attributes = { attribute };
 
 		return getSFCPart(sFCToDivide, code, attributes);
 	}
 
-	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String[] attributes) throws IOException {
+	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code,
+			String[] attributes) throws IOException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		SimpleFeatureIterator it = sFCToDivide.features();
 		try {
@@ -584,8 +768,10 @@ public class Vectors {
 		return result.collection();
 	}
 
-	// public static HashMap<String, SimpleFeatureCollection> divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {
-	// HashMap<String, SimpleFeatureCollection> result = new HashMap<String, SimpleFeatureCollection>();
+	// public static HashMap<String, SimpleFeatureCollection>
+	// divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {
+	// HashMap<String, SimpleFeatureCollection> result = new HashMap<String,
+	// SimpleFeatureCollection>();
 	//
 	// SimpleFeatureIterator it = sFCToDivide.features();
 	// try {

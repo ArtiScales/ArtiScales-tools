@@ -1,8 +1,10 @@
 package fr.ign.cogit.GTFunctions;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -18,6 +20,9 @@ import org.opengis.coverage.grid.GridEnvelope;
 import org.opengis.parameter.GeneralParameterValue;
 import org.opengis.parameter.ParameterValue;
 
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+
 /**
  * Class that contains multiple methods to manipulate a .csv file
  * 
@@ -27,10 +32,55 @@ import org.opengis.parameter.ParameterValue;
 public class Csv {
 	public static boolean needFLine = true;
 
-	public static void main(String[] args) {
+//	public static void main(String[] args) {
+//
+//	}
 
+	
+	public static void mergeCSVFiles(File rootFolder, File outFile) throws IOException {
+		List<File> listCSV = new ArrayList<File>();
+		for (File folderToMerge : rootFolder.listFiles()) {
+			for (File fileToMerge : folderToMerge.listFiles()) {
+				if (fileToMerge.toString().endsWith(".csv")) {
+					listCSV.add(fileToMerge);
+				}
+			}
+		}
+		mergeCSVFiles(listCSV, outFile);
 	}
 
+	public static void mergeCSVFiles(List<File> filesToMerge, File outFile) throws IOException {
+		mergeCSVFiles(filesToMerge, outFile, false);
+	}
+
+	public static void mergeCSVFiles(List<File> filesToMerge, File outFile, boolean replace) throws IOException {
+		if (outFile.exists()) {
+			if (replace) {
+				Files.delete(outFile.toPath());
+			} else {
+				return;
+			}
+		}
+
+		CSVReader defCsv = new CSVReader(new FileReader(filesToMerge.get(0)));
+		String[] firstLineDef = defCsv.readNext();
+		defCsv.close();
+		CSVWriter output = new CSVWriter(new FileWriter(outFile));
+		output.writeNext(firstLineDef);
+		for (File fileToMerge : filesToMerge) {
+			CSVReader ptCsv = new CSVReader(new FileReader(fileToMerge));
+			String[] firstLine = ptCsv.readNext();
+			if (firstLine.length != firstLineDef.length) {
+				System.out.println("mergeCSVFiles() method merges different files");
+			}
+			for (String[] line : ptCsv) {
+				output.writeNext(line);
+			}
+			ptCsv.close();
+		}
+		output.close();
+	}
+	
 	/**
 	 * put the raw values of a .tif raster file cells to a .csv format
 	 * 

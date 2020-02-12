@@ -83,7 +83,7 @@ public class FeaturePolygonizer {
 		return array;
 	}
 
-	private static void addFeatures(Polygonizer p, List<Geometry> inputFeatures) throws MalformedURLException, IOException, SchemaException {
+	private static void addFeatures(Polygonizer p, List<Geometry> inputFeatures) {
 		if (DEBUG)
 			System.out.println(Calendar.getInstance().getTime() + " node lines");
 		List<Geometry> reduced = inputFeatures.stream().map(g->GeometryPrecisionReducer.reduce(g, new PrecisionModel(100))).collect(Collectors.toList());
@@ -185,7 +185,7 @@ public class FeaturePolygonizer {
     return fact.createGeometryCollection(buffer.toArray(new Geometry[buffer.size()])).union();
   }
   @SuppressWarnings("unchecked")
-  public static Geometry getDifference(List<Geometry> features, List<Geometry> featuresToRemove) throws MalformedURLException, IOException, SchemaException {
+  public static Geometry getDifference(List<? extends Geometry> features, List<? extends Geometry> featuresToRemove) {
     Polygonizer polygonizer = new Polygonizer();
     List<Geometry> allFeatures = new ArrayList<>(features);
     allFeatures.addAll(featuresToRemove);

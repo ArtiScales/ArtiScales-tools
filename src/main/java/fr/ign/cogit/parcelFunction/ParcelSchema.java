@@ -11,8 +11,33 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
+import fr.ign.cogit.GTFunctions.Attribute;
+
 public class ParcelSchema {
 
+	
+	
+	/////////////////////
+	/////////////////////
+	//// FrenchZoning Schemas : basic parcels schema used in the french IGN norm
+	/////////////////////
+	/////////////////////
+
+	public static SimpleFeatureBuilder getSFBFrenchZoning() throws NoSuchAuthorityCodeException, FactoryException {
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+		sfTypeBuilder.setName("testType");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.add("the_geom", Polygon.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.add("LIBELLE", String.class);
+		sfTypeBuilder.add("TYPEZONE", String.class);
+		sfTypeBuilder.add("TYPLEPLAN", String.class);
+		sfTypeBuilder.add("INSEE", String.class);
+		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	}
+	
+	
 	/////////////////////
 	/////////////////////
 	//// FrenchParcel Schemas : basic parcels schema used in the french IGN norm
@@ -165,7 +190,7 @@ public class ParcelSchema {
 		finalParcelBuilder.set("COM_ABS", feat.getAttribute("COM_ABS"));
 		finalParcelBuilder.set("SECTION", feat.getAttribute("SECTION"));
 		finalParcelBuilder.set("NUMERO", feat.getAttribute("NUMERO"));
-		finalParcelBuilder.set("INSEE", ParcelAttribute.makeINSEECode(feat));
+		finalParcelBuilder.set("INSEE", Attribute.makeINSEECode(feat));
 		finalParcelBuilder.set("eval", "0");
 		finalParcelBuilder.set("DoWeSimul", "false");
 		finalParcelBuilder.set("IsBuild", "false");
