@@ -24,6 +24,18 @@ public class Schemas {
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
 		return new SimpleFeatureBuilder(featureType);
 	}
+	
+	public static SimpleFeatureBuilder getBasicSchemaID(String name) throws NoSuchAuthorityCodeException, FactoryException {
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.setName(name);
+		sfTypeBuilder.add("the_geom", Polygon.class);
+		sfTypeBuilder.add("id", Integer.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
+		return new SimpleFeatureBuilder(featureType);
+	}
 
 	public static SimpleFeatureBuilder getBasicSchemaMultiPolygon(String name) throws NoSuchAuthorityCodeException, FactoryException {
 
@@ -63,4 +75,22 @@ public class Schemas {
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
 		return new SimpleFeatureBuilder(featureType);
 	}
+
+	public static SimpleFeatureBuilder getASCommunitySchema() throws NoSuchAuthorityCodeException, FactoryException {
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+		sfTypeBuilder.setName("testType");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.add("the_geom", MultiPolygon.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.add("DEPCOM", String.class);
+		sfTypeBuilder.add("NOM_COM", String.class);
+		sfTypeBuilder.add("typo", String.class);
+		sfTypeBuilder.add("surface", String.class);
+		sfTypeBuilder.add("scot", String.class);
+		sfTypeBuilder.add("log-icone", String.class);
+		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	}
+
+
 }

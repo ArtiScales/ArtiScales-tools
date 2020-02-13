@@ -11,8 +11,6 @@ import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.PrecisionModel;
-import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.FilterFactory2;
@@ -20,15 +18,14 @@ import org.opengis.filter.expression.PropertyName;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
+import fr.ign.cogit.GTFunctions.Schemas;
 import fr.ign.cogit.GTFunctions.Vectors;
 
 public class ParcelCollection {
 
-	public static void main(String[] args) throws Exception {
-		markDiffParcel(new File("/tmp/brie98.shp"),new File("/tmp/brie12.shp"), new File("/tmp/"));
-//		markDiffParcel(new File("/tmp/a.shp"),new File("/tmp/b.shp"), new File("/tmp/"));
-
-	}
+//	public static void main(String[] args) throws Exception {
+//
+//	}
 	
 	/**
 	 * add a given collection of parcels to another collection of parcel, for which the schema is kept. 
@@ -224,57 +221,68 @@ public class ParcelCollection {
 	}
 	
 	/**
-	 * method that compares two set of parcels and export only the ones that are in common 
+	 * method that compares two set of parcels and sort the reference plan parcels between the ones that changed and the ones that doesn't We compare the parcels area of the
+	 * reference parcel to the ones that are intersected. If they are similar with a 7% error rate, we conclude that they are the same.
 	 * 
-	 * @param parcelRef
-	 * @param parcelToSort
+	 * @param parcelRefFile
+	 *            : the reference parcel plan
+	 * @param parcelToSortFile
+	 *            : the parcel plan to compare
 	 * @param parcelOutFolder
+	 *            : folder where are stored the two created shapefile
+	 * @return Two shapefile - One that contains the reference parcels that have changed (change.shp) and one with the parcels that haven't changed (noChange.shp)
 	 * @throws IOException
 	 */
-	public static void markDiffParcel(File parcelRef, File parcelToSort, File parcelOutFolder) throws IOException {
-		ShapefileDataStore sds = new ShapefileDataStore(parcelToSort.toURI().toURL());
-		SimpleFeatureCollection parcelUnclean = sds.getFeatureSource().getFeatures();
+	public static void markDiffParcel(File parcelRefFile, File parcelToSortFile, File parcelOutFolder) throws IOException {
+		ShapefileDataStore sds = new ShapefileDataStore(parcelToSortFile.toURI().toURL());
+		SimpleFeatureCollection parcelToSort = sds.getFeatureSource().getFeatures();
 
-		ShapefileDataStore sdsRef = new ShapefileDataStore(parcelRef.toURI().toURL());
-		SimpleFeatureCollection parcelClean = sdsRef.getFeatureSource().getFeatures();
-		SimpleFeatureIterator itClean = parcelClean.features();
+		ShapefileDataStore sdsRef = new ShapefileDataStore(parcelRefFile.toURI().toURL());
+		SimpleFeatureCollection parcelRef = sdsRef.getFeatureSource().getFeatures();
+		SimpleFeatureIterator itRef = parcelRef.features();
 
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
-		PropertyName pName = ff.property(parcelUnclean.getSchema().getGeometryDescriptor().getLocalName());
+		PropertyName pName = ff.property(parcelRef.getSchema().getGeometryDescriptor().getLocalName());
 
 		DefaultFeatureCollection same = new DefaultFeatureCollection();
 		DefaultFeatureCollection notSame = new DefaultFeatureCollection();
+		DefaultFeatureCollection polygonIntersection = new DefaultFeatureCollection();
 
-		int i = 1;
+
 		try {
-			while (itClean.hasNext()) {
-				SimpleFeature clean = itClean.next();
+			while (itRef.hasNext()) {
+				SimpleFeature pRef = itRef.next();
+				Geometry geomPRef = (Geometry) pRef.getDefaultGeometry();
 				boolean not = true;
-				SimpleFeatureIterator itUnclean = parcelUnclean.subCollection(ff.bbox(pName, clean.getBounds())).features();
-				try {
-					while (itUnclean.hasNext()) {
-						SimpleFeature unclean = itUnclean.next();
-						if (GeometryPrecisionReducer.reduce(((Geometry) clean.getDefaultGeometry()).buffer(0), new PrecisionModel(1)).equals(
-								GeometryPrecisionReducer.reduce(((Geometry) unclean.getDefaultGeometry()).buffer(0), new PrecisionModel(1)))) {
-							same.add(clean);
-							not = false;
-							break;
-						}
-					}
-				} catch (Exception problem) {
-					problem.printStackTrace();
-				} finally {
-					itUnclean.close();
-				}
+				// I THOUGHT THAT WOULD IMPROVE PERFORMANCES, BUT IT DOESN'T AT ALL
+//				SimpleFeatureIterator itPToSort = parcelToSort.subCollection(ff.bbox(pName, pRef.getBounds())).features();
+//				try {
+//					while (itPToSort.hasNext()) {
+//						SimpleFeature pToSort = itPToSort.next();
+//						if (GeometryPrecisionReducer.reduce((geomPRef), new PrecisionModel(1)).equals(
+//								GeometryPrecisionReducer.reduce(((Geometry) pToSort.getDefaultGeometry()).buffer(0), new PrecisionModel(1)))) {
+//							same.add(pRef);
+//							not = false;
+//							break;
+//						}
+//					}
+//				} catch (Exception problem) {
+//					problem.printStackTrace();
+//				} finally {
+//					itPToSort.close();
+//				}
 				if (not) {
 					// seek if it is close to (as tiny geometry changes
-					SimpleFeatureIterator itUnclean2 = parcelUnclean
-							.subCollection(ff.crosses(pName, ff.literal((Geometry) clean.getDefaultGeometry()))).features();
+					SimpleFeatureCollection z = parcelToSort.subCollection(ff.intersects(pName, ff.literal(geomPRef)));
+					SimpleFeatureIterator itPToSort = z.features();
+					double geomArea = geomPRef.getArea();
 					try {
-						while (itUnclean2.hasNext()) {
-							SimpleFeature unclean = itUnclean2.next();
-							if (Math.abs(((Geometry) clean.getDefaultGeometry()).intersection(((Geometry) unclean.getDefaultGeometry())).getArea()) < 10) {
-								same.add(clean);
+						while (itPToSort.hasNext()) {
+							SimpleFeature pToSort = itPToSort.next();
+							Geometry geomPToSort = (Geometry) pToSort.getDefaultGeometry();
+							double inter = geomPRef.intersection(geomPToSort).getArea();
+							if (inter > 0.93 * geomArea && inter < 1.07 * geomArea) {
+								same.add(pRef);
 								not = false;
 								break;
 							}
@@ -282,23 +290,26 @@ public class ParcelCollection {
 					} catch (Exception problem) {
 						problem.printStackTrace();
 					} finally {
-						itUnclean2.close();
+						itPToSort.close();
 					}
-					if(not) {
-						notSame.add(clean);
+					if (not) {
+						notSame.add(pRef);
+						SimpleFeatureBuilder intersecPolygon = Schemas.getBasicSchemaMultiPolygon("intersectionPolygon");
+						intersecPolygon.set("the_geom", ((Geometry) pRef.getDefaultGeometry()).buffer(-2));
+						polygonIntersection.add(intersecPolygon.buildFeature(null));
 					}
 				}
-				System.out.println(i++ + " on " + parcelClean.size());
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
 		} finally {
-			itClean.close();
+			itRef.close();
 		}
 		sds.dispose();
 		sdsRef.dispose();
 		Vectors.exportSFC(same, new File(parcelOutFolder, "same.shp"));
 		Vectors.exportSFC(notSame, new File(parcelOutFolder, "notSame.shp"));
+		Vectors.exportSFC(polygonIntersection, new File(parcelOutFolder, "polygonIntersection.shp"));
 
 	}
 	

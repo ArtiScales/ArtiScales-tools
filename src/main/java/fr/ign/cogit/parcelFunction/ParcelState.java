@@ -33,31 +33,31 @@ import fr.ign.cogit.GTFunctions.Vectors;
 
 public class ParcelState {
 
-	public static void main(String[] args) throws Exception {
-		File geoFile = new File("/home/ubuntu/boulot/these/result2903/dataGeo/");
-		File batiFile = new File(geoFile, "building.shp");
-		File parcelFile = new File("/tmp/parcelTested.shp");
-		ShapefileDataStore sds = new ShapefileDataStore(parcelFile.toURI().toURL());
-		SimpleFeatureIterator sfc = sds.getFeatureSource().getFeatures().features();
-
-		try {
-			while (sfc.hasNext()) {
-				SimpleFeature sf = sfc.next();
-				System.out.println("sf " + sf.getAttribute("NUMERO"));
-				long startTime2 = System.currentTimeMillis();
-
-				isAlreadyBuilt(batiFile, sf);
-				long endTime2 = System.nanoTime();
-				System.out.println("duration for isAlreadyBuilt : " + (endTime2 - startTime2) * 1000);
-			}
-
-		} catch (Exception problem) {
-			problem.printStackTrace();
-		} finally {
-			sfc.close();
-		}
-		sds.dispose();
-	}
+//	public static void main(String[] args) throws Exception {
+//		File geoFile = new File("/home/ubuntu/boulot/these/result2903/dataGeo/");
+//		File batiFile = new File(geoFile, "building.shp");
+//		File parcelFile = new File("/tmp/parcelTested.shp");
+//		ShapefileDataStore sds = new ShapefileDataStore(parcelFile.toURI().toURL());
+//		SimpleFeatureIterator sfc = sds.getFeatureSource().getFeatures().features();
+//
+//		try {
+//			while (sfc.hasNext()) {
+//				SimpleFeature sf = sfc.next();
+//				System.out.println("sf " + sf.getAttribute("NUMERO"));
+//				long startTime2 = System.currentTimeMillis();
+//
+//				isAlreadyBuilt(batiFile, sf);
+//				long endTime2 = System.nanoTime();
+//				System.out.println("duration for isAlreadyBuilt : " + (endTime2 - startTime2) * 1000);
+//			}
+//
+//		} catch (Exception problem) {
+//			problem.printStackTrace();
+//		} finally {
+//			sfc.close();
+//		}
+//		sds.dispose();
+//	}
 
 	/**
 	 * return false if the parcel mandatory needs a contact with the road to be
@@ -77,6 +77,10 @@ public class ParcelState {
 
 	public static boolean isArt3AllowsIsolatedParcel(String insee, File predicateFile) throws IOException {
 
+		if(!predicateFile.exists()) {
+			return true;
+		}
+		
 		int nInsee = 0;
 		int nArt3 = 0;
 		// get rule file
@@ -324,10 +328,10 @@ public class ParcelState {
 	 * @throws Exception
 	 */
 	public static String parcelInBigZone(File zoningFile, SimpleFeature parcelIn) throws Exception {
-		List<String> yo = parcelInBigZone(parcelIn, zoningFile);
-		if (yo.isEmpty())
+		List<String> bigZones = parcelInBigZone(parcelIn, zoningFile);
+		if (bigZones.isEmpty())
 			return "null";
-		return yo.get(0);
+		return bigZones.get(0);
 	}
 
 //	public static List<String> parcelInBigZone(IFeature parcelIn, File zoningFile) throws Exception {

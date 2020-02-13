@@ -29,9 +29,9 @@ import fr.ign.cogit.GTFunctions.Vectors;
 
 public class ParcelGetter {
 	
-	public static void main(String[] args) throws Exception {
-		
-	}
+//	public static void main(String[] args) throws Exception {
+//		
+//	}
 	
 	public static SimpleFeatureCollection getParcelByBigZone(String zone, SimpleFeatureCollection parcelles, File zoningFile)
 			throws IOException {
