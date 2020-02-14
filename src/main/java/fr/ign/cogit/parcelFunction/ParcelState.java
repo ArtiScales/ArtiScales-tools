@@ -357,7 +357,6 @@ public class ParcelState {
 		// calculation, but it could worth it
 		boolean twoZones = false;
 		HashMap<String, Double> repart = new HashMap<String, Double>();
-
 		try {
 			zoneLoop: while (featuresZones.hasNext()) {
 				SimpleFeature feat = featuresZones.next();
@@ -387,6 +386,11 @@ public class ParcelState {
 						result.remove("AU");
 						result.remove("U");
 						break zoneLoop;
+					default:
+						result.remove("AU");
+						result.remove("U");
+						result.remove("NC");
+						result.add((String) feat.getAttribute("TYPEZONE"));
 					}
 				}
 				// maybe the parcel is in between two zones (less optimized) intersection
@@ -398,29 +402,19 @@ public class ParcelState {
 					switch ((String) feat.getAttribute("TYPEZONE")) {
 					case "U":
 					case "ZC":
-						if (repart.containsKey("U")) {
-							repart.put("U", repart.get("U") + area);
-						} else {
-							repart.put("U", area);
-						}
+						repart.put("U",repart.getOrDefault("U", 0.0) + area);
 						break;
 					case "AU":
 					case "TBU":
-						if (repart.containsKey("AU")) {
-							repart.put("AU", repart.get("AU") + area);
-						} else {
-							repart.put("AU", area);
-						}
+						repart.put("AU", repart.getOrDefault("AU", 0.0) + area);
 						break;
 					case "N":
 					case "NC":
 					case "A":
-						if (repart.containsKey("NC")) {
-							repart.put("NC", repart.get("NC") + area);
-						} else {
-							repart.put("NC", area);
-						}
+						repart.put("NC", repart.getOrDefault("NC", 0.0) + area);
 						break;
+					default:
+						repart.put((String) feat.getAttribute("TYPEZONE"), repart.getOrDefault((String) feat.getAttribute("TYPEZONE"), 0.0) + area);
 					}
 				}
 			}
@@ -431,6 +425,7 @@ public class ParcelState {
 		}
 		shpDSZone.dispose();
 
+		//in case of multi zones, we sort the entries relatively to the highest area
 		if (twoZones == true) {
 			List<Entry<String, Double>> entryList = new ArrayList<Entry<String, Double>>(repart.entrySet());
 			Collections.sort(entryList, new Comparator<Entry<String, Double>>() {
@@ -439,7 +434,6 @@ public class ParcelState {
 					return obj2.getValue().compareTo(obj1.getValue());
 				}
 			});
-
 			for (Entry<String, Double> s : entryList) {
 				result.add(s.getKey());
 			}
