@@ -171,7 +171,6 @@ public class Vectors {
 			if (keepAttributes) {
 				// easy way
 				if (sameSchemas) {
-					System.out.println("keep attribute & same schema");
 					try {
 						while (parcelIt.hasNext()) {					
 							SimpleFeature feat = parcelIt.next();
@@ -223,7 +222,6 @@ public class Vectors {
 		}
 
 		SimpleFeatureCollection output = newParcel.collection();
-		Vectors.exportSFC(output, new File("/tmp/saqs"));
 		if (empriseFile != null && empriseFile.exists()) {
 			output = Vectors.cropSFC(output, empriseFile);
 		}

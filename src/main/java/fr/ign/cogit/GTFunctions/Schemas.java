@@ -70,8 +70,8 @@ public class Schemas {
 		sfTypeBuilder.setCRS(sourceCRS);
 		sfTypeBuilder.add("the_geom", MultiLineString.class);
 		sfTypeBuilder.setDefaultGeometry("the_geom");
-		sfTypeBuilder.add("Speed", Integer.class);
-		sfTypeBuilder.add("nature", String.class);
+		sfTypeBuilder.add("SPEED", Integer.class);
+		sfTypeBuilder.add("NATURE", String.class);
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
 		return new SimpleFeatureBuilder(featureType);
 	}
