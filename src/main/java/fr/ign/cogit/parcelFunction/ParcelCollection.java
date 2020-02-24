@@ -2,7 +2,15 @@ package fr.ign.cogit.parcelFunction;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -24,8 +32,142 @@ import fr.ign.cogit.GTFunctions.Vectors;
 public class ParcelCollection {
 
 //	public static void main(String[] args) throws Exception {
-//
+//		ShapefileDataStore sds = new ShapefileDataStore(new File("/tmp/lala.shp").toURI().toURL());
+//		SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
+////		long startTime2 = System.nanoTime();
+////		SimpleFeatureCollection parcelsUnsorted2 = Vectors.sortSFCWithArea(sfc);
+////		long stopTime2 = System.nanoTime();
+////		System.out.println("two took "+(stopTime2 - startTime2));
+//		mergeTooSmallParcels(sfc,100);
 //	}
+	
+	/**
+	 * This algorithm merges parcels when they are under an area threshold. 
+	 * It seek the surrounding parcel that share the largest side with the small parcel and merge their geometries. Parcel must touch at least. 
+	 * If no surrounding parcels are found touching (or intersecting) the small parcel, the parcel is deleted and left as a public space.  
+	 * Attributes from the large parcel are kept. 
+	 *
+	 * @param parcels SimpleFeature collection to check every parcels 
+	 * @param minimalParcelSize threshold which parcels are under to be merged
+	 * @return
+	 * @throws FactoryException 
+	 * @throws NoSuchAuthorityCodeException 
+	 * @throws IOException 
+	 */
+	public static SimpleFeatureCollection mergeTooSmallParcels(SimpleFeatureCollection parcelsUnsorted, int minimalParcelSize)
+			throws NoSuchAuthorityCodeException, FactoryException, IOException {
+		SimpleFeatureBuilder build = new SimpleFeatureBuilder(parcelsUnsorted.getSchema());
+		List<Integer> sizeResults = new ArrayList<Integer>();
+		SimpleFeatureCollection result = recursiveMergeTooSmallParcel(parcelsUnsorted, minimalParcelSize, build);
+		sizeResults.add(result.size());
+		System.out.println("Merging too small parcels");
+		System.out.println("OG size:"+parcelsUnsorted.size());
+		System.out.println(sizeResults);
+		do {
+			// recursive application of the merge algorithm to merge little parcels to big ones one-by-one
+			result = recursiveMergeTooSmallParcel(result, minimalParcelSize, build);
+			sizeResults.add(result.size());
+			System.out.println(sizeResults);
+		}
+		// while parcels are still getting merged, we run the recursive algorithm
+		while (!sizeResults.get(sizeResults.size() - 1).equals(sizeResults.get(sizeResults.size() - 2)));
+		Vectors.exportSFC(result, new File("/tmp/salut.shp"));
+		return result;
+	}
+	
+	private static SimpleFeatureCollection recursiveMergeTooSmallParcel(SimpleFeatureCollection parcelsUnsorted, int minimalParcelSize,
+			SimpleFeatureBuilder build) throws IOException {
+		DefaultFeatureCollection result = new DefaultFeatureCollection();
+		// we sort the parcel collection to process the smallest parcels in first
+		List<String> ids = new ArrayList<String>();
+		
+		// dead attempt to use dedicaded sorting objects
+		// SimpleFeatureCollection parcels = Vectors.sortSFCWithArea(parcelsUnsorted);
+		// SimpleFeatureIterator parcelIter = parcels.features();
+		// FilterFactory2 ff = FeatureUtilities.DEFAULT_FILTER_FACTORY;
+		// Function function = new AreaFunction();
+		// SortBy[] s = {ff.sort(function.getName(), SortOrder.ASCENDING)};
+		//// Expression expr = ff.function(function., ff.property("the_geom"));
+		// final PropertyName propertyName = (PropertyName) function; //utopic
+		//// final PropertyName propertyName = ff.arithmeticOperators(true, function); //that isn't the same function object...
+		//
+		//// SortBy[] sort = { new SortByImpl(expr, SortOrder.ASCENDING) };
+		// SortBy[] sort = { new SortByImpl(propertyName, SortOrder.ASCENDING) };
+		// SortedFeatureIterator parcelIt = new SortedFeatureIterator(parcelIter, parcels.getSchema(), sort, parcels.size());
+		
+		//easy hack to sort 
+		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
+		try (SimpleFeatureIterator itr = parcelsUnsorted.features()){
+			while (itr.hasNext()) {
+				SimpleFeature feature = itr.next();
+				double area = ((Geometry) feature.getDefaultGeometry()).getArea();
+				index.put(area, feature);
+			}
+		}
+
+		for (Entry<Double, SimpleFeature> entry : index.entrySet()) {
+			SimpleFeature feat = entry.getValue();
+			// if the parcel has already been merged with a smaller one, we skip (and we made the hypotheses that a merged parcel will always be bigger than the threshold)
+			if (ids.contains(feat.getID())) {
+				continue;
+			}
+			Geometry geom = (Geometry) feat.getDefaultGeometry();
+			if (geom.getArea() < minimalParcelSize) {
+				// System.out.println(feat.getID() + " is too small");
+				DefaultFeatureCollection intersect = new DefaultFeatureCollection();
+				Arrays.stream(parcelsUnsorted.toArray(new SimpleFeature[0])).forEach(interParcel -> {
+					if (((Geometry) interParcel.getDefaultGeometry()).intersects(geom) && !interParcel.getID().equals(feat.getID())) {
+						intersect.add(interParcel);
+					}
+				});
+				if (intersect.size() > 0) {
+					// System.out.println(intersect.size() + " intersecting");
+					// if the tiny parcel intersects a bigger parcel, we seek the longest side to which parcel could be incorporated
+					HashMap<String, Double> repart = new HashMap<String, Double>();
+					Arrays.stream(intersect.toArray(new SimpleFeature[0])).forEach(interParcel -> {
+						repart.put(interParcel.getID(), ((Geometry) interParcel.getDefaultGeometry()).intersection(geom.buffer(1)).getArea());
+					});
+					// we sort to place the biggest intersecting parcel in first
+					List<Entry<String, Double>> entryList = new ArrayList<Entry<String, Double>>(repart.entrySet());
+					Collections.sort(entryList, new Comparator<Entry<String, Double>>() {
+						@Override
+						public int compare(Entry<String, Double> obj1, Entry<String, Double> obj2) {
+							return obj2.getValue().compareTo(obj1.getValue());
+						}
+					});
+					String idToMerge = entryList.get(0).getKey();
+//					System.out.println("idToMerge: " + idToMerge);
+					// if the big parcel has already been merged with a small parcel, we skip it and will return to that small parcel in a future iteration
+					if (ids.contains(idToMerge)) {
+						result.add(feat);
+						continue;
+					}
+					ids.add(idToMerge);
+					// we now merge geometries and copy attributes to the new
+					List<Geometry> lG = new ArrayList<Geometry>();
+					lG.add(geom);
+					Arrays.stream(intersect.toArray(new SimpleFeature[0])).forEach(thaParcel -> {
+						if (thaParcel.getID().equals(idToMerge)) {
+							build.addAll(thaParcel.getAttributes());
+							lG.add((Geometry) thaParcel.getDefaultGeometry());
+						}
+					});
+					build.set("the_geom", Vectors.unionGeom(lG));
+					SimpleFeature f = build.buildFeature(idToMerge);
+					result.add(f);
+				}
+				// no else - if the small parcel doesn't touch any other parcels, we left it as a blank space and will be left as a public space
+			} else {
+				result.add(feat);
+			}
+		}
+		// } catch (Exception problem) {
+		// problem.printStackTrace();
+		// } finally {
+		// parcelIt.close();
+		// }
+		return result;
+	}
 	
 	/**
 	 * add a given collection of parcels to another collection of parcel, for which the schema is kept. 
