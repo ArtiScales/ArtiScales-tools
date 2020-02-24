@@ -188,7 +188,7 @@ public class ParcelAttribute {
 	 * @return
 	 * @throws Exception
 	 */
-	public static String normalizeNameBigZone(String nameZone) throws Exception {
+	public static String normalizeNameFrenchBigZone(String nameZone) throws Exception {
 		switch (nameZone) {
 		case "U":
 		case "ZC":

@@ -25,14 +25,23 @@ import org.opengis.filter.FilterFactory2;
 import fr.ign.cogit.FeaturePolygonizer;
 import fr.ign.cogit.GTFunctions.Vectors;
 
-
-
 public class ParcelGetter {
 	
+	static String codeDepFiled = "CODE_DEP";
+	static String codeComFiled = "CODE_COM";
+	static String zoneNameFiled = "TYPEZONE";
 //	public static void main(String[] args) throws Exception {
 //		
 //	}
 	
+	/**
+	 * try 
+	 * @param zone
+	 * @param parcelles
+	 * @param zoningFile
+	 * @return
+	 * @throws IOException
+	 */
 	public static SimpleFeatureCollection getParcelByBigZone(String zone, SimpleFeatureCollection parcelles, File zoningFile)
 			throws IOException {
 		ShapefileDataStore zonesSDS = new ShapefileDataStore(zoningFile.toURI().toURL());
@@ -46,6 +55,7 @@ public class ParcelGetter {
 			break;
 		case "AU":
 			listZones.add("AU");
+			listZones.add("TBC");
 			break;
 		case "NC":
 			listZones.add("A");
@@ -59,7 +69,7 @@ public class ParcelGetter {
 		try {
 			while (itZonez.hasNext()) {
 				SimpleFeature zones = itZonez.next();
-				if (listZones.contains(zones.getAttribute("TYPEZONE"))) {
+				if (listZones.contains(zones.getAttribute(zoneNameFiled))) {
 					zoneSelected.add(zones);
 				}
 			}
@@ -68,7 +78,6 @@ public class ParcelGetter {
 		} finally {
 			itZonez.close();
 		}
-
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		SimpleFeatureIterator it = parcelles.features();
 		try {
@@ -80,11 +89,6 @@ public class ParcelGetter {
 						SimpleFeature zoneFeat = itZone.next();
 						Geometry zoneGeom = (Geometry) zoneFeat.getDefaultGeometry();
 						Geometry parcelGeom = (Geometry) parcelFeat.getDefaultGeometry();
-						// if (zoneGeom.intersects(parcelGeom)) {
-						//
-						// result.add(parcelFeat);
-						// break;
-
 						if (zoneGeom.contains(parcelGeom)) {
 							result.add(parcelFeat);
 						}
@@ -95,7 +99,6 @@ public class ParcelGetter {
 							result.add(parcelFeat);
 						}
 					}
-
 				} catch (Exception problem) {
 					problem.printStackTrace();
 				} finally {
@@ -135,7 +138,6 @@ public class ParcelGetter {
 					while (itTypo.hasNext()) {
 						SimpleFeature typoFeat = itTypo.next();
 						Geometry typoGeom = (Geometry) typoFeat.getDefaultGeometry();
-
 						if (typoGeom.intersects(parcelGeom)) {
 							if (typoGeom.contains(parcelGeom)) {
 								result.add(parcelFeat);
@@ -145,7 +147,6 @@ public class ParcelGetter {
 							// (with the hypothesis that there is only 2 features)
 							// else if (parcelGeom.intersection(typoGeom).getArea() > parcelGeom.getArea() /
 							// 2) {
-
 							else if (Vectors.scaledGeometryReductionIntersection(Arrays.asList(typoGeom, parcelGeom))
 									.getArea() > (parcelGeom.getArea() / 2)) {
 								result.add(parcelFeat);
@@ -169,8 +170,6 @@ public class ParcelGetter {
 		communitiesSDS.dispose();
 		return result.collection();
 	}
-	
-	
 
 //	public static IFeatureCollection<IFeature> getParcelByCode(IFeatureCollection<IFeature> parcelles, List<String> parcelsWanted)
 //			throws IOException {
@@ -184,7 +183,6 @@ public class ParcelGetter {
 //		}
 //		return result;
 //	}
-
 	public static File getParcelByZip(File parcelIn, List<String> vals, File fileOut) throws IOException {
 		ShapefileDataStore sds = new ShapefileDataStore(parcelIn.toURI().toURL());
 		SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
@@ -207,7 +205,7 @@ public class ParcelGetter {
 		try {
 			while (it.hasNext()) {
 				SimpleFeature feat = it.next();
-				String insee = ((String) feat.getAttribute("CODE_DEP")).concat(((String) feat.getAttribute("CODE_COM")));
+				String insee = ((String) feat.getAttribute(codeComFiled)).concat(((String) feat.getAttribute(codeDepFiled)));
 				if (insee.equals(val)) {
 					result.add(feat);
 				}
@@ -310,7 +308,6 @@ public class ParcelGetter {
 			boolean preCutParcels) throws Exception {
 
 //		DirectPosition.PRECISION = 3;
-
 //		File result = new File("");
 //		for (File f : geoFile.listFiles()) {
 //			if (f.toString().contains("parcel.shp")) {
@@ -319,11 +316,8 @@ public class ParcelGetter {
 //		}
 		
 		File result = parcelFile;
-
-
 		ShapefileDataStore parcelSDS = new ShapefileDataStore(result.toURI().toURL());
 		SimpleFeatureCollection parcelsSFC = parcelSDS.getFeatureSource().getFeatures();
-
 		ShapefileDataStore shpDSBati = new ShapefileDataStore(buildingFile.toURI().toURL());
 
 		// if we decided to work on a set of parcels
@@ -368,19 +362,16 @@ public class ParcelGetter {
 			File tmpParcel = Vectors.exportSFC(parcelsSFC, new File(tmpFile, "tmpParcel.shp"));
 			File[] polyFiles = { tmpParcel, zoningFile };
 			List<Polygon> polygons = FeaturePolygonizer.getPolygons(polyFiles);
-
 			// register to precise every parcel that are in the output
 			List<String> codeParcelsTot = new ArrayList<String>();
 
 			// auto parcel feature builder
 			SimpleFeatureBuilder sfSimpleBuilder = ParcelSchema.getSFBFrenchParcel();
-
 			DefaultFeatureCollection write = new DefaultFeatureCollection();
 
 			// for every made up polygons out of zoning and parcels
 			for (Geometry poly : polygons) {
 				// for every parcels around the polygon
-
 				SimpleFeatureCollection snaped = Vectors.snapDatas(parcelsSFC, poly.getBoundary());
 				SimpleFeatureIterator parcelIt = snaped.features();
 				try {
@@ -389,14 +380,13 @@ public class ParcelGetter {
 						// if the polygon part was between that parcel, we add its attribute
 						if (((Geometry) feat.getDefaultGeometry()).buffer(1).contains(poly)) {
 							sfSimpleBuilder.set("the_geom", GeometryPrecisionReducer.reduce(poly, new PrecisionModel(100)));
-							String code = ParcelAttribute.makeParcelCode(feat);
 							sfSimpleBuilder.set("CODE_DEP", feat.getAttribute("CODE_DEP"));
 							sfSimpleBuilder.set("CODE_COM", feat.getAttribute("CODE_COM"));
 							sfSimpleBuilder.set("COM_ABS", feat.getAttribute("COM_ABS"));
 							sfSimpleBuilder.set("SECTION", feat.getAttribute("SECTION"));
 							String num = (String) feat.getAttribute("NUMERO");
 							// if a part has already been added
-
+							String code = ParcelAttribute.makeParcelCode(feat);
 							if (codeParcelsTot.contains(code)) {
 								while (true) {
 									num = num + "bis";
@@ -413,7 +403,6 @@ public class ParcelGetter {
 							}
 							sfSimpleBuilder.set("CODE", code);
 							write.add(sfSimpleBuilder.buildFeature(null));
-
 							// this could be nicer but it doesn't work
 							// for (int i = 0; i < codeParcelsTot.size(); i++) {
 							// if (codeParcelsTot.get(i).substring(0, 13).equals(code)) {
@@ -435,7 +424,6 @@ public class ParcelGetter {
 				}
 			}
 			parcelsSFC = write.collection();
-			Vectors.exportSFC(parcelsSFC, new File("/tmp/dqsdf.shp"));
 		}
 		// under the carpet
 		// ReferencedEnvelope carpet = parcelsSFC.getBounds();
@@ -453,7 +441,6 @@ public class ParcelGetter {
 		// Vectors.unionSFC(parcels));
 
 		SimpleFeatureBuilder finalParcelBuilder = ParcelSchema.getSFBParcelAsAS();
-
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
 
 		// int tot = parcels.size();
@@ -481,7 +468,6 @@ public class ParcelGetter {
 							continue parc;
 						}
 					}
-
 					finalParcelBuilder.set("the_geom", geom);
 					finalParcelBuilder.set("CODE", ParcelAttribute.makeParcelCode(feat));
 					finalParcelBuilder.set("CODE_DEP", feat.getAttribute("CODE_DEP"));
@@ -496,7 +482,6 @@ public class ParcelGetter {
 					finalParcelBuilder.set("U", u);
 					finalParcelBuilder.set("AU", au);
 					finalParcelBuilder.set("NC", nc);
-
 					newParcel.add(finalParcelBuilder.buildFeature(null));
 				}
 			}

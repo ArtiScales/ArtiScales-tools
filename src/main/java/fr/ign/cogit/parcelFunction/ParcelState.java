@@ -108,7 +108,6 @@ public class ParcelState {
 				}
 			}
 		}
-
 		rule.close();
 		return true;
 	}
@@ -167,12 +166,11 @@ public class ParcelState {
 	public static boolean isAlreadyBuilt(SimpleFeatureCollection batiSFC, SimpleFeature feature, double bufferBati)
 			throws IOException {
 		boolean isContent = false;
+		Geometry geom = ((Geometry) feature.getDefaultGeometry());
 		SimpleFeatureIterator iterator = batiSFC.features();
 		try {
 			while (iterator.hasNext()) {
-				SimpleFeature batiFeature = iterator.next();
-				if (((Geometry) feature.getDefaultGeometry())
-						.intersects(((Geometry) batiFeature.getDefaultGeometry()).buffer(bufferBati))) {
+				if (geom.intersects(((Geometry) iterator.next().getDefaultGeometry()).buffer(bufferBati))) {
 					isContent = true;
 					break;
 				}
@@ -204,7 +202,6 @@ public class ParcelState {
 	 */
 	public static Double getEvalInParcel(SimpleFeature parcel, File outMup)
 			throws ParseException, NoSuchAuthorityCodeException, FactoryException, IOException {
-
 		ShapefileDataStore cellsSDS = new ShapefileDataStore(outMup.toURI().toURL());
 		SimpleFeatureCollection cellsCollection = cellsSDS.getFeatureSource().getFeatures();
 		Double result = getEvalInParcel(parcel, cellsCollection);
@@ -216,18 +213,15 @@ public class ParcelState {
 
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		String geometryCellPropertyName = mupSFC.getSchema().getGeometryDescriptor().getLocalName();
-
 		Filter inter = ff.intersects(ff.property(geometryCellPropertyName), ff.literal(parcel.getDefaultGeometry()));
 		SimpleFeatureCollection onlyCells = mupSFC.subCollection(inter);
 		Double bestEval = 0.0;
-
 		// put the best cell evaluation into the parcel
 		if (onlyCells.size() > 0) {
 			SimpleFeatureIterator onlyCellIt = onlyCells.features();
 			try {
 				while (onlyCellIt.hasNext()) {
-					SimpleFeature multiCell = onlyCellIt.next();
-					bestEval = Math.max(bestEval, (Double) multiCell.getAttribute("eval"));
+					bestEval = Math.max(bestEval, (Double) onlyCellIt.next().getAttribute("eval"));
 				}
 			} catch (Exception problem) {
 				problem.printStackTrace();
@@ -235,9 +229,7 @@ public class ParcelState {
 				onlyCellIt.close();
 			}
 		}
-
 		// si jamais le nom est déjà généré
-
 		// sort collection with evaluation
 		// PropertyName pN = ff.property("eval");
 		// SortByImpl sbt = new SortByImpl(pN,
@@ -246,7 +238,6 @@ public class ParcelState {
 		// SortedSimpleFeatureCollection(newParcel, new SortBy[] { sbt });
 		//
 		// moyenneEval(collectOut);
-
 		return bestEval;
 	}
 
@@ -297,17 +288,16 @@ public class ParcelState {
 
 	public static boolean isParcelInCell(SimpleFeature parcelIn, SimpleFeatureCollection cellsCollection)
 			throws Exception {
-
-		cellsCollection = Vectors.snapDatas(cellsCollection, (Geometry) parcelIn.getDefaultGeometry());
-
+		Geometry geom = (Geometry) parcelIn.getDefaultGeometry();
+		cellsCollection = Vectors.snapDatas(cellsCollection, geom);
+		boolean result = false;
 		// import of the cells of MUP-City outputs
 		SimpleFeatureIterator cellsCollectionIt = cellsCollection.features();
-
 		try {
 			while (cellsCollectionIt.hasNext()) {
-				SimpleFeature cell = cellsCollectionIt.next();
-				if (((Geometry) cell.getDefaultGeometry()).intersects(((Geometry) parcelIn.getDefaultGeometry()))) {
-					return true;
+				if (((Geometry) cellsCollectionIt.next().getDefaultGeometry()).intersects(geom)) {
+					result = true;
+					break;
 				}
 			}
 		} catch (Exception problem) {
@@ -315,7 +305,7 @@ public class ParcelState {
 		} finally {
 			cellsCollectionIt.close();
 		}
-		return false;
+		return result;
 	}
 
 	/**
@@ -333,10 +323,6 @@ public class ParcelState {
 			return "null";
 		return bigZones.get(0);
 	}
-
-//	public static List<String> parcelInBigZone(IFeature parcelIn, File zoningFile) throws Exception {
-//		return parcelInBigZone(GeOxygeneGeoToolsTypes.convert2SimpleFeature(parcelIn, CRS.decode("EPSG:2154")), zoningFile);
-//	}
 
 	/**
 	 * return the TYPEZONEs that a parcels intersect result is sorted by the largest
