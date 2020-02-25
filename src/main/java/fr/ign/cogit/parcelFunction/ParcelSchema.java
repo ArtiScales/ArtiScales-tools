@@ -15,7 +15,51 @@ import fr.ign.cogit.GTFunctions.Attribute;
 
 public class ParcelSchema {
 
+	/////////////////////
+	/////////////////////
+	////Minimal Parcel Schema : minimal parcel schema for a Parcel Manager Processing
+	/////////////////////
+	/////////////////////
 	
+	public static SimpleFeatureBuilder getSFBMinParcel() throws NoSuchAuthorityCodeException, FactoryException {
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+		sfTypeBuilder.setName("testType");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.add("the_geom", Polygon.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.add("SECTION", String.class);
+		sfTypeBuilder.add("CODE", String.class);
+
+		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	}
+	
+	public static SimpleFeatureBuilder getSFBMinParcelSplit() throws NoSuchAuthorityCodeException, FactoryException {
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+		sfTypeBuilder.setName("testType");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.add("the_geom", Polygon.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.add("SECTION", String.class);
+		sfTypeBuilder.add("CODE", String.class);
+		sfTypeBuilder.add("SPLIT", Integer.class);
+
+		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	}
+	
+	public static SimpleFeatureBuilder setSFBMinParcelWithFeat(SimpleFeature feat, SimpleFeatureType schema) {
+		SimpleFeatureBuilder finalParcelBuilder = new SimpleFeatureBuilder(schema);
+		return finalParcelBuilder = setSFBMinParcelWithFeat(feat, finalParcelBuilder, schema);
+	}
+
+	public static SimpleFeatureBuilder setSFBMinParcelWithFeat(SimpleFeature feat, SimpleFeatureBuilder builder, SimpleFeatureType schema) {
+		builder.set(schema.getGeometryDescriptor().getName().toString(), (Geometry) feat.getDefaultGeometry());
+		builder.set("SPLIT", feat.getAttribute("SPLIT"));
+		builder.set("SECTION", feat.getAttribute("SECTION"));
+		builder.set("CODE", feat.getAttribute("CODE"));
+		return builder;
+	}
 	
 	/////////////////////
 	/////////////////////

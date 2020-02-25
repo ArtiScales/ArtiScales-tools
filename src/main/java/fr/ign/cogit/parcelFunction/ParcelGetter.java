@@ -171,18 +171,6 @@ public class ParcelGetter {
 		return result.collection();
 	}
 
-//	public static IFeatureCollection<IFeature> getParcelByCode(IFeatureCollection<IFeature> parcelles, List<String> parcelsWanted)
-//			throws IOException {
-//		IFeatureCollection<IFeature> result = new FT_FeatureCollection<>();
-//		for (IFeature parcelle : parcelles) {
-//			for (String s : parcelsWanted) {
-//				if (s.equals((String) parcelle.getAttribute("CODE"))) {
-//					result.add(parcelle);
-//				}
-//			}
-//		}
-//		return result;
-//	}
 	public static File getParcelByZip(File parcelIn, List<String> vals, File fileOut) throws IOException {
 		ShapefileDataStore sds = new ShapefileDataStore(parcelIn.toURI().toURL());
 		SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
@@ -191,6 +179,15 @@ public class ParcelGetter {
 		return Vectors.exportSFC(result, fileOut);
 	}
 
+	/**
+	 * Get parcels out of a parcel collection corresponding to a list of zipcodes
+	 * Zipcodes are not directly contained in a field of the collection but is composed of two fields. Their values are set by default but it's possible to change them with the methods {@link #setCodeComFiled(String) setCodeComFiled} and {@link #setCodeDepFiled(String) setCodeDepFiled}
+	 *
+	 * @param parcelIn : input parcel collection
+	 * @param vals : a list of zipcode values
+	 * @return a simple feature collection of parcels having the values contained in <i>vals</i>.
+	 * 	 * @throws IOException
+	 */
 	public static SimpleFeatureCollection getParcelByZip(SimpleFeatureCollection parcelIn, List<String> vals) throws IOException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		for (String val : vals) {
@@ -199,14 +196,63 @@ public class ParcelGetter {
 		return result.collection();
 	}
 
+	/**
+	 * Get parcels out of a parcel collection with the zip code of them parcels
+	 * Zipcodes are not directly contained in a field of the collection but is composed of two fields. Their values are set by default but it's possible to change them with the methods {@link #setCodeComFiled(String) setCodeComFiled} and {@link #setCodeDepFiled(String) setCodeDepFiled}
+	 * @param parcelIn : input parcel collection
+	 * @param val : value of the zipcode
+	 * @return a simple feature collection of parcels having the <i>val</i> value.
+	 * 	 * @throws IOException
+	 */
 	public static SimpleFeatureCollection getParcelByZip(SimpleFeatureCollection parcelIn, String val) throws IOException {
+		return getParcelByZip(parcelIn, val, codeDepFiled, codeComFiled);
+	}
+
+	/**
+	 * Get parcels out of a parcel collection with the zip code of them parcels
+	 * zipcode is not directly contained in a field of the collection but is composed of two fields (usually a state-like code and a community code)
+	 * @param parcelIn : input parcel collection
+	 * @param val : value of the zipcode
+	 * @param firstFieldName : first part of the field name which compose zipcode field name
+	 * @param secondFieldName : second part of the field name which compose zipcode field name
+	 * @return a simple feature collection of parcels having the <i>val</i> value.
+	 * 	 * @throws IOException
+	 */
+	public static SimpleFeatureCollection getParcelByZip(SimpleFeatureCollection parcelIn, String val, String firstFieldName, String secondFieldName) throws IOException {
 		SimpleFeatureIterator it = parcelIn.features();
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		try {
 			while (it.hasNext()) {
 				SimpleFeature feat = it.next();
-				String insee = ((String) feat.getAttribute(codeComFiled)).concat(((String) feat.getAttribute(codeDepFiled)));
-				if (insee.equals(val)) {
+				String zipCode = ((String) feat.getAttribute(firstFieldName)).concat(((String) feat.getAttribute(secondFieldName)));
+				if (zipCode.equals(val)) {
+					result.add(feat);
+				}
+			}
+		} catch (Exception problem) {
+			problem.printStackTrace();
+		} finally {
+			it.close();
+		}
+		return result.collection();
+	}
+	
+	/**
+	 * Get parcels out of a parcel collection with the zip code of them parcels
+	 * @param parcelIn : input parcel collection
+	 * @param val : zipCode value
+	 * @param zipCodeField : Field of the zipcode 
+	 * @return a simple feature collection of parcels having the <i>val</i> value.
+	 * @throws IOException
+	 */
+	public static SimpleFeatureCollection getParcelByZip(SimpleFeatureCollection parcelIn, String val, String zipFieldName) throws IOException {
+		SimpleFeatureIterator it = parcelIn.features();
+		DefaultFeatureCollection result = new DefaultFeatureCollection();
+		try {
+			while (it.hasNext()) {
+				SimpleFeature feat = it.next();
+				String zipCode = ((String) feat.getAttribute(zipFieldName));
+				if (zipCode.equals(val)) {
 					result.add(feat);
 				}
 			}
@@ -496,6 +542,30 @@ public class ParcelGetter {
 		shpDSBati.dispose();
 
 		return Vectors.exportSFC(newParcel.collection(), new File(tmpFile, "parcelProcessed.shp"));
+	}
+
+	public static String getCodeDepFiled() {
+		return codeDepFiled;
+	}
+
+	public static void setCodeDepFiled(String codeDepFiled) {
+		ParcelGetter.codeDepFiled = codeDepFiled;
+	}
+
+	public static String getCodeComFiled() {
+		return codeComFiled;
+	}
+
+	public static void setCodeComFiled(String codeComFiled) {
+		ParcelGetter.codeComFiled = codeComFiled;
+	}
+
+	public static String getZoneNameFiled() {
+		return zoneNameFiled;
+	}
+
+	public static void setZoneNameFiled(String zoneNameFiled) {
+		ParcelGetter.zoneNameFiled = zoneNameFiled;
 	}
 
 
