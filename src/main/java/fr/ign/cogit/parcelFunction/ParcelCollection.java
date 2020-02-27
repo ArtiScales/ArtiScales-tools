@@ -26,8 +26,9 @@ import org.opengis.filter.expression.PropertyName;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
-import fr.ign.cogit.GTFunctions.Schemas;
-import fr.ign.cogit.GTFunctions.Vectors;
+import fr.ign.cogit.geoToolsFunctions.Schemas;
+import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
+import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
 
 public class ParcelCollection {
 
@@ -46,7 +47,7 @@ public class ParcelCollection {
 	 * It seek the surrounding parcel that share the largest side with the small parcel and merge their geometries. Parcel must touch at least. 
 	 * If no surrounding parcels are found touching (or intersecting) the small parcel, the parcel is deleted and left as a public space.  
 	 * Attributes from the large parcel are kept. 
-	 *
+	 * TODO apply that step to Parcel Manager algorithms 
 	 * @param parcels SimpleFeature collection to check every parcels 
 	 * @param minimalParcelSize threshold which parcels are under to be merged
 	 * @return
@@ -71,7 +72,6 @@ public class ParcelCollection {
 		}
 		// while parcels are still getting merged, we run the recursive algorithm
 		while (!sizeResults.get(sizeResults.size() - 1).equals(sizeResults.get(sizeResults.size() - 2)));
-		Vectors.exportSFC(result, new File("/tmp/salut.shp"));
 		return result;
 	}
 	
@@ -152,7 +152,7 @@ public class ParcelCollection {
 							lG.add((Geometry) thaParcel.getDefaultGeometry());
 						}
 					});
-					build.set("the_geom", Vectors.unionGeom(lG));
+					build.set("the_geom", Geom.unionGeom(lG));
 					SimpleFeature f = build.buildFeature(idToMerge);
 					result.add(f);
 				}
@@ -248,68 +248,77 @@ public class ParcelCollection {
 	//
 	// return result;
 	// }
-
-	public static SimpleFeatureCollection completeParcelMissingWithOriginal(SimpleFeatureCollection parcelToComplete,
-			SimpleFeatureCollection originalParcel) throws NoSuchAuthorityCodeException, FactoryException, IOException {
-		DefaultFeatureCollection result = new DefaultFeatureCollection();
-		result.addAll(parcelToComplete);
-		// List<String> codeParcelAdded = new ArrayList<String>();
-
-		// SimpleFeatureType schema =
-		// parcelToComplete.features().next().getFeatureType();
-
-		// result.addAll(parcelCuted);
-
-		SimpleFeatureIterator parcelToCompletetIt = parcelToComplete.features();
-		try {
-			while (parcelToCompletetIt.hasNext()) {
-				SimpleFeature featToComplete = parcelToCompletetIt.next();
-				Geometry geomToComplete = (Geometry) featToComplete.getDefaultGeometry();
-				Geometry geomsOrigin = Vectors.unionSFC(Vectors.snapDatas(originalParcel, geomToComplete));
-				if (!geomsOrigin.buffer(1).contains(geomToComplete)) {
-					// System.out.println("this parcel has disapeard : " + geomToComplete);
-					// SimpleFeatureBuilder fit = FromGeom.setSFBParcelWithFeat(featToComplete,
-					// schema);
-					// result.add(fit.buildFeature(null));
-					// SimpleFeatureBuilder builder =
-					// FromGeom.setSFBOriginalParcelWithFeat(featToComplete, schema);
-					// result.add(builder.buildFeature(null));
-					// codeParcelAdded.add(ParcelFonction.makeParcelCode(featToComplete));
-				}
-			}
-		} catch (Exception problem) {
-			problem.printStackTrace();
-		} finally {
-			parcelToCompletetIt.close();
-		}
-
-		// SimpleFeatureIterator parcelOriginal = originalParcel.features();
-		// try {
-		// while (parcelOriginal.hasNext()) {
-		// SimpleFeature featOriginal = parcelOriginal.next();
-		// Geometry geom = (Geometry) featOriginal.getDefaultGeometry();
-		// Geometry geomToComplete =
-		// Vectors.unionSFC(Vectors.snapDatas(parcelToComplete, geom.buffer(10)));
-		// if (!geomToComplete.contains(geom.buffer(-1))) {
-		// System.out.println(geomToComplete);
-		// System.out.println();
-		// SimpleFeatureBuilder builder =
-		// FromGeom.setSFBOriginalParcelWithFeat(featOriginal, schema);
-		// result.add(builder.buildFeature(null));
-		// codeParcelAdded.add(ParcelFonction.makeParcelCode(featOriginal));
-		// }
-		// SimpleFeatureBuilder fit = FromGeom.setSFBParcelWithFeat(featOriginal,
-		// schema);
-		// result.add(fit.buildFeature(null));
-		// }
-		// } catch (Exception problem) {
-		// problem.printStackTrace();
-		// } finally {
-		// parcelOriginal.close();
-		// }
-
-		return result;
-	}
+	
+//	/**
+//	 * @FIXME fix that 
+//	 * @param parcelToComplete
+//	 * @param originalParcel
+//	 * @return
+//	 * @throws NoSuchAuthorityCodeException
+//	 * @throws FactoryException
+//	 * @throws IOException
+//	 */
+//	public static SimpleFeatureCollection completeParcelMissingWithOriginal(SimpleFeatureCollection parcelToComplete,
+//			SimpleFeatureCollection originalParcel) throws NoSuchAuthorityCodeException, FactoryException, IOException {
+//		DefaultFeatureCollection result = new DefaultFeatureCollection();
+//		result.addAll(parcelToComplete);
+//		// List<String> codeParcelAdded = new ArrayList<String>();
+//
+//		// SimpleFeatureType schema =
+//		// parcelToComplete.features().next().getFeatureType();
+//
+//		// result.addAll(parcelCuted);
+//
+//		SimpleFeatureIterator parcelToCompletetIt = parcelToComplete.features();
+//		try {
+//			while (parcelToCompletetIt.hasNext()) {
+//				SimpleFeature featToComplete = parcelToCompletetIt.next();
+//				Geometry geomToComplete = (Geometry) featToComplete.getDefaultGeometry();
+//				Geometry geomsOrigin = Vectors.unionSFC(Vectors.snapDatas(originalParcel, geomToComplete));
+//				if (!geomsOrigin.buffer(1).contains(geomToComplete)) {
+//					// System.out.println("this parcel has disapeard : " + geomToComplete);
+//					// SimpleFeatureBuilder fit = FromGeom.setSFBParcelWithFeat(featToComplete,
+//					// schema);
+//					// result.add(fit.buildFeature(null));
+//					// SimpleFeatureBuilder builder =
+//					// FromGeom.setSFBOriginalParcelWithFeat(featToComplete, schema);
+//					// result.add(builder.buildFeature(null));
+//					// codeParcelAdded.add(ParcelFonction.makeParcelCode(featToComplete));
+//				}
+//			}
+//		} catch (Exception problem) {
+//			problem.printStackTrace();
+//		} finally {
+//			parcelToCompletetIt.close();
+//		}
+//
+//		// SimpleFeatureIterator parcelOriginal = originalParcel.features();
+//		// try {
+//		// while (parcelOriginal.hasNext()) {
+//		// SimpleFeature featOriginal = parcelOriginal.next();
+//		// Geometry geom = (Geometry) featOriginal.getDefaultGeometry();
+//		// Geometry geomToComplete =
+//		// Vectors.unionSFC(Vectors.snapDatas(parcelToComplete, geom.buffer(10)));
+//		// if (!geomToComplete.contains(geom.buffer(-1))) {
+//		// System.out.println(geomToComplete);
+//		// System.out.println();
+//		// SimpleFeatureBuilder builder =
+//		// FromGeom.setSFBOriginalParcelWithFeat(featOriginal, schema);
+//		// result.add(builder.buildFeature(null));
+//		// codeParcelAdded.add(ParcelFonction.makeParcelCode(featOriginal));
+//		// }
+//		// SimpleFeatureBuilder fit = FromGeom.setSFBParcelWithFeat(featOriginal,
+//		// schema);
+//		// result.add(fit.buildFeature(null));
+//		// }
+//		// } catch (Exception problem) {
+//		// problem.printStackTrace();
+//		// } finally {
+//		// parcelOriginal.close();
+//		// }
+//
+//		return result;
+//	}
 /**
  * @warning NOT SURE IT'S WORKING
  * @param parcelTot
@@ -378,18 +387,15 @@ public class ParcelCollection {
 	public static void markDiffParcel(File parcelRefFile, File parcelToSortFile, File parcelOutFolder) throws IOException {
 		ShapefileDataStore sds = new ShapefileDataStore(parcelToSortFile.toURI().toURL());
 		SimpleFeatureCollection parcelToSort = sds.getFeatureSource().getFeatures();
-
 		ShapefileDataStore sdsRef = new ShapefileDataStore(parcelRefFile.toURI().toURL());
 		SimpleFeatureCollection parcelRef = sdsRef.getFeatureSource().getFeatures();
 		SimpleFeatureIterator itRef = parcelRef.features();
-
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
 		PropertyName pName = ff.property(parcelRef.getSchema().getGeometryDescriptor().getLocalName());
 
 		DefaultFeatureCollection same = new DefaultFeatureCollection();
 		DefaultFeatureCollection notSame = new DefaultFeatureCollection();
 		DefaultFeatureCollection polygonIntersection = new DefaultFeatureCollection();
-
 
 		try {
 			while (itRef.hasNext()) {
@@ -449,9 +455,9 @@ public class ParcelCollection {
 		}
 		sds.dispose();
 		sdsRef.dispose();
-		Vectors.exportSFC(same, new File(parcelOutFolder, "same.shp"));
-		Vectors.exportSFC(notSame, new File(parcelOutFolder, "notSame.shp"));
-		Vectors.exportSFC(polygonIntersection, new File(parcelOutFolder, "polygonIntersection.shp"));
+		Collec.exportSFC(same, new File(parcelOutFolder, "same.shp"));
+		Collec.exportSFC(notSame, new File(parcelOutFolder, "notSame.shp"));
+		Collec.exportSFC(polygonIntersection, new File(parcelOutFolder, "polygonIntersection.shp"));
 
 	}
 	

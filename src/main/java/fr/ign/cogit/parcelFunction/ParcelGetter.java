@@ -23,13 +23,15 @@ import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 
 import fr.ign.cogit.FeaturePolygonizer;
-import fr.ign.cogit.GTFunctions.Vectors;
+import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
+import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
 
 public class ParcelGetter {
 	
 	static String codeDepFiled = "CODE_DEP";
 	static String codeComFiled = "CODE_COM";
 	static String zoneNameFiled = "TYPEZONE";
+	static String typologyField = "typo";
 //	public static void main(String[] args) throws Exception {
 //		
 //	}
@@ -46,7 +48,7 @@ public class ParcelGetter {
 			throws IOException {
 		ShapefileDataStore zonesSDS = new ShapefileDataStore(zoningFile.toURI().toURL());
 		SimpleFeatureCollection zonesSFCBig = zonesSDS.getFeatureSource().getFeatures();
-		SimpleFeatureCollection zonesSFC = Vectors.cropSFC(zonesSFCBig, parcelles);
+		SimpleFeatureCollection zonesSFC = Collec.cropSFC(zonesSFCBig, parcelles);
 		List<String> listZones = new ArrayList<>();
 		switch (zone) {
 		case "U":
@@ -94,7 +96,7 @@ public class ParcelGetter {
 						}
 						// if the intersection is less than 50% of the parcel, we let it to the other
 						// (with the hypothesis that there is only 2 features)
-						else if (Vectors.scaledGeometryReductionIntersection(Arrays.asList(parcelGeom, zoneGeom)).getArea() > parcelGeom.getArea()
+						else if (Geom.scaledGeometryReductionIntersection(Arrays.asList(parcelGeom, zoneGeom)).getArea() > parcelGeom.getArea()
 								/ 2) {
 							result.add(parcelFeat);
 						}
@@ -114,16 +116,25 @@ public class ParcelGetter {
 		return result.collection();
 	}
 
-	public static SimpleFeatureCollection getParcelByTypo(String typo, SimpleFeatureCollection parcelles, File rootFile, File zoningFile)
+	/**
+	 * Get parcels by their typology. 
+	 * Default typology field name is "typo" and can be changed using method {@link setTypology(String) setTypology()}
+	 * @param typo : name of the seeked typology 
+	 * @param parcels : collection of parcels
+	 * @param communityFile :ShapeFile of the communities with a filed describing their typology
+	 * @return parcels which are included in the communities of a given typology
+	 * @throws IOException
+	 */
+	public static SimpleFeatureCollection getParcelByTypo(String typo, SimpleFeatureCollection parcels, File communityFile)
 			throws IOException {
 
-		ShapefileDataStore communitiesSDS = new ShapefileDataStore(zoningFile.toURI().toURL());
+		ShapefileDataStore communitiesSDS = new ShapefileDataStore(communityFile.toURI().toURL());
 		SimpleFeatureCollection communitiesSFCBig = communitiesSDS.getFeatureSource().getFeatures();
-		SimpleFeatureCollection communitiesSFC = Vectors.cropSFC(communitiesSFCBig, parcelles);
+		SimpleFeatureCollection communitiesSFC = Collec.cropSFC(communitiesSFCBig, parcels);
 
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
-		SimpleFeatureIterator itParcel = parcelles.features();
+		SimpleFeatureIterator itParcel = parcels.features();
 		try {
 			while (itParcel.hasNext()) {
 				SimpleFeature parcelFeat = itParcel.next();
@@ -132,7 +143,7 @@ public class ParcelGetter {
 				if (parcelGeom.getArea() < 5.0) {
 					continue;
 				}
-				Filter filter = ff.like(ff.property("typo"), typo);
+				Filter filter = ff.like(ff.property(typologyField), typo);
 				SimpleFeatureIterator itTypo = communitiesSFC.subCollection(filter).features();
 				try {
 					while (itTypo.hasNext()) {
@@ -147,7 +158,7 @@ public class ParcelGetter {
 							// (with the hypothesis that there is only 2 features)
 							// else if (parcelGeom.intersection(typoGeom).getArea() > parcelGeom.getArea() /
 							// 2) {
-							else if (Vectors.scaledGeometryReductionIntersection(Arrays.asList(typoGeom, parcelGeom))
+							else if (Geom.scaledGeometryReductionIntersection(Arrays.asList(typoGeom, parcelGeom))
 									.getArea() > (parcelGeom.getArea() / 2)) {
 								result.add(parcelFeat);
 								break;
@@ -176,7 +187,7 @@ public class ParcelGetter {
 		SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
 		SimpleFeatureCollection result = getParcelByZip(sfc, vals);
 		sds.dispose();
-		return Vectors.exportSFC(result, fileOut);
+		return Collec.exportSFC(result, fileOut);
 	}
 
 	/**
@@ -405,7 +416,7 @@ public class ParcelGetter {
 
 		// if we cut all the parcel regarding to the zoning code
 		if (preCutParcels) {
-			File tmpParcel = Vectors.exportSFC(parcelsSFC, new File(tmpFile, "tmpParcel.shp"));
+			File tmpParcel = Collec.exportSFC(parcelsSFC, new File(tmpFile, "tmpParcel.shp"));
 			File[] polyFiles = { tmpParcel, zoningFile };
 			List<Polygon> polygons = FeaturePolygonizer.getPolygons(polyFiles);
 			// register to precise every parcel that are in the output
@@ -418,7 +429,7 @@ public class ParcelGetter {
 			// for every made up polygons out of zoning and parcels
 			for (Geometry poly : polygons) {
 				// for every parcels around the polygon
-				SimpleFeatureCollection snaped = Vectors.snapDatas(parcelsSFC, poly.getBoundary());
+				SimpleFeatureCollection snaped = Collec.snapDatas(parcelsSFC, poly.getBoundary());
 				SimpleFeatureIterator parcelIt = snaped.features();
 				try {
 					while (parcelIt.hasNext()) {
@@ -541,7 +552,7 @@ public class ParcelGetter {
 		parcelSDS.dispose();
 		shpDSBati.dispose();
 
-		return Vectors.exportSFC(newParcel.collection(), new File(tmpFile, "parcelProcessed.shp"));
+		return Collec.exportSFC(newParcel.collection(), new File(tmpFile, "parcelProcessed.shp"));
 	}
 
 	public static String getCodeDepFiled() {
@@ -566,6 +577,14 @@ public class ParcelGetter {
 
 	public static void setZoneNameFiled(String zoneNameFiled) {
 		ParcelGetter.zoneNameFiled = zoneNameFiled;
+	}
+
+	public static String getTypologyField() {
+		return typologyField;
+	}
+
+	public static void setTypologyField(String typologyField) {
+		ParcelGetter.typologyField = typologyField;
 	}
 
 

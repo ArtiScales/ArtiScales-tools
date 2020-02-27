@@ -1,4 +1,4 @@
-package fr.ign.cogit.GTFunctions;
+package fr.ign.cogit.geoToolsFunctions;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +23,8 @@ import org.opengis.parameter.ParameterValue;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.operation.TransformException;
 
+import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
+
 public class Rasters {
 
 	public static GridCoverage2D importRaster(File rasterIn) throws IOException {
@@ -39,7 +41,7 @@ public class Rasters {
 
 	public static void cut(File fileToCut, File envelope, File fileOut) throws IOException, InvalidParameterValueException, ParameterNotFoundException, TransformException {
 		ShapefileDataStore envDS = new ShapefileDataStore(envelope.toURI().toURL());
-		Geometry env = Vectors.unionSFC(envDS.getFeatureSource().getFeatures());
+		Geometry env = Geom.unionSFC(envDS.getFeatureSource().getFeatures());
 		writeGeotiff(fileOut, Rasters.importRaster(fileToCut, env));
 	}
 public static void main(String[] args) throws InvalidParameterValueException, ParameterNotFoundException, IOException, TransformException {

@@ -14,16 +14,21 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
-import fr.ign.cogit.GTFunctions.Vectors;
+import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
+import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
 
 public class MarkParcelAttributeFromPosition {
+	
+	static String markFieldName = "SPLIT";
+	
 	/**
-	 * mark parcels that intersects a polygonIntersection output on the "SPLIT" field.
+	 * Mark parcels that intersects a given collection of polygons.
+	 * The default field name containing the mark is "SPLIT" but it can be changed with the {@link #setMarkFieldName()} method.
 	 * 
 	 * @param parcels
 	 *            : The collection of parcels to mark
 	 * @param polygonIntersectionFile
-	 *            : A shapefile containing outputs of MUP-City
+	 *            : A shapefile containing the collection of polygons
 	 * @return
 	 * @throws IOException
 	 * @throws Exception
@@ -32,7 +37,7 @@ public class MarkParcelAttributeFromPosition {
 			throws IOException, Exception {
 
 		ShapefileDataStore sds = new ShapefileDataStore(polygonIntersectionFile.toURI().toURL());
-		Geometry geomPolygonIntersection = Vectors.unionSFC(Vectors.snapDatas(sds.getFeatureSource().getFeatures(), parcels));
+		Geometry geomPolygonIntersection = Geom.unionSFC(Collec.snapDatas(sds.getFeatureSource().getFeatures(), parcels));
 
 		final SimpleFeatureType featureSchema = ParcelSchema.getSFBMinParcelSplit().getFeatureType();
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
@@ -40,9 +45,9 @@ public class MarkParcelAttributeFromPosition {
 		Arrays.stream(parcels.toArray(new SimpleFeature[0])).forEach(feat -> {
 			SimpleFeatureBuilder featureBuilder = ParcelSchema.setSFBMinParcelWithFeat(feat, featureSchema);
 			if (((Geometry) feat.getDefaultGeometry()).intersects(geomPolygonIntersection)) {
-				featureBuilder.set("SPLIT", 1);
+				featureBuilder.set(markFieldName, 1);
 			} else {
-				featureBuilder.set("SPLIT", 0);
+				featureBuilder.set(markFieldName, 0);
 			}
 			result.add(featureBuilder.buildFeature(null));
 		});
@@ -71,10 +76,10 @@ public class MarkParcelAttributeFromPosition {
 			SimpleFeatureBuilder featureBuilder = ParcelSchema.setSFBMinParcelWithFeat(feat, featureSchema);
 			try {
 				if (ParcelState.parcelInBigZone(zoningFile, feat).equals(zoningType)
-						&& (feat.getFeatureType().getDescriptor("SPLIT") == null || feat.getAttribute("SPLIT").equals(1))) {
-					featureBuilder.set("SPLIT", 1);
+						&& (feat.getFeatureType().getDescriptor(markFieldName) == null || feat.getAttribute(markFieldName).equals(1))) {
+					featureBuilder.set(markFieldName, 1);
 				} else {
-					featureBuilder.set("SPLIT", 0);
+					featureBuilder.set(markFieldName, 0);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -101,12 +106,20 @@ public class MarkParcelAttributeFromPosition {
 		Arrays.stream(parcels.toArray(new SimpleFeature[0])).forEach(feat -> {
 			SimpleFeatureBuilder featureBuilder = ParcelSchema.setSFBMinParcelWithFeat(feat, featureSchema);
 			if (feat.getAttribute(fieldName).equals(attribute)) {
-				featureBuilder.set("SPLIT", 1);
+				featureBuilder.set(markFieldName, 1);
 			} else {
-				featureBuilder.set("SPLIT", 0);
+				featureBuilder.set(markFieldName, 0);
 			}
 			result.add(featureBuilder.buildFeature(null));
 		});
 		return result;
+	}
+
+	public static String getMarkFieldName() {
+		return markFieldName;
+	}
+
+	public static void setMarkFieldName(String markFieldName) {
+		MarkParcelAttributeFromPosition.markFieldName = markFieldName;
 	}
 }

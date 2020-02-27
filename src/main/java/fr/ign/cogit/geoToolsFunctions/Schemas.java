@@ -1,4 +1,4 @@
-package fr.ign.cogit.GTFunctions;
+package fr.ign.cogit.geoToolsFunctions;
 
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;

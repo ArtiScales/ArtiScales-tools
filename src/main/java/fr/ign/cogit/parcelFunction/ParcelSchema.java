@@ -11,7 +11,7 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
-import fr.ign.cogit.GTFunctions.Attribute;
+import fr.ign.cogit.geoToolsFunctions.Attribute;
 
 public class ParcelSchema {
 

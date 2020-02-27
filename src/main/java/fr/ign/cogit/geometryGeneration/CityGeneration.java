@@ -4,37 +4,45 @@ import java.io.File;
 import java.io.IOException;
 
 import org.geotools.data.shapefile.ShapefileDataStore;
-import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Geometry;
-import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
-import fr.ign.cogit.GTFunctions.Schemas;
-import fr.ign.cogit.GTFunctions.Vectors;
-
+import fr.ign.cogit.geoToolsFunctions.Schemas;
+import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
+import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
+/**
+ * Class to generate shapefiles related to community shape. 
+ * 
+ * @author mcolomb
+ *
+ */
 public class CityGeneration {
-	public static File CreateIlots(File parcelFile, File outFolder) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+	/**
+	 * Generate urban islet out of a parcel plan. Urban islet can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
+	 * 
+	 * @param parcelFile : input parcel
+	 * @param outFolder : folder where goes the generated urban islet
+	 * @return a collection of urban islet
+	 * @throws IOException
+	 * @throws NoSuchAuthorityCodeException
+	 * @throws FactoryException
+	 */
+	public static File createUrbanIslet(File parcelFile, File outFolder) throws IOException, NoSuchAuthorityCodeException, FactoryException {
 		File result = new File(outFolder, "ilot.shp");
 		ShapefileDataStore parcelSDS = new ShapefileDataStore(parcelFile.toURI().toURL());
-		SimpleFeatureCollection parcelSFC = parcelSDS.getFeatureSource().getFeatures();
-		Geometry bigGeom = Vectors.unionSFC(parcelSFC);
+		Geometry bigGeom = Geom.unionSFC(parcelSDS.getFeatureSource().getFeatures());
 		DefaultFeatureCollection df = new DefaultFeatureCollection();
-
-		int nbGeom = bigGeom.getNumGeometries();
-		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaID("ilot");
+		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaID("islet");
 		int count = 0;
-		for (int i = 0; i < nbGeom; i++) {
+		for (int i = 0; i < bigGeom.getNumGeometries(); i++) {
 			sfBuilder.add(bigGeom.getGeometryN(i));
 			Object[] obj = {i};
-			SimpleFeature feature = sfBuilder.buildFeature(String.valueOf(count), obj);
-			
-			df.add(feature);
-			count++;
+			df.add(sfBuilder.buildFeature(String.valueOf(count++), obj));
 		}
 		parcelSDS.dispose();
-		return Vectors.exportSFC(df.collection(), result);
+		return Collec.exportSFC(df.collection(), result);
 	}
 }

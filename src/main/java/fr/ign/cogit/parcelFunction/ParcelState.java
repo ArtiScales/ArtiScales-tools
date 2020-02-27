@@ -29,7 +29,8 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 import com.opencsv.CSVReader;
 
-import fr.ign.cogit.GTFunctions.Vectors;
+import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
+import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
 
 public class ParcelState {
 
@@ -144,7 +145,7 @@ public class ParcelState {
 	public static boolean isAlreadyBuilt(File buildingFile, SimpleFeature parcel, Geometry emprise) throws Exception {
 		ShapefileDataStore batiSDS = new ShapefileDataStore(buildingFile.toURI().toURL());
 		SimpleFeatureCollection batiFeatures = batiSDS.getFeatureSource().getFeatures();
-		boolean result = isAlreadyBuilt(Vectors.snapDatas(batiFeatures, emprise), parcel, 0.0);
+		boolean result = isAlreadyBuilt(Collec.snapDatas(batiFeatures, emprise), parcel, 0.0);
 		batiSDS.dispose();
 		return result;
 
@@ -289,7 +290,7 @@ public class ParcelState {
 	public static boolean isParcelInCell(SimpleFeature parcelIn, SimpleFeatureCollection cellsCollection)
 			throws Exception {
 		Geometry geom = (Geometry) parcelIn.getDefaultGeometry();
-		cellsCollection = Vectors.snapDatas(cellsCollection, geom);
+		cellsCollection = Collec.snapDatas(cellsCollection, geom);
 		boolean result = false;
 		// import of the cells of MUP-City outputs
 		SimpleFeatureIterator cellsCollectionIt = cellsCollection.features();
@@ -336,7 +337,7 @@ public class ParcelState {
 	public static List<String> parcelInBigZone(SimpleFeature parcelIn, File zoningFile) throws Exception {
 		List<String> result = new LinkedList<String>();
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(zoningFile.toURI().toURL());
-		SimpleFeatureCollection shpDSZoneReduced = Vectors.snapDatas(shpDSZone.getFeatureSource().getFeatures(),
+		SimpleFeatureCollection shpDSZoneReduced = Collec.snapDatas(shpDSZone.getFeatureSource().getFeatures(),
 				(Geometry) parcelIn.getDefaultGeometry());
 		SimpleFeatureIterator featuresZones = shpDSZoneReduced.features();
 		// if there's two zones, we need to sort them by making collection. zis iz évy
@@ -382,7 +383,7 @@ public class ParcelState {
 				// maybe the parcel is in between two zones (less optimized) intersection
 				else if ((featGeometry).intersects(parcelInGeometry)) {
 					twoZones = true;
-					double area = Vectors
+					double area = Geom
 							.scaledGeometryReductionIntersection(Arrays.asList(featGeometry, parcelInGeometry))
 							.getArea();
 					switch ((String) feat.getAttribute("TYPEZONE")) {
@@ -451,7 +452,7 @@ public class ParcelState {
 	public static List<String> parcelInTypo(SimpleFeature parcelIn, File communeFile) throws Exception {
 		List<String> result = new ArrayList<String>();
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(communeFile.toURI().toURL());
-		SimpleFeatureCollection shpDSZoneReduced = Vectors.snapDatas(shpDSZone.getFeatureSource().getFeatures(),
+		SimpleFeatureCollection shpDSZoneReduced = Collec.snapDatas(shpDSZone.getFeatureSource().getFeatures(),
 				(Geometry) parcelIn.getDefaultGeometry());
 
 		SimpleFeatureIterator featuresZones = shpDSZoneReduced.features();
@@ -498,7 +499,7 @@ public class ParcelState {
 				// maybe the parcel is in between two cities
 				else if (featGeometry.intersects(parcelInGeometry)) {
 					twoZones = true;
-					double area = Vectors
+					double area = Geom
 							.scaledGeometryReductionIntersection(Arrays.asList(featGeometry, parcelInGeometry))
 							.getArea();
 					switch ((String) feat.getAttribute("typo")) {

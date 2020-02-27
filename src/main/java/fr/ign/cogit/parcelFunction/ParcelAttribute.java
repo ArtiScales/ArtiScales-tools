@@ -9,7 +9,7 @@ import org.geotools.data.simple.SimpleFeatureIterator;
 import org.locationtech.jts.geom.Geometry;
 import org.opengis.feature.simple.SimpleFeature;
 
-import fr.ign.cogit.GTFunctions.Attribute;
+import fr.ign.cogit.geoToolsFunctions.Attribute;
 
 public class ParcelAttribute {
 	
@@ -128,7 +128,7 @@ public class ParcelAttribute {
 	 * get a list of all the INSEE numbers of the parcels in the collection
 	 * 
 	 * @overload for automatic INSEE name field in the French case
-	 * @param parcels : a collection of parcels TODO to test with the stream
+	 * @param parcels : a collection of parcels
 	 * @return
 	 */
 	public static List<String> getCityCodeFromParcels(SimpleFeatureCollection parcels) {
@@ -141,7 +141,7 @@ public class ParcelAttribute {
 	 * @param parcels
 	 *            : a collection of parcels
 	 * @param String
-	 *            containing the name of the field containing the city's code TODO to test with the stream
+	 *            containing the name of the field containing the city's code
 	 * @return
 	 */
 	public static List<String> getCityCodeFromParcels(SimpleFeatureCollection parcels, String cityField) {
