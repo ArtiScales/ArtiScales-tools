@@ -19,6 +19,7 @@ import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.TopologyException;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.FilterFactory2;
@@ -136,7 +137,7 @@ public class ParcelCollection {
 						}
 					});
 					String idToMerge = entryList.get(0).getKey();
-//					System.out.println("idToMerge: " + idToMerge);
+//					System.out.println("idToMerge: " + idToMerge + "  " + ParcelAttribute.sysoutFrenchParcel(feat));
 					// if the big parcel has already been merged with a small parcel, we skip it and will return to that small parcel in a future iteration
 					if (ids.contains(idToMerge)) {
 						result.add(feat);
@@ -152,7 +153,14 @@ public class ParcelCollection {
 							lG.add((Geometry) thaParcel.getDefaultGeometry());
 						}
 					});
-					build.set("the_geom", Geom.unionGeom(lG));
+					Geometry g ;
+					try {
+						g = Geom.unionGeom(lG) ; 
+					} catch (TopologyException tp) {
+						System.out.println("problem with +"+lG); //TODO fix that on the test test
+						g = Geom.scaledGeometryReductionIntersection(lG);
+					}
+					build.set("the_geom", g);
 					SimpleFeature f = build.buildFeature(idToMerge);
 					result.add(f);
 				}

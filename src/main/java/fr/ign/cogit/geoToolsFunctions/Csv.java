@@ -288,7 +288,7 @@ public class Csv {
 		simpleCSVWriter(lines, fLine, new File(file, name + ".csv"), append);
 	}
 	
-	public static void generateCsvFile(Hashtable<String, String[]> cellRepet, File file, String name, boolean append, String[] premiereColonne)
+	public static void generateCsvFile(Hashtable<String, String[]> cellRepet, File folderOut, String name, boolean append, String[] premiereColonne)
 			throws IOException {
 		String fLine = "";
 		if (premiereColonne != null) {
@@ -306,7 +306,7 @@ public class Csv {
 			}
 			lines.add(line);
 		}
-		simpleCSVWriter(lines, fLine, new File(file, name + ".csv"), append);
+		simpleCSVWriter(lines, fLine, new File(folderOut, name + ".csv"), append);
 	}
 
 	public static void generateCsvFileCol(Hashtable<String, double[]> cellRepet, File file, String name)

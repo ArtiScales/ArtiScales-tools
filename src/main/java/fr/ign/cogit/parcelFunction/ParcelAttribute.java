@@ -181,6 +181,11 @@ public class ParcelAttribute {
 		// }
 		return result;
 	}
+	
+	public static String sysoutFrenchParcel(SimpleFeature parcel) {
+		return "Parcel in " + (String) parcel.getAttribute("CODE_DEP") + ((String) parcel.getAttribute("CODE_COM")) + ". Section "
+				+ ((String) parcel.getAttribute("SECTION")) + " and number " + ((String) parcel.getAttribute("NUMERO"));
+	}
 
 	/**
 	 * translate some big zone labels coming from different urban documents to a normalized one
