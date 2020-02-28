@@ -1,6 +1,6 @@
 package fr.ign.cogit.parameter;
 
-public class ProfileBuilding {
+public class ProfileUrbanFabric {
 
 	double maximalArea;
 	double minimalArea;
@@ -13,7 +13,7 @@ public class ProfileBuilding {
 
 	static String profileFolder;
 
-	public ProfileBuilding(double maximalArea, double minimalArea, double maximalWidth, double smallStreetWidth,
+	public ProfileUrbanFabric(double maximalArea, double minimalArea, double maximalWidth, double smallStreetWidth,
 			double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet, double lenDriveway) {
 		super();
 		this.maximalArea = maximalArea;
@@ -26,7 +26,7 @@ public class ProfileBuilding {
 		this.lenDriveway = lenDriveway;
 	}
 
-	public ProfileBuilding(int maximalArea, int minimalArea, int maximalWidth, int streetWidth,
+	public ProfileUrbanFabric(int maximalArea, int minimalArea, int maximalWidth, int streetWidth,
 			int decompositionLevelWithoutStreet, int lenDriveway) {
 		super();
 		this.maximalArea = maximalArea;
@@ -39,7 +39,7 @@ public class ProfileBuilding {
 		this.lenDriveway = lenDriveway;
 	}
 
-	public ProfileBuilding() {
+	public ProfileUrbanFabric() {
 	}
 
 	public double getMaximalArea() {
@@ -87,7 +87,7 @@ public class ProfileBuilding {
 	}
 
 	public static void setProfileFolder(String profileFolder) {
-		ProfileBuilding.profileFolder = profileFolder;
+		ProfileUrbanFabric.profileFolder = profileFolder;
 	}
 
 	public double getStreetWidth() {

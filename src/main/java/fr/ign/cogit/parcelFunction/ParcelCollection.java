@@ -95,7 +95,7 @@ public class ParcelCollection {
 		// SortBy[] sort = { new SortByImpl(propertyName, SortOrder.ASCENDING) };
 		// SortedFeatureIterator parcelIt = new SortedFeatureIterator(parcelIter, parcels.getSchema(), sort, parcels.size());
 		
-		//easy hack to sort 
+		//easy hack to sort parcels by their size
 		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
 		try (SimpleFeatureIterator itr = parcelsUnsorted.features()){
 			while (itr.hasNext()) {
