@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -92,7 +94,43 @@ public class Collec {
 	}
 
 	/**
-	 * export a simple feature collection
+	 * export a simple feature collection. If the shapefile already exists , either overwrite it or merge it with the existing shapefile.
+	 * 
+	 * @param toExport
+	 * @param fileOut
+	 * @param overwrite
+	 *            : if true, the shapefile is overwritten if it exists. If false, the shapefiles (ne existing and the export) are merged together with the
+	 *            {@link fr.ign.cogit.geoToolsFunctions.vectors.Shp#mergeVectFiles(List, File)} method
+	 * @return
+	 * @throws Exception
+	 */
+	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, boolean overwrite) throws Exception {
+
+		List<File> file2MergeIn = new ArrayList<File>();
+		// copyShp(String shpName, String newShpName, File fromFolder, File toFolder)
+
+		if (fileOut.exists() && !overwrite) {
+			String fileName = fileOut.getName().substring(0, fileOut.getName().length()-4);
+			File newFile = new File(fileOut.getParentFile(), fileName + "tmp.shp");
+			Shp.copyShp(fileName, fileName + "tmp", fileOut.getParentFile(), fileOut.getParentFile());
+			file2MergeIn.add(newFile);
+		}
+		File datFile = exportSFC(toExport, fileOut, toExport.getSchema());
+		file2MergeIn.add(datFile);
+		File result = Shp.mergeVectFiles(file2MergeIn, fileOut);
+		Shp.deleteShp(fileOut.getName().substring(0, fileOut.getName().length()-4) + "tmp", fileOut.getParentFile());
+		return result;
+	}
+
+	private static void coord2D(Coordinate c) {
+		if (!CoordinateXY.class.isInstance(c))
+			c.setZ(Double.NaN);
+	}
+		
+	
+	/**
+	 * export a simple feature collection. Overwrite file if already exists
+	 * 
 	 * @param toExport
 	 * @param fileName
 	 * @return
@@ -105,25 +143,31 @@ public class Collec {
 		}
 		return exportSFC(toExport, fileName, toExport.getSchema());
 	}
+	
 
-	private static void coord2D(Coordinate c) {
-		if (!CoordinateXY.class.isInstance(c))
-			c.setZ(Double.NaN);
-	}
-
+	/**
+	 * export a simple feature collection. If the shapefile already exists , either overwrite it or merge it with the existing shapefile.
+	 * 
+	 * @param toExport
+	 * @param fileName
+	 * @return
+	 * @throws IOException
+	 */
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileName, SimpleFeatureType ft)
 			throws IOException {
 
 		ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-
+		
 		if (!fileName.getName().endsWith(".shp")) {
 			fileName = new File(fileName + ".shp");
 		}
+		
 		Map<String, Serializable> params = new HashMap<>();
 		params.put("url", fileName.toURI().toURL());
 		params.put("create spatial index", Boolean.TRUE);
 
 		ShapefileDataStore newDataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
+
 		newDataStore.createSchema(ft);
 
 		Transaction transaction = new DefaultTransaction("create");

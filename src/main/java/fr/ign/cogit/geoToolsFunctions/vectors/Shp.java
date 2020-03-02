@@ -259,20 +259,52 @@ public class Shp {
 		shpDSZone.dispose();
 		return Collec.exportSFC(Collec.snapDatas(inCollection, bBox), fileOut);
 	}
-	public static void copyShp(String name, File fromFile, File destinationFile) throws IOException {
-		for (File f : fromFile.listFiles()) {
+	
+	/**
+	 * copy the files of a shapefile to an other folder
+	 * @param name: name of the shapefile
+	 * @param fromFolder: folder where the shapefile are located
+	 * @param destinationFolder: destination to where the folder is located 
+	 * @throws IOException
+	 */
+	public static void copyShp(String name, File fromFolder, File destinationFolder) throws IOException {
+		for (File f : fromFolder.listFiles()) {
 			if (f.getName().startsWith(name)) {
-				FileOutputStream out = new FileOutputStream(new File(destinationFile, f.getName()));
+				FileOutputStream out = new FileOutputStream(new File(destinationFolder, f.getName()));
 				Files.copy(f.toPath(), out);
 				out.close();
 			}
 		}
 	}
+	
+	/**
+	 * delete the files of a shapefile to an other folder
+	 * @param name: name of the shapefile
+	 * @param fromFolder: folder where the shapefile are located
+	 * @throws IOException
+	 */
+	public static void deleteShp(String name, File fromFolder) throws IOException {
+		for (File f : fromFolder.listFiles()) {
+			if (f.getName().startsWith(name) && f.getName().substring(0, f.getName().length()-4).equals(name)) {
+				Files.delete(f.toPath());
+			}
+		}
+	}
 
-	public static void copyShp(String name, String nameOut, File fromFile, File destinationFile) throws IOException {
-		for (File f : fromFile.listFiles()) {
-			if (f.getName().startsWith(name)) {
-				FileOutputStream out = new FileOutputStream(new File(destinationFile, f.getName()));
+	/**
+	 * copy the files of a shapefile to an other folder and rename it.
+	 * Shapefile names must be withoud extension
+	 * @param shpName
+	 * @param newShpName
+	 * @param fromFolder
+	 * @param toFolder
+	 * @throws IOException
+	 */
+	public static void copyShp(String shpName, String newShpName, File fromFolder, File toFolder) throws IOException {
+		for (File f : fromFolder.listFiles()) {
+			if (f.getName().startsWith(shpName)) {
+				String ext = f.getName().substring(f.getName().length() - 4, f.getName().length());
+				FileOutputStream out = new FileOutputStream(new File(toFolder, newShpName+ext));
 				Files.copy(f.toPath(), out);
 				out.close();
 			}
