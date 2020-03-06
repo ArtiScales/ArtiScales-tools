@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.geotools.data.DataUtilities;
 import org.geotools.data.DefaultTransaction;
@@ -105,7 +106,10 @@ public class Collec {
 	 * @throws Exception
 	 */
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, boolean overwrite) throws Exception {
-
+		if (toExport.isEmpty()) {
+			System.out.println(fileOut.getName() + " is empty");
+			return fileOut;
+		}
 		List<File> file2MergeIn = new ArrayList<File>();
 		// copyShp(String shpName, String newShpName, File fromFolder, File toFolder)
 
@@ -132,16 +136,16 @@ public class Collec {
 	 * export a simple feature collection. Overwrite file if already exists
 	 * 
 	 * @param toExport
-	 * @param fileName
+	 * @param fileOut
 	 * @return
 	 * @throws IOException
 	 */
-	public static File exportSFC(SimpleFeatureCollection toExport, File fileName) throws IOException {
+	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut) throws IOException {
 		if (toExport.isEmpty()) {
-			System.out.println(fileName.getName() + " is empty");
-			return fileName;
+			System.out.println(fileOut.getName() + " is empty");
+			return fileOut;
 		}
-		return exportSFC(toExport, fileName, toExport.getSchema());
+		return exportSFC(toExport, fileOut, toExport.getSchema());
 	}
 	
 
@@ -149,21 +153,21 @@ public class Collec {
 	 * export a simple feature collection. If the shapefile already exists , either overwrite it or merge it with the existing shapefile.
 	 * 
 	 * @param toExport
-	 * @param fileName
+	 * @param fileOut
 	 * @return
 	 * @throws IOException
 	 */
-	public static File exportSFC(SimpleFeatureCollection toExport, File fileName, SimpleFeatureType ft)
+	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft)
 			throws IOException {
 
 		ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
 		
-		if (!fileName.getName().endsWith(".shp")) {
-			fileName = new File(fileName + ".shp");
+		if (!fileOut.getName().endsWith(".shp")) {
+			fileOut = new File(fileOut + ".shp");
 		}
 		
 		Map<String, Serializable> params = new HashMap<>();
-		params.put("url", fileName.toURI().toURL());
+		params.put("url", fileOut.toURI().toURL());
 		params.put("create spatial index", Boolean.TRUE);
 
 		ShapefileDataStore newDataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
@@ -219,7 +223,7 @@ public class Collec {
 			System.exit(1);
 		}
 		newDataStore.dispose();
-		return fileName;
+		return fileOut;
 	}
 	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, File empriseFile)
 			throws MalformedURLException, IOException {
@@ -320,6 +324,22 @@ public class Collec {
 			result.add(entry.getValue());
 		}
 		return result.collection();
+	}
+	
+	/**
+	 * Check if the given collection contains the given field name
+	 * @param collec input SimpleFeatureCollecton
+	 * @param attributeFiledName : name of the field (must respect case)
+	 * @return true if the collec contains the field name, false otherwise
+	 */
+	public static boolean isCollecContainsAttribute(SimpleFeatureCollection collec, String attributeFiledName) {
+		if (collec.getSchema().getAttributeDescriptors().stream().filter(s -> s.getName().toString().equals(attributeFiledName))
+		.collect(Collectors.toList()).size() == 0) {
+			return false;
+		}
+		else {
+			return false;
+		}
 	}
 	
 	// public static HashMap<String, SimpleFeatureCollection>

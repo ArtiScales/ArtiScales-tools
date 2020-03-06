@@ -34,6 +34,8 @@ import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
 
 public class ParcelState {
 
+	public static String zoneNameField = "TYPEZONE";
+	
 //	public static void main(String[] args) throws Exception {
 //		File geoFile = new File("/home/ubuntu/boulot/these/result2903/dataGeo/");
 //		File batiFile = new File(geoFile, "building.shp");
@@ -353,7 +355,7 @@ public class ParcelState {
 						precMod);
 				if (featGeometry.buffer(0.5).contains(parcelInGeometry)) {
 					twoZones = false;
-					switch ((String) feat.getAttribute("TYPEZONE")) {
+					switch ((String) feat.getAttribute(zoneNameField)) {
 					case "U":
 					case "ZC":
 						result.add("U");
@@ -377,7 +379,7 @@ public class ParcelState {
 						result.remove("AU");
 						result.remove("U");
 						result.remove("NC");
-						result.add((String) feat.getAttribute("TYPEZONE"));
+						result.add((String) feat.getAttribute(zoneNameField));
 					}
 				}
 				// maybe the parcel is in between two zones (less optimized) intersection
@@ -386,7 +388,7 @@ public class ParcelState {
 					double area = Geom
 							.scaledGeometryReductionIntersection(Arrays.asList(featGeometry, parcelInGeometry))
 							.getArea();
-					switch ((String) feat.getAttribute("TYPEZONE")) {
+					switch ((String) feat.getAttribute(zoneNameField)) {
 					case "U":
 					case "ZC":
 						repart.put("U",repart.getOrDefault("U", 0.0) + area);
@@ -401,7 +403,7 @@ public class ParcelState {
 						repart.put("NC", repart.getOrDefault("NC", 0.0) + area);
 						break;
 					default:
-						repart.put((String) feat.getAttribute("TYPEZONE"), repart.getOrDefault((String) feat.getAttribute("TYPEZONE"), 0.0) + area);
+						repart.put((String) feat.getAttribute(zoneNameField), repart.getOrDefault((String) feat.getAttribute(zoneNameField), 0.0) + area);
 					}
 				}
 			}

@@ -384,16 +384,21 @@ public class ParcelCollection {
 	 * reference parcel to the ones that are intersected. If they are similar with a 7% error rate, we conclude that they are the same.
 	 * 
 	 * @param parcelRefFile
-	 *            : the reference parcel plan
-	 * @param parcelToSortFile
-	 *            : the parcel plan to compare
+	 *            : The reference parcel plan
+	 * @param parcelToCompareFile
+	 *            : The parcel plan to compare
 	 * @param parcelOutFolder
-	 *            : folder where are stored the two created shapefile
-	 * @return Two shapefile - One that contains the reference parcels that have changed (change.shp) and one with the parcels that haven't changed (noChange.shp)
+	 *            : Folder where are stored the result shapefiles
+	 * @return Four shapefiles <ul>
+	 * <li><b>same.shp</b> contains the reference parcels that have not evolved</li> 
+	 * <li><b>notSame.shp</b> contains the reference parcels that have changed</li>
+	 * <li><b>polygonIntersection.shp</b> contains the <i>notSame.shp</i> parcels with a reduction buffer, used for a precise intersection with other parcel. It is used for Parcel Manager scenarios</li>
+	 * <li><b>evolvedParcel.shp</b> contains only the compared parcels that have evolved</li>
+	 *  </ul>
 	 * @throws IOException
 	 */
-	public static void markDiffParcel(File parcelRefFile, File parcelToSortFile, File parcelOutFolder) throws IOException {
-		ShapefileDataStore sds = new ShapefileDataStore(parcelToSortFile.toURI().toURL());
+	public static void markDiffParcel(File parcelRefFile, File parcelToCompareFile, File parcelOutFolder) throws IOException {
+		ShapefileDataStore sds = new ShapefileDataStore(parcelToCompareFile.toURI().toURL());
 		SimpleFeatureCollection parcelToSort = sds.getFeatureSource().getFeatures();
 		ShapefileDataStore sdsRef = new ShapefileDataStore(parcelRefFile.toURI().toURL());
 		SimpleFeatureCollection parcelRef = sdsRef.getFeatureSource().getFeatures();
@@ -461,12 +466,16 @@ public class ParcelCollection {
 		} finally {
 			itRef.close();
 		}
-		sds.dispose();
-		sdsRef.dispose();
 		Collec.exportSFC(same, new File(parcelOutFolder, "same.shp"));
 		Collec.exportSFC(notSame, new File(parcelOutFolder, "notSame.shp"));
 		Collec.exportSFC(polygonIntersection, new File(parcelOutFolder, "polygonIntersection.shp"));
-
+		
+		//export the compared parcels that have changed
+		SimpleFeatureCollection evolvedParcel = parcelToSort.subCollection(ff.intersects(pName, ff.literal(Geom.unionSFC(polygonIntersection))));
+		Collec.exportSFC(evolvedParcel, new File(parcelOutFolder, "evolvedParcel.shp"));
+		
+		sds.dispose();
+		sdsRef.dispose();
 	}
 	
 	public static List<String> dontAddParcel(List<String> parcelToNotAdd, SimpleFeatureCollection bigZoned) {
