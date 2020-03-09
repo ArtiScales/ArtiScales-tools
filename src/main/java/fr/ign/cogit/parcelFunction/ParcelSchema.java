@@ -4,9 +4,11 @@ import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.referencing.CRS;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -228,7 +230,7 @@ public class ParcelSchema {
 	public static SimpleFeatureBuilder setSFBParcelAsASWithFrenchParcelFeat(SimpleFeature feat, SimpleFeatureType schema, String geometryOutputName) {
 		SimpleFeatureBuilder finalParcelBuilder = new SimpleFeatureBuilder(schema);
 		finalParcelBuilder.set(geometryOutputName, (Geometry) feat.getDefaultGeometry());
-		finalParcelBuilder.set("CODE", ParcelAttribute.makeParcelCode(feat));
+		finalParcelBuilder.set("CODE", ParcelAttribute.makeFrenchParcelCode(feat));
 		finalParcelBuilder.set("CODE_DEP", feat.getAttribute("CODE_DEP"));
 		finalParcelBuilder.set("CODE_COM", feat.getAttribute("CODE_COM"));
 		finalParcelBuilder.set("COM_ABS", feat.getAttribute("COM_ABS"));
@@ -300,6 +302,33 @@ public class ParcelSchema {
 		builder.set("U", feat.getAttribute("U"));
 		builder.set("AU", feat.getAttribute("AU"));
 		builder.set("NC", feat.getAttribute("NC"));
+		return builder;
+	}
+
+	public static SimpleFeatureBuilder getSFBSchemaWithMultiPolygon(SimpleFeatureType schema) throws FactoryException {
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = schema.getCoordinateReferenceSystem();
+		for (AttributeDescriptor attr : schema.getAttributeDescriptors()) {
+			if (attr.getLocalName().equals("the_geom"))
+				continue;
+			sfTypeBuilder.add(attr);
+		}
+		sfTypeBuilder.setName("testType");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.add("the_geom", MultiPolygon.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	}
+	
+	public static SimpleFeatureBuilder setSFBSchemaWithMultiPolygon(SimpleFeature feat) throws FactoryException {
+		SimpleFeatureBuilder builder = getSFBSchemaWithMultiPolygon(feat.getFeatureType());
+
+		for (AttributeDescriptor attr : feat.getFeatureType().getAttributeDescriptors()) {
+//			if (attr.getLocalName().equals("the_geom"))
+//				continue;
+			builder.set(attr.getName(), feat.getAttribute(attr.getName()));
+		}
+
 		return builder;
 	}
 }

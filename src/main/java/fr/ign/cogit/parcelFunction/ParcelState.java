@@ -69,7 +69,7 @@ public class ParcelState {
 	 * that could be done
 	 * 
 	 * @param feat     : the parcel
-	 * @param rootFile : the rootFile of ArtiScales's project
+	 * @param predicateFile : the table containing urban rules. If null, will return true anytime
 	 * @return
 	 * @throws IOException
 	 */
@@ -355,22 +355,19 @@ public class ParcelState {
 						precMod);
 				if (featGeometry.buffer(0.5).contains(parcelInGeometry)) {
 					twoZones = false;
-					switch ((String) feat.getAttribute(zoneNameField)) {
+					String zoneName = ParcelAttribute.normalizeNameFrenchBigZone((String) feat.getAttribute(zoneNameField));
+					switch (zoneName) {
 					case "U":
-					case "ZC":
 						result.add("U");
 						result.remove("AU");
 						result.remove("NC");
 						break zoneLoop;
 					case "AU":
-					case "TBU":
 						result.add("AU");
 						result.remove("U");
 						result.remove("NC");
 						break zoneLoop;
-					case "N":
 					case "NC":
-					case "A":
 						result.add("NC");
 						result.remove("AU");
 						result.remove("U");
@@ -379,7 +376,7 @@ public class ParcelState {
 						result.remove("AU");
 						result.remove("U");
 						result.remove("NC");
-						result.add((String) feat.getAttribute(zoneNameField));
+						result.add(zoneName);
 					}
 				}
 				// maybe the parcel is in between two zones (less optimized) intersection
@@ -388,22 +385,19 @@ public class ParcelState {
 					double area = Geom
 							.scaledGeometryReductionIntersection(Arrays.asList(featGeometry, parcelInGeometry))
 							.getArea();
-					switch ((String) feat.getAttribute(zoneNameField)) {
+					String zoneName = ParcelAttribute.normalizeNameFrenchBigZone((String) feat.getAttribute(zoneNameField));
+					switch (zoneName) {
 					case "U":
-					case "ZC":
 						repart.put("U",repart.getOrDefault("U", 0.0) + area);
 						break;
 					case "AU":
-					case "TBU":
 						repart.put("AU", repart.getOrDefault("AU", 0.0) + area);
 						break;
-					case "N":
 					case "NC":
-					case "A":
 						repart.put("NC", repart.getOrDefault("NC", 0.0) + area);
 						break;
 					default:
-						repart.put((String) feat.getAttribute(zoneNameField), repart.getOrDefault((String) feat.getAttribute(zoneNameField), 0.0) + area);
+						repart.put(zoneName, repart.getOrDefault((String) feat.getAttribute(zoneNameField), 0.0) + area);
 					}
 				}
 			}

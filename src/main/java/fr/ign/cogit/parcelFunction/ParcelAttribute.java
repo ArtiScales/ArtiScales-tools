@@ -3,6 +3,8 @@ package fr.ign.cogit.parcelFunction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -13,12 +15,15 @@ import fr.ign.cogit.geoToolsFunctions.Attribute;
 
 public class ParcelAttribute {
 	
+	private static String cityNumberFiledName = "DEPCOM";
+	private static String armatureFieldName = "armature";
+
 	/**
 	 * Construct a french parcel code
 	 * @param parcel : French parcel feature
 	 * @return the string code
 	 */
-	public static String makeParcelCode(SimpleFeature parcel) {
+	public static String makeFrenchParcelCode(SimpleFeature parcel) {
 		return ((String) parcel.getAttribute("CODE_DEP")) + ((String) parcel.getAttribute("CODE_COM")) + ((String) parcel.getAttribute("COM_ABS"))
 				+ ((String) parcel.getAttribute("SECTION")) + ((String) parcel.getAttribute("NUMERO"));
 	}
@@ -26,59 +31,63 @@ public class ParcelAttribute {
 	/**
 	 * get the Community Code numbers from a Simplefeature (that is most of the time, a parcel or building)
 	 * 
-	 * @param community : Collection of cities. Must contain the <i>DEPCOM</i> field with the city code
+	 * @param community : Collection of cities. The default field name is <i>DEPCOM</i> an can be changed with the function {@link #setArmatureCodeName(String)}
 	 * @param parcel : Collection of parcels to get city codes from
 	 * @return 
 	 */
 	public static String getCommunityCodeFromSFC(SimpleFeatureCollection community, SimpleFeature parcel) {
-		return getAttributeFromSFC(community, parcel, "DEPCOM");
+		return getAttributeFromSFC(community, parcel, cityNumberFiledName);
 	}
 
 	/**
 	 * get the type of community from a Simplefeature (that is most of the time, a parcel or building)
 	 * 
-	 * @param community : Collection of cities. Must contain the <i>armature</i> field with the city code
+	 * @param community : Collection of cities. The default field name is <i>armature</i> an can be changed with the function {@link #setCityNumberCodeName(String)}
 	 * @param parcel : Collection of parcels to get city codes from
 	 * @return 
 	 */
 	public static String getArmatureFromSFC(SimpleFeatureCollection community, SimpleFeature parcel) {
-		return getAttributeFromSFC(community, parcel, "armature");
+		return getAttributeFromSFC(community, parcel, armatureFieldName);
 	}
 
 	/**
-	 * get the Community Code numbers from a Simplefeature (that is most of the time, a parcel or building)
+	 * get the value of a feature's field from a SimpleFeatureCollection that intersects a given Simplefeature (that is most of the time, a parcel or building)
+	 * If the given feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection
 	 * 
-	 * @param community : Collection of cities. Must contain the <i>DEPCOM</i> field with the city code
-	 * @param parcel : Collection of parcels to get city codes from
-	 * @return 
+	 * @param collec : Input collection 
+	 * @param givenFeaure : the given feature to look for
+	 * @param fieldName : the name of the field in which to look for the attribute
+	 * @return the value of the feature's field
 	 */
-	public static String getAttributeFromSFC(SimpleFeatureCollection cities, SimpleFeature parcel, String code) {
-		SimpleFeature city = null;
-		SimpleFeatureIterator citIt = cities.features();
-		String result = "";
+	public static String getAttributeFromSFC(SimpleFeatureCollection collec, SimpleFeature givenFeaure, String fieldName) {
+		SimpleFeature overlappingFeature = null;
+		SimpleFeatureIterator collecIt = collec.features();
+		Geometry givenFeatureGeom = (Geometry) givenFeaure.getDefaultGeometry(); 
+		boolean multipleOverlap = false;
+		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
 		try {
-			while (citIt.hasNext()) {
-				SimpleFeature cit = citIt.next();
-				if (((Geometry) cit.getDefaultGeometry()).contains((Geometry) parcel.getDefaultGeometry())) {
-					city = cit;
+			while (collecIt.hasNext()) {
+				SimpleFeature theFeature = collecIt.next();
+				Geometry theFeatureGeom = (Geometry) theFeature.getDefaultGeometry();
+				if (theFeatureGeom.contains(givenFeatureGeom)) {
+					overlappingFeature = theFeature;
 					break;
 				}
-				// if the parcel is in between two cities, we randomly add the first met
-				else if (((Geometry) cit.getDefaultGeometry()).intersects((Geometry) parcel.getDefaultGeometry())) {
-					city = cit;
-					break;
+				// if the parcel is in between two cities, we put the cities in a sorted collection 
+				else if (theFeatureGeom.intersects(givenFeatureGeom)) {
+					multipleOverlap = true;
+					index.put(theFeatureGeom.getArea(), theFeature);
 				}
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
 		} finally {
-			citIt.close();
+			collecIt.close();
 		}
-		String attribute = (String) city.getAttribute(code);
-		if (attribute != null && !attribute.isEmpty()) {
-			result = attribute;
+		if(multipleOverlap) {
+			overlappingFeature = index.get(index.lastKey());
 		}
-		return result;
+		return (String) overlappingFeature.getAttribute(fieldName);
 	}
 
 	// public static List<String> getCodeParcelsStream(SimpleFeatureCollection parcels) {
@@ -113,7 +122,7 @@ public class ParcelAttribute {
 				if (code != null && !code.isEmpty()) {
 					result.add(code);
 				} else {
-					result.add(makeParcelCode(feat));
+					result.add(makeFrenchParcelCode(feat));
 				}
 			}
 		} catch (Exception problem) {
@@ -195,6 +204,8 @@ public class ParcelAttribute {
 	 */
 	public static String normalizeNameFrenchBigZone(String nameZone) throws Exception {
 		switch (nameZone) {
+		case "":
+			return "";
 		case "U":
 		case "ZC":
 		case "C":
@@ -208,6 +219,24 @@ public class ParcelAttribute {
 		case "ZNC":
 			return "NC";
 		}
-		throw new Exception("unknown big zone name");
+		// System.out.println(nameZone + ": unknown big zone name for normalizeNameFrenchBigZone()");
+		throw new Exception(nameZone + ": unknown big zone name for normalizeNameFrenchBigZone()");
+		// return nameZone;		return nameZone;
+	}
+
+	public static String getCityNumberCodeName() {
+		return cityNumberFiledName;
+	}
+
+	public static void setCityNumberCodeName(String cityNumberCodeName) {
+		ParcelAttribute.cityNumberFiledName = cityNumberCodeName;
+	}
+
+	public static String getArmatureCodeName() {
+		return armatureFieldName;
+	}
+
+	public static void setArmatureCodeName(String armatureCodeName) {
+		ParcelAttribute.armatureFieldName = armatureCodeName;
 	}
 }

@@ -219,4 +219,23 @@ public class Geom {
 				collector.add(g);
 		}
 	}
+	
+	/**
+	 * get a polygon and return a multiplolygon
+	 * @param geom
+	 * @return
+	 */
+	public static Geometry getMultiPolygonGeom(Geometry geom) {
+		// force the cast into multipolygon
+		if (geom instanceof Polygon) {
+			GeometryFactory gf = new GeometryFactory();
+			Polygon[] pols = { (Polygon) geom };
+			return geom = gf.createMultiPolygon(pols);
+		} else if (geom instanceof MultiPolygon) {
+			return geom;
+		} else {
+			System.out.println("getMultiPolygonGeom() problem with type of the geometry " + geom + " : " + geom.getGeometryType());
+			return null;
+		}
+	}
 }

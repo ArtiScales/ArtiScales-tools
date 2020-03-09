@@ -19,6 +19,7 @@ import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.TopologyException;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -27,6 +28,7 @@ import org.opengis.filter.expression.PropertyName;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
+import fr.ign.cogit.FeaturePolygonizer;
 import fr.ign.cogit.geoToolsFunctions.Schemas;
 import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
 import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
@@ -34,13 +36,16 @@ import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
 public class ParcelCollection {
 
 //	public static void main(String[] args) throws Exception {
-//		ShapefileDataStore sds = new ShapefileDataStore(new File("/tmp/lala.shp").toURI().toURL());
-//		SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
+//
+//		markDiffParcel(new File("/tmp/lala.shp"), new File("/tmp/lala2.shp"), new File("/tmp/delRoad"), new File("/tmp/"));
+//
+////		ShapefileDataStore sds = new ShapefileDataStore(new File("/tmp/lala.shp").toURI().toURL());
+////		SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
 ////		long startTime2 = System.nanoTime();
 ////		SimpleFeatureCollection parcelsUnsorted2 = Vectors.sortSFCWithArea(sfc);
 ////		long stopTime2 = System.nanoTime();
 ////		System.out.println("two took "+(stopTime2 - startTime2));
-//		mergeTooSmallParcels(sfc,100);
+////		Collec.exportSFC(mergeTooSmallParcels(sfc,20),new File("/tmp/lalaMerged.shp"));
 //	}
 	
 	/**
@@ -48,7 +53,6 @@ public class ParcelCollection {
 	 * It seek the surrounding parcel that share the largest side with the small parcel and merge their geometries. Parcel must touch at least. 
 	 * If no surrounding parcels are found touching (or intersecting) the small parcel, the parcel is deleted and left as a public space.  
 	 * Attributes from the large parcel are kept. 
-	 * TODO apply that step to Parcel Manager algorithms 
 	 * @param parcels SimpleFeature collection to check every parcels 
 	 * @param minimalParcelSize threshold which parcels are under to be merged
 	 * @return
@@ -58,13 +62,15 @@ public class ParcelCollection {
 	 */
 	public static SimpleFeatureCollection mergeTooSmallParcels(SimpleFeatureCollection parcelsUnsorted, int minimalParcelSize)
 			throws NoSuchAuthorityCodeException, FactoryException, IOException {
-		SimpleFeatureBuilder build = new SimpleFeatureBuilder(parcelsUnsorted.getSchema());
+		
+		SimpleFeatureBuilder build = ParcelSchema.getSFBSchemaWithMultiPolygon(parcelsUnsorted.getSchema());
+		
 		List<Integer> sizeResults = new ArrayList<Integer>();
 		SimpleFeatureCollection result = recursiveMergeTooSmallParcel(parcelsUnsorted, minimalParcelSize, build);
+
 		sizeResults.add(result.size());
 		System.out.println("Merging too small parcels");
 		System.out.println("OG size:"+parcelsUnsorted.size());
-		System.out.println(sizeResults);
 		do {
 			// recursive application of the merge algorithm to merge little parcels to big ones one-by-one
 			result = recursiveMergeTooSmallParcel(result, minimalParcelSize, build);
@@ -77,42 +83,32 @@ public class ParcelCollection {
 	}
 	
 	private static SimpleFeatureCollection recursiveMergeTooSmallParcel(SimpleFeatureCollection parcelsUnsorted, int minimalParcelSize,
-			SimpleFeatureBuilder build) throws IOException {
+			SimpleFeatureBuilder build) throws IOException, FactoryException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		// we sort the parcel collection to process the smallest parcels in first
-		List<String> ids = new ArrayList<String>();
-		
-		// dead attempt to use dedicaded sorting objects
-		// SimpleFeatureCollection parcels = Vectors.sortSFCWithArea(parcelsUnsorted);
-		// SimpleFeatureIterator parcelIter = parcels.features();
-		// FilterFactory2 ff = FeatureUtilities.DEFAULT_FILTER_FACTORY;
-		// Function function = new AreaFunction();
-		// SortBy[] s = {ff.sort(function.getName(), SortOrder.ASCENDING)};
-		//// Expression expr = ff.function(function., ff.property("the_geom"));
-		// final PropertyName propertyName = (PropertyName) function; //utopic
-		//// final PropertyName propertyName = ff.arithmeticOperators(true, function); //that isn't the same function object...
-		//
-		//// SortBy[] sort = { new SortByImpl(expr, SortOrder.ASCENDING) };
-		// SortBy[] sort = { new SortByImpl(propertyName, SortOrder.ASCENDING) };
-		// SortedFeatureIterator parcelIt = new SortedFeatureIterator(parcelIter, parcels.getSchema(), sort, parcels.size());
-		
+		List<String> ids = new ArrayList<String>();	
 		//easy hack to sort parcels by their size
 		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
-		try (SimpleFeatureIterator itr = parcelsUnsorted.features()){
+		SimpleFeatureIterator itr = parcelsUnsorted.features();
+		try {
 			while (itr.hasNext()) {
 				SimpleFeature feature = itr.next();
-				double area = ((Geometry) feature.getDefaultGeometry()).getArea();
+				//get the area an generate random numbers for the last 4 for out of 14 decimal. this hack is done to avoid exaclty same key area and delete some features
+				double area = ((Geometry) feature.getDefaultGeometry()).getArea()+Math.random()/1000000;
 				index.put(area, feature);
 			}
+		} catch (Exception problem) {
+			problem.printStackTrace();
+		} finally {
+			itr.close();
 		}
-
 		for (Entry<Double, SimpleFeature> entry : index.entrySet()) {
 			SimpleFeature feat = entry.getValue();
 			// if the parcel has already been merged with a smaller one, we skip (and we made the hypotheses that a merged parcel will always be bigger than the threshold)
 			if (ids.contains(feat.getID())) {
 				continue;
 			}
-			Geometry geom = (Geometry) feat.getDefaultGeometry();
+			Geometry geom = Geom.getMultiPolygonGeom((Geometry) feat.getDefaultGeometry());
 			if (geom.getArea() < minimalParcelSize) {
 				// System.out.println(feat.getID() + " is too small");
 				DefaultFeatureCollection intersect = new DefaultFeatureCollection();
@@ -121,6 +117,7 @@ public class ParcelCollection {
 						intersect.add(interParcel);
 					}
 				});
+				// if the small parcel is intersecting others and will be merge to them
 				if (intersect.size() > 0) {
 					// System.out.println(intersect.size() + " intersecting");
 					// if the tiny parcel intersects a bigger parcel, we seek the longest side to which parcel could be incorporated
@@ -137,10 +134,10 @@ public class ParcelCollection {
 						}
 					});
 					String idToMerge = entryList.get(0).getKey();
-//					System.out.println("idToMerge: " + idToMerge + "  " + ParcelAttribute.sysoutFrenchParcel(feat));
+					// System.out.println("idToMerge: " + idToMerge + " " + ParcelAttribute.sysoutFrenchParcel(feat));
 					// if the big parcel has already been merged with a small parcel, we skip it and will return to that small parcel in a future iteration
 					if (ids.contains(idToMerge)) {
-						result.add(feat);
+						result.add(ParcelSchema.setSFBSchemaWithMultiPolygon(feat).buildFeature(null));
 						continue;
 					}
 					ids.add(idToMerge);
@@ -150,14 +147,15 @@ public class ParcelCollection {
 					Arrays.stream(intersect.toArray(new SimpleFeature[0])).forEach(thaParcel -> {
 						if (thaParcel.getID().equals(idToMerge)) {
 							build.addAll(thaParcel.getAttributes());
-							lG.add((Geometry) thaParcel.getDefaultGeometry());
+							lG.add(Geom.getMultiPolygonGeom((Geometry) thaParcel.getDefaultGeometry()));
 						}
 					});
-					Geometry g ;
+					Geometry g;
+					// System.out.println(lG);
 					try {
-						g = Geom.unionGeom(lG) ; 
+						g = Geom.unionGeom(lG);
 					} catch (TopologyException tp) {
-						System.out.println("problem with +"+lG); //TODO fix that on the test test
+						System.out.println("problem with +"+lG);
 						g = Geom.scaledGeometryReductionIntersection(lG);
 					}
 					build.set("the_geom", g);
@@ -166,14 +164,9 @@ public class ParcelCollection {
 				}
 				// no else - if the small parcel doesn't touch any other parcels, we left it as a blank space and will be left as a public space
 			} else {
-				result.add(feat);
+				result.add(ParcelSchema.setSFBSchemaWithMultiPolygon(feat).buildFeature(null));
 			}
 		}
-		// } catch (Exception problem) {
-		// problem.printStackTrace();
-		// } finally {
-		// parcelIt.close();
-		// }
 		return result;
 	}
 	
@@ -381,7 +374,7 @@ public class ParcelCollection {
 	
 	/**
 	 * method that compares two set of parcels and sort the reference plan parcels between the ones that changed and the ones that doesn't We compare the parcels area of the
-	 * reference parcel to the ones that are intersected. If they are similar with a 7% error rate, we conclude that they are the same.
+	 * reference parcel to the ones that are intersected. If they are similar with a 3% error rate, we conclude that they are the same.
 	 * 
 	 * @param parcelRefFile
 	 *            : The reference parcel plan
@@ -397,7 +390,7 @@ public class ParcelCollection {
 	 *  </ul>
 	 * @throws IOException
 	 */
-	public static void markDiffParcel(File parcelRefFile, File parcelToCompareFile, File parcelOutFolder) throws IOException {
+	public static void markDiffParcel(File parcelRefFile, File parcelToCompareFile, File parcelOutFolder, File tmpFolder) throws IOException {
 		ShapefileDataStore sds = new ShapefileDataStore(parcelToCompareFile.toURI().toURL());
 		SimpleFeatureCollection parcelToSort = sds.getFeatureSource().getFeatures();
 		ShapefileDataStore sdsRef = new ShapefileDataStore(parcelRefFile.toURI().toURL());
@@ -409,57 +402,43 @@ public class ParcelCollection {
 		DefaultFeatureCollection same = new DefaultFeatureCollection();
 		DefaultFeatureCollection notSame = new DefaultFeatureCollection();
 		DefaultFeatureCollection polygonIntersection = new DefaultFeatureCollection();
-
+		//for every reference parcels 
 		try {
-			while (itRef.hasNext()) {
+			refParcel: while (itRef.hasNext()) {
 				SimpleFeature pRef = itRef.next();
 				Geometry geomPRef = (Geometry) pRef.getDefaultGeometry();
-				boolean not = true;
-				// I THOUGHT THAT WOULD IMPROVE PERFORMANCES, BUT IT DOESN'T AT ALL
-//				SimpleFeatureIterator itPToSort = parcelToSort.subCollection(ff.bbox(pName, pRef.getBounds())).features();
-//				try {
-//					while (itPToSort.hasNext()) {
-//						SimpleFeature pToSort = itPToSort.next();
-//						if (GeometryPrecisionReducer.reduce((geomPRef), new PrecisionModel(1)).equals(
-//								GeometryPrecisionReducer.reduce(((Geometry) pToSort.getDefaultGeometry()).buffer(0), new PrecisionModel(1)))) {
-//							same.add(pRef);
-//							not = false;
-//							break;
-//						}
-//					}
-//				} catch (Exception problem) {
-//					problem.printStackTrace();
-//				} finally {
-//					itPToSort.close();
-//				}
-				if (not) {
-					// seek if it is close to (as tiny geometry changes
-					SimpleFeatureCollection z = parcelToSort.subCollection(ff.intersects(pName, ff.literal(geomPRef)));
-					SimpleFeatureIterator itPToSort = z.features();
-					double geomArea = geomPRef.getArea();
-					try {
-						while (itPToSort.hasNext()) {
-							SimpleFeature pToSort = itPToSort.next();
-							Geometry geomPToSort = (Geometry) pToSort.getDefaultGeometry();
-							double inter = geomPRef.intersection(geomPToSort).getArea();
-							if (inter > 0.93 * geomArea && inter < 1.07 * geomArea) {
-								same.add(pRef);
-								not = false;
-								break;
-							}
+				double geomArea = geomPRef.getArea();
+				//for every intersected parcels, we check if it is close to (as tiny geometry changes)
+				SimpleFeatureCollection parcelsIntersectRef = parcelToSort.subCollection(ff.intersects(pName, ff.literal(geomPRef)));
+
+				SimpleFeatureIterator itParcelIntersectRef = parcelsIntersectRef.features();
+				try {
+					while (itParcelIntersectRef.hasNext()) {
+						double inter = geomPRef.intersection((Geometry) itParcelIntersectRef.next().getDefaultGeometry()).getArea();
+						// if there are parcel intersection and a similar area, we conclude that parcel haven't changed. We put it in the \"same\" collection and stop the search
+						if (inter > 0.95 * geomArea && inter < 1.05 * geomArea) {
+							same.add(pRef);
+							continue refParcel;
 						}
-					} catch (Exception problem) {
-						problem.printStackTrace();
-					} finally {
-						itPToSort.close();
 					}
-					if (not) {
-						notSame.add(pRef);
-						SimpleFeatureBuilder intersecPolygon = Schemas.getBasicSchemaMultiPolygon("intersectionPolygon");
-						intersecPolygon.set("the_geom", ((Geometry) pRef.getDefaultGeometry()).buffer(-2));
-						polygonIntersection.add(intersecPolygon.buildFeature(null));
+				} catch (Exception problem) {
+					problem.printStackTrace();
+				} finally {
+					itParcelIntersectRef.close();
+				}
+				//we check if the parcel has been intentionally deleted by generating new polygons (same technique of area comparison, but with a way smaller error bound)
+				// if it has been cleaned, we don't add it to no additional parcels 
+				File[] polyFiles = {Collec.exportSFC(parcelsIntersectRef, new File(tmpFolder, "parcelsIntersectRef.shp")),Geom.exportGeom(geomPRef, new File(tmpFolder, "geom.shp"))};
+				List<Polygon> polygons = FeaturePolygonizer.getPolygons(polyFiles);
+				for (Polygon polygon : polygons) {
+					if ((polygon.getArea() > geomArea* 0.9 && polygon.getArea() < geomArea * 1.1) && polygon.buffer(0.5).contains(geomPRef) ) {
+						continue refParcel;
 					}
 				}
+				notSame.add(pRef);
+				SimpleFeatureBuilder intersecPolygon = Schemas.getBasicSchemaMultiPolygon("intersectionPolygon");
+				intersecPolygon.set("the_geom", ((Geometry) pRef.getDefaultGeometry()).buffer(-2));
+				polygonIntersection.add(intersecPolygon.buildFeature(null));
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();

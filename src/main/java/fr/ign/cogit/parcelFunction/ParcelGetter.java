@@ -443,7 +443,7 @@ public class ParcelGetter {
 							sfSimpleBuilder.set("SECTION", feat.getAttribute("SECTION"));
 							String num = (String) feat.getAttribute("NUMERO");
 							// if a part has already been added
-							String code = ParcelAttribute.makeParcelCode(feat);
+							String code = ParcelAttribute.makeFrenchParcelCode(feat);
 							if (codeParcelsTot.contains(code)) {
 								while (true) {
 									num = num + "bis";
@@ -526,7 +526,7 @@ public class ParcelGetter {
 						}
 					}
 					finalParcelBuilder.set("the_geom", geom);
-					finalParcelBuilder.set("CODE", ParcelAttribute.makeParcelCode(feat));
+					finalParcelBuilder.set("CODE", ParcelAttribute.makeFrenchParcelCode(feat));
 					finalParcelBuilder.set("CODE_DEP", feat.getAttribute("CODE_DEP"));
 					finalParcelBuilder.set("CODE_COM", feat.getAttribute("CODE_COM"));
 					finalParcelBuilder.set("COM_ABS", feat.getAttribute("COM_ABS"));
