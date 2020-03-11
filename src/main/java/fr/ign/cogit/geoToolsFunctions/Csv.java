@@ -141,19 +141,19 @@ public class Csv {
 	 * Double[]>> Used mainly for the MUP-City particular evaluation analysis
 	 * 
 	 * @param results
-	 * @param file
+	 * @param folderOut
 	 * @param name
 	 * @throws IOException
 	 */
 	public static void generateCsvFileMultTab(Hashtable<String, Hashtable<String, Double[]>> results, String name,
-			String fLine, File file) throws IOException {
+			String firstLine, File folderOut) throws IOException {
 
-		File fileName = new File(file + "/" + name + ".csv");
+		File fileName = new File(folderOut + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, true);
 		for (String tab : results.keySet()) {
 			Hashtable<String, Double[]> intResult = results.get(tab);
 			if (needFLine) {
-				writer.append("scenario " + tab + "," + fLine + "\n");
+				writer.append("scenario " + tab + "," + firstLine + "\n");
 				needFLine = false;
 			}
 			for (String nomScenar : intResult.keySet()) {
@@ -171,14 +171,14 @@ public class Csv {
 	 * Double>> Used mainly for the MUP-City analysis objects RasterMergeResult
 	 * 
 	 * @param results
-	 * @param file
+	 * @param folderOut
 	 * @param name
 	 * @throws IOException
 	 */
-	public static void generateCsvFileMultTab(Hashtable<String, Hashtable<String, Double>> results, File file,
+	public static void generateCsvFileMultTab(Hashtable<String, Hashtable<String, Double>> results, File folderOut,
 			String name) throws IOException {
 
-		File fileName = new File(file + "/" + name + ".csv");
+		File fileName = new File(folderOut + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, true);
 		for (String tab : results.keySet()) {
 			Hashtable<String, Double> intResult = results.get(tab);
@@ -192,10 +192,16 @@ public class Csv {
 		writer.close();
 	}
 
-	public static void generateLatexMultTab(Hashtable<String, Hashtable<String, Double>> results, File file,
-			String name) throws IOException {
+	/**
+	 * that is supposed to generate latex tabs but not real sure that works @TODO to test
+	 * @param results
+	 * @param folderOut : folder where the .csv file is created
+	 * @param name : name of the .csv file 
+	 * @throws IOException
+	 */
+	public static void generateLatexMultTab(Hashtable<String, Hashtable<String, Double>> results, File folderOut, String name) throws IOException {
 
-		File fileName = new File(file + "/" + name + ".txt");
+		File fileName = new File(folderOut + "/" + name + ".txt");
 		FileWriter writer = new FileWriter(fileName, true);
 		for (String tab : results.keySet()) {
 			Hashtable<String, Double> intResult = results.get(tab);
@@ -210,113 +216,148 @@ public class Csv {
 	}
 
 	/**
-	 * for what is it used?
+	 * Generate a .csv file out of a hashtable. Each key is the first entry of a new line.
+	 * By default, if an already existing .csv file exists, the new data are append to it
 	 * 
-	 * @param cellRepet
-	 * @param file
-	 * @param name
+	 * @param cellRepet : Values are a double table (they are then converted in Object[])
+	 * @param folderOut : folder where the .csv file is created
+	 * @param name : name of the .csv file 
+	 * @param firstCol : header of the .csv file (can be null)
 	 * @throws IOException
 	 */
-	public static void generateCsvFile(Hashtable<String, Object[]> cellRepet, File file, String name)
+	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File folderOut, String name, String[] firstCol)
 			throws IOException {
-		Hashtable<String, double[]> result = new Hashtable<String, double[]>();
-		for (Object[] ligne : cellRepet.values()) {
-			double[] aMettre = new double[ligne.length - 1];
-			for (int i = 1; i < ligne.length; i = i + 1) {
-				aMettre[i - 1] = (double) ligne[i];
-			}
-			result.put(String.valueOf(ligne[0]), aMettre);
-		}
-		generateCsvFileCol(result, file, name);
-	}
-
-	// public static void generateCsvFile(Hashtable<String, double[]> cellRepet,
-	// File file, String name,
-	// String[] premiereColonne) throws IOException {
-	// File fileName = new File(file + "/" + name + ".csv");
-	// boolean addAfter = true;
-	// FileWriter writer = new FileWriter(fileName, addAfter);
-	// if (premiereColonne != null) {
-	// for (String title : premiereColonne) {
-	// writer.append(title + ",");
-	// }
-	// writer.append("\n");
-	// }
-	//
-	// for (String nomScenar : cellRepet.keySet()) {
-	// writer.append(nomScenar + ",");
-	// for (double val : cellRepet.get(nomScenar)) {
-	// writer.append(val + ",");
-	// }
-	// writer.append("\n");
-	// }
-	// writer.close();
-	// }
-
-	
-	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File file, String name,
-			String[] premiereColonne) throws IOException {
-		generateCsvFile(cellRepet, file, name, premiereColonne,true);
+		generateCsvFile(cellRepet, name, folderOut, firstCol, true);
 	}
 	
 	/**
+	 * generate a .csv file out of a hashtable. Each key is the first entry of a new line
 	 * 
-	 * @param cellRepet
-	 * @param file
-	 * @param name
-	 * @param premiereColonne
+	 * @param cellRepet : Values are a double table (they are then converted in Object[])
+	 * @param name : name of the .csv file 
+	 * @param folderOut : folder where the .csv file is created
+	 * @param firstCol : header of the .csv file (can be null)
+	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
 	 * @throws IOException
 	 */
-	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File file, String name,
-			String[] premiereColonne,boolean append) throws IOException {
-		String fLine = "";
-		if (premiereColonne != null) {
-			fLine = premiereColonne[0];
-			for (int i = 1; i < premiereColonne.length; i++) {
-				fLine = (fLine + "," + premiereColonne[i]);
+	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, String name, File folderOut, String[] firstCol, boolean append)
+			throws IOException {
+		Hashtable<String, Object[]> result = new Hashtable<String, Object[]>();
+		for (double[] ligne : cellRepet.values()) {
+			Object[] aMettre = new Object[ligne.length - 1];
+			for (int i = 1; i < ligne.length; i = i + 1) {
+				aMettre[i - 1] = ligne[i];
 			}
+			result.put(String.valueOf(ligne[0]), aMettre);
 		}
-
-		List<String> lines = new ArrayList<String>();
-		for (String nom : cellRepet.keySet()) {
-			String line = nom + ",";
-			for (double val : cellRepet.get(nom)) {
-				line = line + val+",";
-			}
-			lines.add(line);
-		}
-		simpleCSVWriter(lines, fLine, new File(file, name + ".csv"), append);
+		generateCsvFile(result, folderOut, name, firstCol, append);
 	}
-	
-	public static void generateCsvFile(Hashtable<String, String[]> cellRepet, File folderOut, String name, boolean append, String[] premiereColonne)
+
+	/**
+	 * generate a .csv file out of a hashtable. Each key is the first entry of a new line
+	 * 
+	 * @param cellRepet : Values are a String table (they are then converted in Object[])
+	 * @param folderOut : folder where the .csv file is created
+	 * @param name : name of the .csv file 
+	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
+	 * @param firstCol : header of the .csv file (can be null)
+	 * @throws IOException
+	 */
+	public static void generateCsvFile(Hashtable<String, String[]> cellRepet, File folderOut, String name, boolean append, String[] firstCol)
+			throws IOException {
+		Hashtable<String, Object[]> result = new Hashtable<String, Object[]>();
+		for (String[] ligne : cellRepet.values()) {
+			Object[] aMettre = new Object[ligne.length - 1];
+			for (int i = 1; i < ligne.length; i = i + 1) {
+				aMettre[i - 1] = ligne[i];
+			}
+			result.put(String.valueOf(ligne[0]), aMettre);
+		}
+		generateCsvFile(result, folderOut,name,  firstCol, append);
+	}
+
+	/**
+	 * Generate a .csv file out of a hashtable. Each key is the first entry of a new line.
+	 * By default, if an already existing .csv file exists, the new data are append to it
+	 * 
+	 * @param cellRepet : Values are an Object table
+	 * @param name : name of the .csv file 
+	 * @param folderOut : folder where the .csv file is created
+	 * @param firstCol : header of the .csv file (can be null)
+	 * @throws IOException
+	 */
+	public static void generateCsvFile(Hashtable<String, Object[]> cellRepet, String name, File folderOut, String[] firstCol) throws IOException {
+		generateCsvFile(cellRepet, folderOut, name, firstCol, true);
+	}
+
+	/**
+	 * Generate a .csv file out of a hashtable. Each key is the first entry of a new line.
+	 * 
+	 * @param cellRepet : Values are an Object table
+	 * @param folderOut : folder where the .csv file is created
+	 * @param name : name of the .csv file 
+	 * @param firstCol : header of the .csv file (can be null)
+	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
+	 * @throws IOException
+	 */
+	public static void generateCsvFile(Hashtable<String, Object[]> cellRepet, File folderOut, String name, String[] firstCol, boolean append)
 			throws IOException {
 		String fLine = "";
-		if (premiereColonne != null) {
-			fLine = premiereColonne[0];
-			for (int i = 1; i < premiereColonne.length; i++) {
-				fLine = (fLine + "," + premiereColonne[i]);
+		if (firstCol != null) {
+			fLine = firstCol[0];
+			for (int i = 1; i < firstCol.length; i++) {
+				fLine = (fLine + "," + firstCol[i]);
 			}
 		}
-
 		List<String> lines = new ArrayList<String>();
 		for (String nom : cellRepet.keySet()) {
 			String line = nom + ",";
-			for (String val : cellRepet.get(nom)) {
+			for (Object val : cellRepet.get(nom)) {
 				line = line + val + ",";
 			}
 			lines.add(line);
 		}
 		simpleCSVWriter(lines, fLine, new File(folderOut, name + ".csv"), append);
 	}
+	
+	/**
+	 * Generate a .csv file out of a hashtable. Data are dispalyed in colomn and each key is placed in the header
+	 * 
+ 	 * @param cellRepet : Values are a double table (they are then converted in Object[])
+	 * @param name : name of the .csv file 
+	 * @param folderOut : folder where the .csv file is created
+	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
+	 * @throws IOException
+	 */
+	public static void generateCsvFileCol(Hashtable<String, double[]> cellRepet, String name, File folderOut) throws IOException {
+		Hashtable<String, Object[]> result = new Hashtable<String, Object[]>();
+		for (double[] ligne : cellRepet.values()) {
+			Object[] aMettre = new Object[ligne.length - 1];
+			for (int i = 1; i < ligne.length; i = i + 1) {
+				aMettre[i - 1] = (double) ligne[i];
+			}
+			result.put(String.valueOf(ligne[0]), aMettre);
+		}
+		generateCsvFileCol(result, folderOut, name);
+	}
 
-	public static void generateCsvFileCol(Hashtable<String, double[]> cellRepet, File file, String name)
+	/**
+	 * Generate a .csv file out of a hashtable. Data are dispalyed in colomn and each key is placed in the header
+	 * 
+	 * @param cellRepet : Values are an Object table
+	 * @param folderOut : folder where the .csv file is created
+	 * @param name : name of the .csv file 
+	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
+	 * @throws IOException
+	 */
+	public static void generateCsvFileCol(Hashtable<String, Object[]> cellRepet, File folderOut, String name)
 			throws IOException {
-		File fileName = new File(file + "/" + name + ".csv");
+		File fileName = new File(folderOut + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, false);
 
 		// selec the longest tab
 		int longestTab = 0;
-		for (double[] tab : cellRepet.values()) {
+		for (Object[] tab : cellRepet.values()) {
 			if (tab.length > longestTab) {
 				longestTab = tab.length;
 			}
@@ -326,17 +367,15 @@ public class Csv {
 			writer.append(nomm + ",");
 		}
 		writer.append("\n");
-
 		for (int i = 0; i <= longestTab - 1; i++) {
 			for (String nomm : cellRepet.keySet()) {
 				try {
-					writer.append(Double.toString(cellRepet.get(nomm)[i]) + ",");
+					writer.append(cellRepet.get(nomm)[i] + ",");
 				} catch (ArrayIndexOutOfBoundsException a) {
 				}
 			}
 			writer.append("\n");
 		}
-
 		writer.close();
 	}
 

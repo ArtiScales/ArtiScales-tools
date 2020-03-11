@@ -133,6 +133,9 @@ public class Geom {
 	}
 
 	public static Geometry unionSFC(SimpleFeatureCollection collection) throws IOException {
+		if (collection.size() == 1) {
+			return (Geometry) collection.features().next().getDefaultGeometry();
+		}
 		try {
 			Geometry union = unionPrecisionReduce(collection, 1000);
 			return union;

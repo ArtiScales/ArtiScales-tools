@@ -197,7 +197,8 @@ public class ParcelAttribute {
 	}
 
 	/**
-	 * translate some big zone labels coming from different urban documents to a normalized one
+	 * translate some big zone labels coming from different urban documents to a normalized one.
+	 * If no match has been found, we return the input value
 	 * @param nameZone
 	 * @return
 	 * @throws Exception
@@ -219,9 +220,7 @@ public class ParcelAttribute {
 		case "ZNC":
 			return "NC";
 		}
-		// System.out.println(nameZone + ": unknown big zone name for normalizeNameFrenchBigZone()");
-		throw new Exception(nameZone + ": unknown big zone name for normalizeNameFrenchBigZone()");
-		// return nameZone;		return nameZone;
+		 return nameZone;	
 	}
 
 	public static String getCityNumberCodeName() {
