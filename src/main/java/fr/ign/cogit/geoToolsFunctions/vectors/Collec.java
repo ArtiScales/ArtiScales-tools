@@ -32,6 +32,9 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateXY;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Polygon;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
@@ -338,8 +341,36 @@ public class Collec {
 			return false;
 		}
 		else {
-			return false;
+			return true;
 		}
+	}
+	
+	/**
+	 * convert a collection of simple feature (which geometries are either {@link org.locationtech.jts.geom.Polygon} or {@link org.locationtech.jts.geom.MultiPolygon}) to a list of
+	 * LineString
+	 * 
+	 * @param inputSFC
+	 * @return
+	 */
+	public static List<LineString> fromSFCtoExteriorRingLines(SimpleFeatureCollection inputSFC) {
+		List<LineString> lines = new ArrayList<>();
+		SimpleFeatureIterator iterator = inputSFC.features();
+		try {
+			while (iterator.hasNext()) {
+				SimpleFeature feature = iterator.next();
+				if (feature.getDefaultGeometry() instanceof MultiPolygon) {
+					MultiPolygon mp = (MultiPolygon) feature.getDefaultGeometry();
+					for (int i = 0; i < mp.getNumGeometries(); i++) {
+						lines.add(((Polygon) mp.getGeometryN(i)).getExteriorRing());
+					}
+				} else {
+					lines.add(((Polygon) feature.getDefaultGeometry()).getExteriorRing());
+				}
+			}
+		} finally {
+			iterator.close();
+		}
+		return lines;
 	}
 	
 	// public static HashMap<String, SimpleFeatureCollection>
