@@ -247,23 +247,19 @@ public class Collec {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		return DataUtilities.collection(inSFC.subCollection(ff.bbox(ff.property(inSFC.getSchema().getGeometryDescriptor().getLocalName()), empriseSFC.getBounds())));
 	}
-	public static SimpleFeatureCollection snapDatas(File fileIn, SimpleFeatureCollection box) throws Exception {
-
+	public static SimpleFeatureCollection snapDatas(File fileIn, SimpleFeatureCollection box) throws IOException {
 		// load the input from the general folder
 		ShapefileDataStore shpDSIn = new ShapefileDataStore(fileIn.toURI().toURL());
 		SimpleFeatureCollection inCollection = shpDSIn.getFeatureSource().getFeatures();
-
 		Geometry bBox = Geom.unionSFC(box);
-
 		return snapDatas(inCollection, bBox);
 	}
 
-	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile) throws Exception {
+	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile) throws IOException {
 		return snapDatas(SFCIn, boxFile, 0);
 	}
 
-	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance)
-			throws Exception {
+	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws IOException {
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
 		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
 		Geometry bBox = Geom.unionSFC(zoneCollection);
@@ -274,13 +270,12 @@ public class Collec {
 		return snapDatas(SFCIn, bBox);
 	}
 
-	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox)
-			throws Exception {
+	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox) {
 		Geometry geomBBox = Geom.unionSFC(bBox);
 		return snapDatas(SFCIn, geomBBox);
 	}
 
-	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) throws Exception {
+	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		String geometryInPropertyName = SFCIn.getSchema().getGeometryDescriptor().getLocalName();
 		Filter filterIn = ff.intersects(ff.property(geometryInPropertyName), ff.literal(bBox));
@@ -305,7 +300,6 @@ public class Collec {
 					result.add(feat);
 				}
 			});
-		
 		return result.collection();
 	}
 	

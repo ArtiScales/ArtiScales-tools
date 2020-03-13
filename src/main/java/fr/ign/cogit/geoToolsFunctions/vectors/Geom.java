@@ -132,7 +132,7 @@ public class Geom {
 		return geometryCollection.union();
 	}
 
-	public static Geometry unionSFC(SimpleFeatureCollection collection) throws IOException {
+	public static Geometry unionSFC(SimpleFeatureCollection collection) {
 		if (collection.size() == 1) {
 			return (Geometry) collection.features().next().getDefaultGeometry();
 		}
@@ -152,7 +152,10 @@ public class Geom {
 		}
 	}
 
-	public static Geometry unionGeom(List<Geometry> lG) throws IOException {
+	public static Geometry unionGeom(List<Geometry> lG) {
+		if (lG.size() == 1) {
+			return lG.get(0);
+		}
 		GeometryFactory factory = new GeometryFactory();
 		Stream<Geometry> s = lG.stream();
 		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
@@ -238,6 +241,21 @@ public class Geom {
 			return geom;
 		} else {
 			System.out.println("getMultiPolygonGeom() problem with type of the geometry " + geom + " : " + geom.getGeometryType());
+			return null;
+		}
+	}
+	
+	public static Geometry getPolygon(Geometry geom) {
+		if (geom instanceof Polygon) {
+			return geom ;
+		} else if (geom instanceof MultiPolygon) {
+			List<Geometry> lG = new ArrayList<Geometry>(); 			
+			for (int i = 0 ; i<((MultiPolygon) geom).getNumGeometries(); i++ ) {
+				lG.add(geom.getGeometryN(i));
+			}
+    		 return Geom.unionGeom(lG);
+		} else {
+			System.out.println("getPolygonGeom() problem with type of the geometry " + geom + " : " + geom.getGeometryType());
 			return null;
 		}
 	}
