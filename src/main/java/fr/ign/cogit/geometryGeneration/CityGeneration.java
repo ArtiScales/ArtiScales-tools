@@ -20,6 +20,11 @@ import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
  *
  */
 public class CityGeneration {
+	
+//	public static void main(String[] args) throws NoSuchAuthorityCodeException, IOException, FactoryException {
+//		createUrbanIslet(new File("/home/ubuntu/PMtest/SeineEtMarne/PARCELLE03.SHP"),  new File ("/home/ubuntu/PMtest/SeineEtMarne/"));
+//	}
+	
 	/**
 	 * Generate urban islet out of a parcel plan. Urban islet can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
 	 * 
@@ -31,7 +36,11 @@ public class CityGeneration {
 	 * @throws FactoryException
 	 */
 	public static File createUrbanIslet(File parcelFile, File outFolder) throws IOException, NoSuchAuthorityCodeException, FactoryException {
-		File result = new File(outFolder, "ilot.shp");
+		File result = new File(outFolder, "islet.shp");
+		if (result.exists()) {
+			System.out.println("createUrbanIslet(): islet already exists" );
+			return result;
+		}
 		ShapefileDataStore parcelSDS = new ShapefileDataStore(parcelFile.toURI().toURL());
 		Geometry bigGeom = Geom.unionSFC(parcelSDS.getFeatureSource().getFeatures());
 		DefaultFeatureCollection df = new DefaultFeatureCollection();

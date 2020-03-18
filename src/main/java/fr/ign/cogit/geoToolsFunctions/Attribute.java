@@ -4,6 +4,8 @@ import java.io.FileNotFoundException;
 
 import org.opengis.feature.simple.SimpleFeature;
 
+import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
+
 public class Attribute {
 	
 	/**
@@ -80,11 +82,15 @@ public class Attribute {
 	}
 	
 	/**
-	 * Construct the french community code number (INSEE) from a french parcel
+	 * Construct the French community code number (INSEE) from a French parcel
 	 * @param parcel
 	 * @return the INSEE number
 	 */
 	public static String makeINSEECode(SimpleFeature parcel) {
-		return ((String) parcel.getAttribute("CODE_DEP")) + ((String) parcel.getAttribute("CODE_COM"));
+		if (Collec.isSimpleFeatureContainsAttribute(parcel, "CODE_DEP") && Collec.isSimpleFeatureContainsAttribute(parcel, "CODE_COM")) {
+			return ((String) parcel.getAttribute("CODE_DEP")) + ((String) parcel.getAttribute("CODE_COM"));
+		} else {
+			return null;
+		}
 	}
 }

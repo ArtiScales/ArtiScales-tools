@@ -23,6 +23,7 @@ import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.TopologyException;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.expression.PropertyName;
 import org.opengis.referencing.FactoryException;
@@ -35,18 +36,21 @@ import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
 
 public class ParcelCollection {
 
-//	public static void main(String[] args) throws Exception {
-//
+	public static void main(String[] args) throws Exception {
+		ShapefileDataStore sds = new ShapefileDataStore(new File("/tmp/lala.shp").toURI().toURL());
+		SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
+		
+		Collec.exportSFC(mergeTooSmallParcels(sfc,100),new File("/tmp/lalaMerged.shp"));
 //		markDiffParcel(new File("/tmp/lala.shp"), new File("/tmp/lala2.shp"), new File("/tmp/delRoad"), new File("/tmp/"));
 //
-////		ShapefileDataStore sds = new ShapefileDataStore(new File("/tmp/lala.shp").toURI().toURL());
-////		SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
-////		long startTime2 = System.nanoTime();
-////		SimpleFeatureCollection parcelsUnsorted2 = Vectors.sortSFCWithArea(sfc);
-////		long stopTime2 = System.nanoTime();
-////		System.out.println("two took "+(stopTime2 - startTime2));
-////		Collec.exportSFC(mergeTooSmallParcels(sfc,20),new File("/tmp/lalaMerged.shp"));
-//	}
+//		ShapefileDataStore sds = new ShapefileDataStore(new File("/tmp/lala.shp").toURI().toURL());
+//		SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
+//		long startTime2 = System.nanoTime();
+//		SimpleFeatureCollection parcelsUnsorted2 = Vectors.sortSFCWithArea(sfc);
+//		long stopTime2 = System.nanoTime();
+//		System.out.println("two took "+(stopTime2 - startTime2));
+//		Collec.exportSFC(mergeTooSmallParcels(sfc,20),new File("/tmp/lalaMerged.shp"));
+	}
 	
 	/**
 	 * This algorithm merges parcels when they are under an area threshold. 
@@ -63,17 +67,15 @@ public class ParcelCollection {
 	public static SimpleFeatureCollection mergeTooSmallParcels(SimpleFeatureCollection parcelsUnsorted, int minimalParcelSize)
 			throws NoSuchAuthorityCodeException, FactoryException, IOException {
 		
-		SimpleFeatureBuilder build = ParcelSchema.getSFBSchemaWithMultiPolygon(parcelsUnsorted.getSchema());
-		
 		List<Integer> sizeResults = new ArrayList<Integer>();
-		SimpleFeatureCollection result = recursiveMergeTooSmallParcel(parcelsUnsorted, minimalParcelSize, build);
+		SimpleFeatureCollection result = recursiveMergeTooSmallParcel(parcelsUnsorted, minimalParcelSize);
 
 		sizeResults.add(result.size());
 		System.out.println("Merging too small parcels");
 		System.out.println("OG size:"+parcelsUnsorted.size());
 		do {
 			// recursive application of the merge algorithm to merge little parcels to big ones one-by-one
-			result = recursiveMergeTooSmallParcel(result, minimalParcelSize, build);
+			result = recursiveMergeTooSmallParcel(result, minimalParcelSize);
 			sizeResults.add(result.size());
 			System.out.println(sizeResults);
 		}
@@ -82,8 +84,7 @@ public class ParcelCollection {
 		return result;
 	}
 	
-	private static SimpleFeatureCollection recursiveMergeTooSmallParcel(SimpleFeatureCollection parcelsUnsorted, int minimalParcelSize,
-			SimpleFeatureBuilder build) throws IOException, FactoryException {
+	private static SimpleFeatureCollection recursiveMergeTooSmallParcel(SimpleFeatureCollection parcelsUnsorted, int minimalParcelSize) throws IOException, FactoryException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		// we sort the parcel collection to process the smallest parcels in first
 		List<String> ids = new ArrayList<String>();	
@@ -141,17 +142,22 @@ public class ParcelCollection {
 						continue;
 					}
 					ids.add(idToMerge);
-					// we now merge geometries and copy attributes to the new
+					// we now merge geometries and copy attributes to the new Feature
 					List<Geometry> lG = new ArrayList<Geometry>();
 					lG.add(geom);
+					SimpleFeatureBuilder build = ParcelSchema.getSFBSchemaWithMultiPolygon(parcelsUnsorted.getSchema());
 					Arrays.stream(intersect.toArray(new SimpleFeature[0])).forEach(thaParcel -> {
 						if (thaParcel.getID().equals(idToMerge)) {
-							build.addAll(thaParcel.getAttributes());
+//							build.addAll(thaParcel.getAttributes());
+							for (AttributeDescriptor attr : thaParcel.getFeatureType().getAttributeDescriptors()) {
+								if (attr.getLocalName().equals("the_geom"))
+									continue;
+								build.set(attr.getName(),thaParcel.getAttribute(attr.getName()) );
+							}
 							lG.add(Geom.getMultiPolygonGeom((Geometry) thaParcel.getDefaultGeometry()));
 						}
 					});
 					Geometry g;
-					// System.out.println(lG);
 					try {
 						g = Geom.unionGeom(lG);
 					} catch (TopologyException tp) {
@@ -456,7 +462,12 @@ public class ParcelCollection {
 		sds.dispose();
 		sdsRef.dispose();
 	}
-	
+	/**
+	 * @warning not tested (maybe not needed)
+	 * @param parcelToNotAdd
+	 * @param bigZoned
+	 * @return
+	 */
 	public static List<String> dontAddParcel(List<String> parcelToNotAdd, SimpleFeatureCollection bigZoned) {
 
 		SimpleFeatureIterator feat = bigZoned.features();

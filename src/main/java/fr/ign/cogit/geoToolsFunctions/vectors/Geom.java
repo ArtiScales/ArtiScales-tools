@@ -81,7 +81,6 @@ public class Geom {
 				geomResult = geomResult.intersection(geoms.get(i));
 			}
 			return geomResult;
-
 		} catch (TopologyException e) {
 			try {
 				Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(1000));

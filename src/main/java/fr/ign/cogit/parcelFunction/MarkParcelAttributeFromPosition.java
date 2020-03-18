@@ -41,15 +41,18 @@ public class MarkParcelAttributeFromPosition {
 
 		final SimpleFeatureType featureSchema = ParcelSchema.getSFBMinParcelSplit().getFeatureType();
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
-
 		Arrays.stream(parcels.toArray(new SimpleFeature[0])).forEach(feat -> {
-			SimpleFeatureBuilder featureBuilder = ParcelSchema.setSFBMinParcelWithFeat(feat, featureSchema);
-			if (((Geometry) feat.getDefaultGeometry()).intersects(geomPolygonIntersection)) {
-				featureBuilder.set(markFieldName, 1);
-			} else {
-				featureBuilder.set(markFieldName, 0);
+			try {
+				SimpleFeatureBuilder featureBuilder = ParcelSchema.getSFBMinParcelSplit();
+				if (((Geometry) feat.getDefaultGeometry()).intersects(geomPolygonIntersection)) {
+					featureBuilder = ParcelSchema.setSFBMinParcelSplitWithFeat(feat,featureBuilder, featureSchema, 1);
+				} else {
+					featureBuilder = ParcelSchema.setSFBMinParcelSplitWithFeat(feat,featureBuilder, featureSchema, 0);
+				}
+				result.add(featureBuilder.buildFeature(null));
+			} catch (FactoryException e) {
+				e.printStackTrace();
 			}
-			result.add(featureBuilder.buildFeature(null));
 		});
 		sds.dispose();
 		return result.collection();
@@ -71,20 +74,20 @@ public class MarkParcelAttributeFromPosition {
 			throws Exception {
 		final SimpleFeatureType featureSchema = ParcelSchema.getSFBMinParcelSplit().getFeatureType();
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
-
 		Arrays.stream(parcels.toArray(new SimpleFeature[0])).forEach(feat -> {
-			SimpleFeatureBuilder featureBuilder = ParcelSchema.setSFBMinParcelWithFeat(feat, featureSchema);
+			SimpleFeatureBuilder featureBuilder;
 			try {
+				featureBuilder = ParcelSchema.getSFBMinParcelSplit();
 				if (ParcelState.parcelInBigZone(zoningFile, feat).equals(zoningType)
 						&& (feat.getFeatureType().getDescriptor(markFieldName) == null || feat.getAttribute(markFieldName).equals(1))) {
-					featureBuilder.set(markFieldName, 1);
+					featureBuilder = ParcelSchema.setSFBMinParcelSplitWithFeat(feat, featureBuilder, featureSchema, 1);
 				} else {
-					featureBuilder.set(markFieldName, 0);
+					featureBuilder = ParcelSchema.setSFBMinParcelSplitWithFeat(feat, featureBuilder, featureSchema, 0);
 				}
+				result.add(featureBuilder.buildFeature(null));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			result.add(featureBuilder.buildFeature(null));
 		});
 		return result;
 	}
@@ -104,7 +107,7 @@ public class MarkParcelAttributeFromPosition {
 		final SimpleFeatureType featureSchema = ParcelSchema.getSFBMinParcelSplit().getFeatureType();
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		Arrays.stream(parcels.toArray(new SimpleFeature[0])).forEach(feat -> {
-			SimpleFeatureBuilder featureBuilder = ParcelSchema.setSFBMinParcelWithFeat(feat, featureSchema);
+			SimpleFeatureBuilder featureBuilder = ParcelSchema.setSFBMinParcelSplitWithFeat(feat, featureSchema);
 			if (feat.getAttribute(fieldName).equals(attribute)) {
 				featureBuilder.set(markFieldName, 1);
 			} else {

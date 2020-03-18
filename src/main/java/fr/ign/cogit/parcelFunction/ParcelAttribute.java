@@ -9,13 +9,14 @@ import java.util.TreeMap;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 
 import fr.ign.cogit.geoToolsFunctions.Attribute;
 
 public class ParcelAttribute {
 	
-	private static String cityNumberFiledName = "DEPCOM";
 	private static String armatureFieldName = "armature";
 
 	/**
@@ -36,7 +37,7 @@ public class ParcelAttribute {
 	 * @return 
 	 */
 	public static String getCommunityCodeFromSFC(SimpleFeatureCollection community, SimpleFeature parcel) {
-		return getAttributeFromSFC(community, parcel, cityNumberFiledName);
+		return getAttributeFromSFC(community, parcel, ParcelSchema.getMinParcelCommunityFiled());
 	}
 
 	/**
@@ -55,20 +56,20 @@ public class ParcelAttribute {
 	 * If the given feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection
 	 * 
 	 * @param collec : Input collection 
-	 * @param givenFeaure : the given feature to look for
+	 * @param givenFeature : the given feature to look for
 	 * @param fieldName : the name of the field in which to look for the attribute
 	 * @return the value of the feature's field
 	 */
-	public static String getAttributeFromSFC(SimpleFeatureCollection collec, SimpleFeature givenFeaure, String fieldName) {
+	public static String getAttributeFromSFC(SimpleFeatureCollection collec, SimpleFeature givenFeature, String fieldName) {
 		SimpleFeature overlappingFeature = null;
 		SimpleFeatureIterator collecIt = collec.features();
-		Geometry givenFeatureGeom = (Geometry) givenFeaure.getDefaultGeometry(); 
+		Geometry givenFeatureGeom = GeometryPrecisionReducer.reduce((Geometry) givenFeature.getDefaultGeometry(), new PrecisionModel(10)); 
 		boolean multipleOverlap = false;
 		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
 		try {
 			while (collecIt.hasNext()) {
 				SimpleFeature theFeature = collecIt.next();
-				Geometry theFeatureGeom = (Geometry) theFeature.getDefaultGeometry();
+				Geometry theFeatureGeom =  GeometryPrecisionReducer.reduce((Geometry) theFeature.getDefaultGeometry(), new PrecisionModel(10));
 				if (theFeatureGeom.contains(givenFeatureGeom)) {
 					overlappingFeature = theFeature;
 					break;
@@ -134,18 +135,9 @@ public class ParcelAttribute {
 	}
 
 	/**
-	 * get a list of all the INSEE numbers of the parcels in the collection
-	 * 
-	 * @overload for automatic INSEE name field in the French case
-	 * @param parcels : a collection of parcels
-	 * @return
-	 */
-	public static List<String> getCityCodeFromParcels(SimpleFeatureCollection parcels) {
-		return getCityCodeFromParcels(parcels, "INSEE");
-	}
-
-	/**
-	 * get a list of all the INSEE numbers of the parcels in the collection
+	 * get a list of all the <i>city code numbers</i> of the given collection.
+	 * The city code field name is <i>DEPCOM<i> by default and can be changed with the method {@link #setCityNumberCodeName(String)}
+	 * If no code is found, we try to generate it (only for the French Parcels)
 	 * 
 	 * @param parcels
 	 *            : a collection of parcels
@@ -153,41 +145,19 @@ public class ParcelAttribute {
 	 *            containing the name of the field containing the city's code
 	 * @return
 	 */
-	public static List<String> getCityCodeFromParcels(SimpleFeatureCollection parcels, String cityField) {
+	public static List<String> getCityCodeFromParcels(SimpleFeatureCollection parcels) {
 		List<String> result = new ArrayList<String>();
 		Arrays.stream(parcels.toArray(new SimpleFeature[0])).forEach(feat -> {
-			String code = ((String) feat.getAttribute(cityField));
+			String code = ((String) feat.getAttribute(ParcelSchema.getMinParcelCommunityFiled()));
 			if (code != null && !code.isEmpty()) {
 				result.add(code);
 			} else {
 				String c = Attribute.makeINSEECode(feat);
-				if (!result.contains(c)) {
+				if (c != null && !result.contains(c)) {
 					result.add(Attribute.makeINSEECode(feat));
 				}
 			}
 		});
-
-		// List<String> result = new ArrayList<String>();
-		// SimpleFeatureIterator parcelIt = parcels.features();
-		// try {
-		// while (parcelIt.hasNext()) {
-		// SimpleFeature feat = parcelIt.next();
-		// String code = ((String) feat.getAttribute("INSEE"));
-		// if (code != null && !code.isEmpty()) {
-		// result.add(code);
-		// } else {
-		// String c = makeINSEECode(feat);
-		// if (!result.contains(c)) {
-		// result.add(makeINSEECode(feat));
-		// }
-		// }
-		//
-		// }
-		// } catch (Exception problem) {
-		// problem.printStackTrace();
-		// } finally {
-		// parcelIt.close();
-		// }
 		return result;
 	}
 	
@@ -221,14 +191,6 @@ public class ParcelAttribute {
 			return "NC";
 		}
 		 return nameZone;	
-	}
-
-	public static String getCityNumberCodeName() {
-		return cityNumberFiledName;
-	}
-
-	public static void setCityNumberCodeName(String cityNumberCodeName) {
-		ParcelAttribute.cityNumberFiledName = cityNumberCodeName;
 	}
 
 	public static String getArmatureCodeName() {

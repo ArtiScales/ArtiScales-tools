@@ -182,10 +182,10 @@ public class ParcelGetter {
 		return result.collection();
 	}
 
-	public static File getParcelByZip(File parcelIn, List<String> vals, File fileOut) throws IOException {
+	public static File getFrenchParcelByZip(File parcelIn, List<String> vals, File fileOut) throws IOException {
 		ShapefileDataStore sds = new ShapefileDataStore(parcelIn.toURI().toURL());
 		SimpleFeatureCollection sfc = sds.getFeatureSource().getFeatures();
-		SimpleFeatureCollection result = getParcelByZip(sfc, vals);
+		SimpleFeatureCollection result = getFrenchParcelByZip(sfc, vals);
 		sds.dispose();
 		return Collec.exportSFC(result, fileOut);
 	}
@@ -199,10 +199,10 @@ public class ParcelGetter {
 	 * @return a simple feature collection of parcels having the values contained in <i>vals</i>.
 	 * 	 * @throws IOException
 	 */
-	public static SimpleFeatureCollection getParcelByZip(SimpleFeatureCollection parcelIn, List<String> vals) throws IOException {
+	public static SimpleFeatureCollection getFrenchParcelByZip(SimpleFeatureCollection parcelIn, List<String> vals) throws IOException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		for (String val : vals) {
-			result.addAll(getParcelByZip(parcelIn, val));
+			result.addAll(getFrenchParcelByZip(parcelIn, val));
 		}
 		return result.collection();
 	}
@@ -215,7 +215,7 @@ public class ParcelGetter {
 	 * @return a simple feature collection of parcels having the <i>val</i> value.
 	 * 	 * @throws IOException
 	 */
-	public static SimpleFeatureCollection getParcelByZip(SimpleFeatureCollection parcelIn, String val) throws IOException {
+	public static SimpleFeatureCollection getFrenchParcelByZip(SimpleFeatureCollection parcelIn, String val) throws IOException {
 		return getParcelByZip(parcelIn, val, codeDepFiled, codeComFiled);
 	}
 
@@ -256,22 +256,19 @@ public class ParcelGetter {
 	 * @return a simple feature collection of parcels having the <i>val</i> value.
 	 * @throws IOException
 	 */
-	public static SimpleFeatureCollection getParcelByZip(SimpleFeatureCollection parcelIn, String val, String zipFieldName) throws IOException {
-		SimpleFeatureIterator it = parcelIn.features();
-		DefaultFeatureCollection result = new DefaultFeatureCollection();
-		try {
-			while (it.hasNext()) {
-				SimpleFeature feat = it.next();
-				String zipCode = ((String) feat.getAttribute(zipFieldName));
-				if (zipCode.equals(val)) {
-					result.add(feat);
-				}
-			}
-		} catch (Exception problem) {
-			problem.printStackTrace();
-		} finally {
-			it.close();
+	public static SimpleFeatureCollection getParcelByZip(SimpleFeatureCollection parcelIn, String val) throws IOException {
+		//we check if the field for zipcodes is present, otherwise we try national types of parcels 
+		if(!Collec.isCollecContainsAttribute(parcelIn, ParcelSchema.getMinParcelCommunityFiled())) {
+			return getFrenchParcelByZip(parcelIn, val);
 		}
+		DefaultFeatureCollection result = new DefaultFeatureCollection();
+		Arrays.stream(parcelIn.toArray(new SimpleFeature[0])).forEach(feat -> {
+			if (Collec.isSimpleFeatureContainsAttribute(feat, ParcelSchema.getMinParcelCommunityFiled())
+					&& feat.getAttribute(ParcelSchema.getMinParcelCommunityFiled()) != null
+					&& ((String) feat.getAttribute(ParcelSchema.getMinParcelCommunityFiled())).equals(val)) {
+				result.add(feat);
+			}
+		});
 		return result.collection();
 	}
 	
@@ -325,6 +322,7 @@ public class ParcelGetter {
 	}
 
 	/**
+	 * @deprecated
 	 * prepare the parcel SimpleFeatureCollection and add necessary attributes and informations for an ArtiScales Simulation overload to automatically cut all parcels regarding to
 	 * the zoning file
 	 * 
@@ -344,6 +342,7 @@ public class ParcelGetter {
 	}
 
 	/**
+	 * @deprecated
 	 * prepare the parcel SimpleFeatureCollection and add necessary attributes and informations for an ArtiScales Simulation
 	 * 
 	 * @param geoFile
@@ -586,6 +585,4 @@ public class ParcelGetter {
 	public static void setTypologyField(String typologyField) {
 		ParcelGetter.typologyField = typologyField;
 	}
-
-
 }

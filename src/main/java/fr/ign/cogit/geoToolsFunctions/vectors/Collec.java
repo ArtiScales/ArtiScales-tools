@@ -322,7 +322,20 @@ public class Collec {
 		}
 		return result.collection();
 	}
-	
+
+	/**
+	 * Check if the given Simple Feature contains the given field name. Uses the {@link #isSchemaContainsAttribute(SimpleFeatureType, String)} method.
+	 * 
+	 * @param feat
+	 *            input feature
+	 * @param attributeFiledName
+	 *            name of the field (must respect case)
+	 * @return true if the feature contains the field name, false otherwise
+	 */
+	public static boolean isSimpleFeatureContainsAttribute(SimpleFeature feat, String attributeFiledName) {
+		return isSchemaContainsAttribute(feat.getFeatureType(), attributeFiledName);
+	}
+
 	/**
 	 * Check if the given collection contains the given field name
 	 * @param collec input SimpleFeatureCollecton
@@ -330,7 +343,17 @@ public class Collec {
 	 * @return true if the collec contains the field name, false otherwise
 	 */
 	public static boolean isCollecContainsAttribute(SimpleFeatureCollection collec, String attributeFiledName) {
-		if (collec.getSchema().getAttributeDescriptors().stream().filter(s -> s.getName().toString().equals(attributeFiledName))
+		return isSchemaContainsAttribute(collec.getSchema(), attributeFiledName);
+	}
+	
+	/**
+	 * Check if the given schema contains the given field name
+	 * @param schema SimpleFeatureType schema
+	 * @param attributeFiledName : name of the field (must respect case)
+	 * @return true if the collec contains the field name, false otherwise
+	 */
+	public static boolean isSchemaContainsAttribute(SimpleFeatureType schema, String attributeFiledName) {
+		if (schema.getAttributeDescriptors().stream().filter(s -> s.getName().toString().equals(attributeFiledName))
 		.collect(Collectors.toList()).size() == 0) {
 			return false;
 		}

@@ -14,9 +14,14 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import fr.ign.cogit.geoToolsFunctions.Attribute;
+import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
 
 public class ParcelSchema {
 
+	static String minParcelNumberField = "NUMERO";
+	static String minParcelSectionField = "SECTION";
+	static String minParcelCommunityField = "DEPCOM";
+	
 	/////////////////////
 	/////////////////////
 	////Minimal Parcel Schema : minimal parcel schema for a Parcel Manager Processing
@@ -30,22 +35,9 @@ public class ParcelSchema {
 		sfTypeBuilder.setCRS(sourceCRS);
 		sfTypeBuilder.add("the_geom", Polygon.class);
 		sfTypeBuilder.setDefaultGeometry("the_geom");
-		sfTypeBuilder.add("SECTION", String.class);
-		sfTypeBuilder.add("CODE", String.class);
-
-		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
-	}
-	
-	public static SimpleFeatureBuilder getSFBMinParcelSplit() throws NoSuchAuthorityCodeException, FactoryException {
-		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
-		sfTypeBuilder.setName("testType");
-		sfTypeBuilder.setCRS(sourceCRS);
-		sfTypeBuilder.add("the_geom", Polygon.class);
-		sfTypeBuilder.setDefaultGeometry("the_geom");
-		sfTypeBuilder.add("SECTION", String.class);
-		sfTypeBuilder.add("CODE", String.class);
-		sfTypeBuilder.add("SPLIT", Integer.class);
+		sfTypeBuilder.add(minParcelSectionField, String.class);
+		sfTypeBuilder.add(minParcelNumberField, String.class);
+		sfTypeBuilder.add(minParcelCommunityField, String.class);
 
 		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 	}
@@ -57,15 +49,64 @@ public class ParcelSchema {
 
 	public static SimpleFeatureBuilder setSFBMinParcelWithFeat(SimpleFeature feat, SimpleFeatureBuilder builder, SimpleFeatureType schema) {
 		builder.set(schema.getGeometryDescriptor().getName().toString(), (Geometry) feat.getDefaultGeometry());
-		builder.set("SPLIT", feat.getAttribute("SPLIT"));
-		builder.set("SECTION", feat.getAttribute("SECTION"));
-		builder.set("CODE", feat.getAttribute("CODE"));
+		builder.set(minParcelSectionField, feat.getAttribute(minParcelSectionField));
+		builder.set(minParcelNumberField, feat.getAttribute(minParcelNumberField));
+
+		//setting zipcode
+		if (Collec.isSimpleFeatureContainsAttribute(feat,minParcelCommunityField)) {
+			builder.set(minParcelCommunityField, feat.getAttribute(minParcelCommunityField));
+		}
+		//if looks like french parcel
+		else if (Collec.isSimpleFeatureContainsAttribute(feat, "CODE_DEP")) {
+			builder.set(ParcelSchema.getMinParcelCommunityFiled(), ((String) feat.getAttribute("CODE_DEP")).concat((String) feat.getAttribute("CODE_COM")));
+		}
+		return builder;
+	}
+	
+	public static SimpleFeatureBuilder getSFBMinParcelSplit() throws NoSuchAuthorityCodeException, FactoryException {
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:2154");
+		sfTypeBuilder.setName("testType");
+		sfTypeBuilder.setCRS(sourceCRS);
+		sfTypeBuilder.add("the_geom", Polygon.class);
+		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.add(minParcelSectionField, String.class);
+		sfTypeBuilder.add(minParcelCommunityField, String.class);
+		sfTypeBuilder.add(minParcelNumberField, String.class);
+		sfTypeBuilder.add(MarkParcelAttributeFromPosition.getMarkFieldName(), Integer.class);
+
+		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	}
+
+	public static SimpleFeatureBuilder setSFBMinParcelSplitWithFeat(SimpleFeature feat, SimpleFeatureType schema) {
+		return setSFBMinParcelSplitWithFeat(feat, schema, (int) feat.getAttribute(MarkParcelAttributeFromPosition.getMarkFieldName()));
+	}
+	
+	public static SimpleFeatureBuilder setSFBMinParcelSplitWithFeat(SimpleFeature feat, SimpleFeatureType schema, int isSplit) {
+		SimpleFeatureBuilder finalParcelBuilder = new SimpleFeatureBuilder(schema);
+		return finalParcelBuilder = setSFBMinParcelSplitWithFeat(feat, finalParcelBuilder, schema, isSplit);
+	}
+
+	public static SimpleFeatureBuilder setSFBMinParcelSplitWithFeat(SimpleFeature feat, SimpleFeatureBuilder builder, SimpleFeatureType schema, int isSplit) {
+		builder.set(schema.getGeometryDescriptor().getName().toString(), (Geometry) feat.getDefaultGeometry());
+		builder.set(MarkParcelAttributeFromPosition.getMarkFieldName(), isSplit);
+		builder.set(minParcelSectionField, feat.getAttribute(minParcelSectionField));
+		builder.set(minParcelNumberField, feat.getAttribute(minParcelNumberField));
+
+		//setting zipcode
+		if (Collec.isSimpleFeatureContainsAttribute(feat,minParcelCommunityField)) {
+			builder.set(minParcelCommunityField, feat.getAttribute(minParcelCommunityField));
+		}
+		//if looks like french parcel
+		else if (Collec.isSimpleFeatureContainsAttribute(feat, "CODE_DEP")) {
+			builder.set(ParcelSchema.getMinParcelCommunityFiled(), ((String) feat.getAttribute("CODE_DEP")).concat((String) feat.getAttribute("CODE_COM")));
+		}
 		return builder;
 	}
 	
 	/////////////////////
 	/////////////////////
-	//// FrenchZoning Schemas : basic parcels schema used in the french IGN norm
+	//// FrenchZoning Schemas : basic parcels schema used in the French IGN norm
 	/////////////////////
 	/////////////////////
 
@@ -82,7 +123,6 @@ public class ParcelSchema {
 		sfTypeBuilder.add("INSEE", String.class);
 		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 	}
-	
 	
 	/////////////////////
 	/////////////////////
@@ -135,7 +175,7 @@ public class ParcelSchema {
 		sfTypeBuilder.add("COM_ABS", String.class);
 		sfTypeBuilder.add("SECTION", String.class);
 		sfTypeBuilder.add("NUMERO", String.class);
-		sfTypeBuilder.add("SPLIT", String.class);
+		sfTypeBuilder.add(MarkParcelAttributeFromPosition.getMarkFieldName(), String.class);
 
 		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 	}
@@ -158,7 +198,7 @@ public class ParcelSchema {
 		builder.set("COM_ABS", feat.getAttribute("COM_ABS"));
 		builder.set("SECTION", feat.getAttribute("SECTION"));
 		builder.set("NUMERO", feat.getAttribute("NUMERO"));
-		builder.set("SPLIT", split);
+		builder.set(MarkParcelAttributeFromPosition.getMarkFieldName(), split);
 
 		return builder;
 	}
@@ -330,5 +370,29 @@ public class ParcelSchema {
 		}
 
 		return builder;
+	}
+
+	public static String getMinParcelNumberField() {
+		return minParcelNumberField;
+	}
+
+	public static void setMinParcelNumberField(String minParcelNumberField) {
+		ParcelSchema.minParcelNumberField = minParcelNumberField;
+	}
+
+	public static String getMinParcelSectionField() {
+		return minParcelSectionField;
+	}
+
+	public static void setMinParcelSectionField(String minParcelSectionField) {
+		ParcelSchema.minParcelSectionField = minParcelSectionField;
+	}
+
+	public static String getMinParcelCommunityFiled() {
+		return minParcelCommunityField;
+	}
+
+	public static void setMinParcelCommunityField(String minParcelCommunityField) {
+		ParcelSchema.minParcelCommunityField = minParcelCommunityField;
 	}
 }
