@@ -44,7 +44,7 @@ public class ParcelGetter {
 	 * @return
 	 * @throws IOException
 	 */
-	public static SimpleFeatureCollection getParcelByBigZone(String zone, SimpleFeatureCollection parcelles, File zoningFile)
+	public static SimpleFeatureCollection getParcelByZoningType(String zone, SimpleFeatureCollection parcelles, File zoningFile)
 			throws IOException {
 		ShapefileDataStore zonesSDS = new ShapefileDataStore(zoningFile.toURI().toURL());
 		SimpleFeatureCollection zonesSFCBig = zonesSDS.getFeatureSource().getFeatures();

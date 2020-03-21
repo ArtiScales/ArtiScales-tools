@@ -116,27 +116,21 @@ public class ParcelState {
 	}
 
 	/**
-	 * Return true if the parcel is already built 
+	 * This algorithm looks if a parcel is overlapped by a building and returns true
+	 * if they are.
 	 * 
+	 * @param batiSFC
 	 * @param feature
-	 * @param geoFile
 	 * @return
 	 * @throws IOException
 	 */
-	public static boolean isAlreadyBuilt(File batiFile, SimpleFeature feature) throws IOException {
-		ShapefileDataStore batiSDS = new ShapefileDataStore(batiFile.toURI().toURL());
-		SimpleFeatureCollection batiFeatures = batiSDS.getFeatureSource().getFeatures();
-		boolean result = isAlreadyBuilt(batiFeatures, feature);
-		batiSDS.dispose();
-		return result;
-	}
-
 	public static boolean isAlreadyBuilt(SimpleFeatureCollection batiSFC, SimpleFeature feature) throws IOException {
 		return isAlreadyBuilt(batiSFC, feature, 0.0);
 	}
 
 	/**
-	 * overload to select only a selection of buildings
+	 * This algorithm looks if a parcel is overlapped by a building and returns true if they are.
+	 * @overload to select only a selection of buildings
 	 * 
 	 * @param buildingFile
 	 * @param parcel
@@ -150,22 +144,19 @@ public class ParcelState {
 		boolean result = isAlreadyBuilt(Collec.snapDatas(batiFeatures, emprise), parcel, 0.0);
 		batiSDS.dispose();
 		return result;
-
 	}
 
-	// public static boolean isAlreadyBuiltStream(SimpleFeatureCollection batiSFC,
-	// SimpleFeature feature, double bufferBati) throws IOException {
-	// boolean res = false;
-	// List<String> result = Arrays.stream(batiSFC.toArray(new SimpleFeature[0]))
-	// .forEach(batiFeature -> {
-	// if (((Geometry) feature.getDefaultGeometry()).intersects(((Geometry)
-	// batiFeature.getDefaultGeometry()).buffer(bufferBati))) {
-	// res = true ;
-	// }
-	// }
-	// );
-	// }
-
+	/**
+	 * This algorithm looks if a parcel is overlapped by a building+a buffer (in
+	 * most of the cases, buffer is negative to delete small parts of buildings that
+	 * can slightly overlap a parcel) and returns true if they are.
+	 * 
+	 * @param batiSFC
+	 * @param feature
+	 * @param bufferBati
+	 * @return
+	 * @throws IOException
+	 */
 	public static boolean isAlreadyBuilt(SimpleFeatureCollection batiSFC, SimpleFeature feature, double bufferBati)
 			throws IOException {
 		boolean isContent = false;
