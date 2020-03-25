@@ -12,6 +12,8 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -84,7 +86,7 @@ public class ParcelCollection {
 		return result;
 	}
 	
-	private static SimpleFeatureCollection recursiveMergeTooSmallParcel(SimpleFeatureCollection parcelsUnsorted, int minimalParcelSize) throws IOException, FactoryException {
+	private static SimpleFeatureCollection recursiveMergeTooSmallParcel(SimpleFeatureCollection parcelsUnsorted, int minimalParcelSize) throws IOException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		// we sort the parcel collection to process the smallest parcels in first
 		List<String> ids = new ArrayList<String>();	
@@ -379,6 +381,29 @@ public class ParcelCollection {
 	}
 	
 	/**
+	 * Sort a parcel collection by the feature's sizes in two collections : the ones that are less a threshold and the ones that are above that threshold
+	 * 
+	 * @param parcelIn
+	 * @param size
+	 * @return a pair
+	 * @throws IOException
+	 */
+	public static Pair<SimpleFeatureCollection,SimpleFeatureCollection> sortParcelsBySize(SimpleFeatureCollection parcelIn, double size) throws IOException {
+		DefaultFeatureCollection less = new DefaultFeatureCollection();
+		DefaultFeatureCollection more = new DefaultFeatureCollection();
+		Arrays.stream(parcelIn.toArray(new SimpleFeature[0])).forEach(feat -> {
+			if (((Geometry) feat.getDefaultGeometry()).getArea() >= size) {
+				more.add(feat);
+			} else {
+				less.add(feat);
+			}
+		});
+		return new ImmutablePair<SimpleFeatureCollection, SimpleFeatureCollection>(
+				less, more);
+	}
+	
+	
+	/**
 	 * method that compares two set of parcels and sort the reference plan parcels between the ones that changed and the ones that doesn't We compare the parcels area of the
 	 * reference parcel to the ones that are intersected. If they are similar with a 3% error rate, we conclude that they are the same.
 	 * 
@@ -416,7 +441,6 @@ public class ParcelCollection {
 				double geomArea = geomPRef.getArea();
 				//for every intersected parcels, we check if it is close to (as tiny geometry changes)
 				SimpleFeatureCollection parcelsIntersectRef = parcelToSort.subCollection(ff.intersects(pName, ff.literal(geomPRef)));
-
 				SimpleFeatureIterator itParcelIntersectRef = parcelsIntersectRef.features();
 				try {
 					while (itParcelIntersectRef.hasNext()) {

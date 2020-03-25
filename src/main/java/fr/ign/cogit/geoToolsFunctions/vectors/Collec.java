@@ -389,6 +389,14 @@ public class Collec {
 		}
 		return lines;
 	}
+
+	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut) throws IOException {
+		DefaultFeatureCollection result = new DefaultFeatureCollection();
+		for (SimpleFeature feat : listFeature) {
+			result.add(feat);
+		}
+		return exportSFC(result.collection(), fileOut);
+	}
 	
 	// public static HashMap<String, SimpleFeatureCollection>
 	// divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {

@@ -345,7 +345,7 @@ public class ParcelSchema {
 		return builder;
 	}
 
-	public static SimpleFeatureBuilder getSFBSchemaWithMultiPolygon(SimpleFeatureType schema) throws FactoryException {
+	public static SimpleFeatureBuilder getSFBSchemaWithMultiPolygon(SimpleFeatureType schema) {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		CoordinateReferenceSystem sourceCRS = schema.getCoordinateReferenceSystem();
 		for (AttributeDescriptor attr : schema.getAttributeDescriptors()) {
@@ -360,18 +360,33 @@ public class ParcelSchema {
 		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 	}
 	
-	public static SimpleFeatureBuilder setSFBSchemaWithMultiPolygon(SimpleFeature feat) throws FactoryException {
+	public static SimpleFeatureBuilder setSFBSchemaWithMultiPolygon(SimpleFeature feat) {
 		SimpleFeatureBuilder builder = getSFBSchemaWithMultiPolygon(feat.getFeatureType());
-
 		for (AttributeDescriptor attr : feat.getFeatureType().getAttributeDescriptors()) {
 //			if (attr.getLocalName().equals("the_geom"))
 //				continue;
 			builder.set(attr.getName(), feat.getAttribute(attr.getName()));
 		}
-
 		return builder;
 	}
-
+	
+	/**
+	 * Create a builder out of a SimpleFeatureCollection's schema and add a mark field of type <b>int</i>. The mark name can be set with the method {@link fr.ign.cogit.parcelFunction.MarkParcelAttributeFromPosition#setMarkFieldName(String)}.
+	 * @param schema
+	 * @return a SimpleFeatureBuilder felative to the schema + a marking field
+	 */
+	public static SimpleFeatureBuilder addSplitField(SimpleFeatureType schema) {
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		for (AttributeDescriptor attr : schema.getAttributeDescriptors()) {
+			sfTypeBuilder.add(attr);
+		}
+		sfTypeBuilder.add(MarkParcelAttributeFromPosition.markFieldName, int.class);
+		sfTypeBuilder.setName(schema.getName());
+		sfTypeBuilder.setCRS(schema.getCoordinateReferenceSystem());
+		sfTypeBuilder.setDefaultGeometry(schema.getGeometryDescriptor().getLocalName());
+		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	}
+	
 	public static String getMinParcelNumberField() {
 		return minParcelNumberField;
 	}
