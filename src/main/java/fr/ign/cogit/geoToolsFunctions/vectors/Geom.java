@@ -4,7 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -25,7 +29,16 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 import fr.ign.cogit.geoToolsFunctions.Schemas;
 
 public class Geom {
-	
+//	public static void main(String[] args) throws Exception {
+//		WKTReader w = new WKTReader();
+//		Geometry g1 = w.read(
+//				"MULTIPOLYGON(((673440.63000000000465661 6861804.29600000008940697, 673460.79399999999441206 6861808.7630000002682209, 673462.83400000003166497 6861767.34200000017881393, 673463.73699999996460974 6861748.78500000014901161, 673447.48300000000745058 6861747.04299999959766865, 673445.22400000004563481 6861765.99000000022351742, 673445.17700000002514571 6861766.35099999979138374, 673440.63000000000465661 6861804.29600000008940697)))");
+//		Geometry g2 = w.read(
+//				"MULTIPOLYGON(((673421.24399999994784594 6861799.9419999998062849, 673440.63000000000465661 6861804.29600000008940697, 673445.17700000002514571 6861766.35099999979138374, 673445.22400000004563481 6861765.99000000022351742, 673447.48300000000745058 6861747.04299999959766865, 673431.51699999999254942 6861744.02900000009685755, 673430.20799999998416752 6861751.13599999994039536, 673428.08600000001024455 6861762.71600000001490116, 673427.69499999994877726 6861764.86799999978393316, 673421.24399999994784594 6861799.9419999998062849)))");
+//		Geometry g3 = w.read(
+//				"MULTIPOLYGON(((673408.16000000003259629 6861730.82299999985843897, 673418.18299999996088445 6861733.1380000002682209, 673425.25300000002607703 6861734.76699999999254942, 673429.11499999999068677 6861718.72400000039488077, 673429.4529999999795109 6861717.3030000003054738, 673435.87399999995250255 6861690.64499999955296516, 673423.22699999995529652 6861688.84200000017881393, 673421.97600000002421439 6861688.63300000037997961, 673413.99600000004284084 6861713.00499999988824129, 673413.67500000004656613 6861713.96700000017881393, 673411.13199999998323619 6861721.74399999994784594, 673410.95600000000558794 6861722.28600000031292439, 673408.16000000003259629 6861730.82299999985843897)))");
+//		System.out.println(getBiggestIntersectingGeometry(Arrays.asList(g1, g2), g3));
+//	}
 	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder,
 			DefaultFeatureCollection result, String geometryOutputName, Geometry geom) {
 		return addSimpleGeometry(sfBuilder, result, geometryOutputName, geom, null);
@@ -244,15 +257,55 @@ public class Geom {
 		}
 	}
 	
+	/**
+	 * Return the intersecting geometry with the highest area of intersection.
+	 * 
+	 * @param lG:
+	 *            input list of geometries
+	 * @param geom:
+	 *            intersection polygon
+	 * @return the largest
+	 * @throws Exception
+	 */
+	public static Geometry getBiggestIntersectingGeometry(List<Geometry> lG, Geometry geom) {
+		HashMap<Geometry, Double> result = new HashMap<Geometry, Double>();
+		for (Geometry g : lG) {
+			double area = (scaledGeometryReductionIntersection(Arrays.asList(g, geom)).getArea());
+			if (area > 0) {
+				result.put(g, area);
+			}
+		}
+		List<Entry<Geometry, Double>> sorted = result.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toList());
+		// if list is empty, we return null
+		if (sorted.isEmpty()) {
+			return null;
+		}
+		return sorted.get(sorted.size() - 1).getKey();
+	}
+	
+	/**
+	 * Get geometry as a Polygon. If it already is a Polygon, returns it. If a MultiPolygon, returns the biggest Polygon Geometry of the list. 
+	 * @param geom
+	 * @return
+	 */
 	public static Geometry getPolygon(Geometry geom) {
+		return getBiggestIntersectingGeometry(getPolygons(geom),geom);
+	}
+	
+	/**
+	 * Get geometry as a Polygon. If it already is a Polygon, returns it. If a MultiPolygon, return the list of polygons. 
+	 * @param geom input geometry 
+	 * @return a list of Polygon Geometry
+	 */
+	public static List<Geometry> getPolygons(Geometry geom) {
 		if (geom instanceof Polygon) {
-			return geom ;
+			return Arrays.asList(geom) ;
 		} else if (geom instanceof MultiPolygon) {
 			List<Geometry> lG = new ArrayList<Geometry>(); 			
 			for (int i = 0 ; i<((MultiPolygon) geom).getNumGeometries(); i++ ) {
 				lG.add(geom.getGeometryN(i));
 			}
-    		 return Geom.unionGeom(lG);
+    		 return lG;
 		} else {
 			System.out.println("getPolygonGeom() problem with type of the geometry " + geom + " : " + geom.getGeometryType());
 			return null;

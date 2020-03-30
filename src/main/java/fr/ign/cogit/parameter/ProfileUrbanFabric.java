@@ -1,7 +1,22 @@
 package fr.ign.cogit.parameter;
 
-public class ProfileUrbanFabric {
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+/**
+ * Parameters describing an urban fabric. One different objects for each of the simulated urban scene. 
+ * Must be set in a .json file and then parse into either constructor or static parser method.
+ * 
+ * @author Maxime Colomb
+ *
+ */
+public class ProfileUrbanFabric {
 	double maximalArea;
 	double minimalArea;
 	double maximalWidth;
@@ -46,56 +61,28 @@ public class ProfileUrbanFabric {
 		return maximalArea;
 	}
 
-	public void setMaximalArea(double maximalArea) {
-		this.maximalArea = maximalArea;
-	}
-
 	public double getMinimalArea() {
 		return minimalArea;
-	}
-
-	public void setMinimalArea(double minimalArea) {
-		this.minimalArea = minimalArea;
 	}
 
 	public double getMaximalWidth() {
 		return maximalWidth;
 	}
 
-	public void setMaximalWidth(double maximalWidth) {
-		this.maximalWidth = maximalWidth;
-	}
-
 	public int getDecompositionLevelWithoutStreet() {
 		return decompositionLevelWithoutStreet;
-	}
-
-	public void setDecompositionLevelWithoutStreet(int decompositionLevelWithoutStreet) {
-		this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
 	}
 
 	public double getLenDriveway() {
 		return lenDriveway;
 	}
 
-	public void setLenDriveway(double lenDriveway) {
-		this.lenDriveway = lenDriveway;
-	}
-
 	public static String getProfileFolder() {
 		return profileFolder;
 	}
 
-	public static void setProfileFolder(String profileFolder) {
-		ProfileUrbanFabric.profileFolder = profileFolder;
-	}
-
 	public double getStreetWidth() {
 		return streetWidth;
-	}
-
-	public void setStreetWidth(double smallStreetWidth) {
-		this.streetWidth = smallStreetWidth;
 	}
 
 	public double getLargeStreetWidth() {
@@ -106,20 +93,12 @@ public class ProfileUrbanFabric {
 		}
 	}
 
-	public void setLargeStreetWidth(double largeStreetWidth) {
-		this.largeStreetWidth = largeStreetWidth;
-	}
-
 	public int getLargeStreetLevel() {
 		if (largeStreetLevel != 0) {
 			return largeStreetLevel;
 		} else {
 			return 999;
 		}
-	}
-
-	public void setLargeStreetLevel(int largeStreetLevel) {
-		this.largeStreetLevel = largeStreetLevel;
 	}
 
 	@Override
@@ -129,5 +108,13 @@ public class ProfileUrbanFabric {
 				+ ", largeStreetLevel=" + largeStreetLevel + ", decompositionLevelWithoutStreet="
 				+ decompositionLevelWithoutStreet + ", lenDriveway=" + lenDriveway + "]";
 	}
-
+	
+	public static ProfileUrbanFabric convertJSONtoProfile(File jsonFile) throws JsonParseException, JsonMappingException, IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		InputStream fileInputStream = new FileInputStream(jsonFile);
+		ProfileUrbanFabric profile = mapper.readValue(fileInputStream, ProfileUrbanFabric.class);
+		fileInputStream.close();
+		return profile;
+	}
 }
