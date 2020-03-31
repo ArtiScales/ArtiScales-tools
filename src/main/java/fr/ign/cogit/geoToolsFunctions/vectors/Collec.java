@@ -9,9 +9,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.geotools.data.DataUtilities;
@@ -277,8 +277,7 @@ public class Collec {
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-		String geometryInPropertyName = SFCIn.getSchema().getGeometryDescriptor().getLocalName();
-		Filter filterIn = ff.intersects(ff.property(geometryInPropertyName), ff.literal(bBox));
+		Filter filterIn = ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox));
 		SimpleFeatureCollection inTown = DataUtilities.collection(SFCIn.subCollection(filterIn));
 		return inTown;
 	}
@@ -390,13 +389,55 @@ public class Collec {
 		return lines;
 	}
 
-	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut) throws IOException {
+	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut) throws Exception {
+		return exportSFC(listFeature, fileOut, true);
+	}
+	
+	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut, boolean overwrite) throws Exception {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		for (SimpleFeature feat : listFeature) {
 			result.add(feat);
 		}
-		return exportSFC(result.collection(), fileOut);
+		return exportSFC(result.collection(), fileOut, overwrite);
 	}
+	
+	/**
+	 * Get a given field from the feature of a SimpleFeatureCollection that is the closest to the given geometry 
+	 * @param geometry: input geometry 
+	 * @param parcels
+	 * @param string
+	 * @return
+	 */
+	public static String getFieldFromSFC(Geometry geometry, SimpleFeatureCollection parcels, String fieldName) {
+		return (String) getSimpleFeatureFromSFC(geometry, parcels).getAttribute(fieldName);
+	}
+	
+	public static SimpleFeature getSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection parcels) {
+		HashMap<SimpleFeature, Double> repart = new HashMap<SimpleFeature, Double>();
+		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+		Filter filter = ff.intersects(ff.property(parcels.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry));
+		try (SimpleFeatureIterator parcelIt = parcels.subCollection(filter).features()) {
+			while (parcelIt.hasNext()) {
+				SimpleFeature parcel = parcelIt.next();
+				Geometry parcelGeom = ((Geometry) parcel.getDefaultGeometry());
+				if (parcelGeom.buffer(0.5).contains(geometry)) {
+					return parcel;
+				}
+				repart.put(parcel,
+						Geom.scaledGeometryReductionIntersection(Arrays.asList(parcelGeom, geometry)).getArea());
+			}
+		} catch (Exception problem) {
+			problem.printStackTrace();
+		}
+		// in case of multi zones, we sort the entries relatively to the highest area
+		List<Entry<SimpleFeature, Double>> sorted = repart.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toList());
+		// if list is empty, we return null
+		if (sorted.isEmpty()) {
+			return null;
+		}
+		return sorted.get(sorted.size() - 1).getKey();
+	}
+
 	
 	// public static HashMap<String, SimpleFeatureCollection>
 	// divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {

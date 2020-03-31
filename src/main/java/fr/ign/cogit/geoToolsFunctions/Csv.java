@@ -26,10 +26,11 @@ import com.opencsv.CSVWriter;
 /**
  * Class that contains multiple methods to manipulate a .csv file
  * 
- * @author yo
+ * @author Maxime Colomb
  *
  */
 public class Csv {
+	
 	public static boolean needFLine = true;
 
 //	public static void main(String[] args) {
@@ -386,7 +387,7 @@ public class Csv {
 		}
 		f.getParentFile().mkdirs();
 		FileWriter writer = new FileWriter(f, append);
-		boolean fL = true;
+		boolean fL = needFLine;
 		if (fL) {
 			writer.append(firstLine);
 			writer.append("\n");
