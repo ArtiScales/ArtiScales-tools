@@ -299,13 +299,22 @@ public class Geom {
 	 */
 	public static List<Geometry> getPolygons(Geometry geom) {
 		if (geom instanceof Polygon) {
-			return Arrays.asList(geom) ;
+			return Arrays.asList(geom);
 		} else if (geom instanceof MultiPolygon) {
-			List<Geometry> lG = new ArrayList<Geometry>(); 			
-			for (int i = 0 ; i<((MultiPolygon) geom).getNumGeometries(); i++ ) {
+			List<Geometry> lG = new ArrayList<Geometry>();
+			for (int i = 0; i < ((MultiPolygon) geom).getNumGeometries(); i++) {
 				lG.add(geom.getGeometryN(i));
 			}
-    		 return lG;
+			return lG;
+		} else if (geom instanceof GeometryCollection) {
+			List<Geometry> lG = new ArrayList<Geometry>();
+			for (int i = 0; i < ((GeometryCollection) geom).getNumGeometries(); i++) {
+				Geometry thatGeom = geom.getGeometryN(i);
+				if (thatGeom instanceof Polygon) {
+					lG.add(thatGeom);
+				}
+			}
+			return lG;
 		} else {
 			System.out.println("getPolygonGeom() problem with type of the geometry " + geom + " : " + geom.getGeometryType());
 			return null;

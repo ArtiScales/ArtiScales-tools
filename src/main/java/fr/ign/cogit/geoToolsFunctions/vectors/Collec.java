@@ -35,6 +35,8 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
@@ -42,6 +44,15 @@ import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.FilterVisitor;
 
 public class Collec {
+	
+//	public static void main(String[] args) throws Exception {
+//		ShapefileDataStore shpDSParcel = new ShapefileDataStore((new File("/home/ubuntu/workspace/ParcelManager/src/main/resources/testData/parcelle.shp")).toURI().toURL());
+//		SimpleFeatureCollection parcel = shpDSParcel.getFeatureSource().getFeatures();
+//		WKTReader w = new WKTReader();
+////		Geometry g = w.read("MULTIPOLYGON (((937159.28 6688272.91, 937171.18 6688277.86, 937175.76 6688271.59, 937192.91 6688247.08, 937194.51 6688244.77, 937210.81 6688220.7, 937272.28 6688116.74, 937259.65 6688107.96, 937259.64 6688107.96, 937230.38 6688159.07, 937200.23 6688210.7, 937193.91 6688221.42, 937181.49 6688240.06, 937163.63 6688265.93, 937159.28 6688272.91)))");
+//		Geometry g = w.read("MultiPolygon(((937183.97284507064614445 6688228.66999999899417162, 937203.95069014118053019 6688237.79283098503947258, 937210.53298591589555144 6688230.05574647802859545, 937190.5551408453611657 6688216.66019718162715435, 937183.97284507064614445 6688228.66999999899417162)))");
+//		System.out.println(getSimpleFeatureFromSFC(g, parcel));
+//	}
 	
 	/**
 	 * return the sum of area of every features of a simpleFeatureCollection
@@ -402,40 +413,49 @@ public class Collec {
 	}
 	
 	/**
-	 * Get a given field from the feature of a SimpleFeatureCollection that is the closest to the given geometry 
-	 * @param geometry: input geometry 
+	 * Get the value of a feature's field from a SimpleFeatureCollection that intersects a given Simplefeature (that is most of the time, a parcel or building). If the given
+	 * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
+	 * 
+	 * @param geometry
+	 *            input {@link Geometry}
 	 * @param parcels
-	 * @param string
-	 * @return
+	 * @param fieldName
+	 *            The name of the field in which to look for the attribute
+	 * @return the wanted filed from the (most) intersecting {@link SimpleFeature}}
 	 */
 	public static String getFieldFromSFC(Geometry geometry, SimpleFeatureCollection parcels, String fieldName) {
 		return (String) getSimpleFeatureFromSFC(geometry, parcels).getAttribute(fieldName);
 	}
 	
+	/**
+	 * Get the value of a feature's field from a SimpleFeatureCollection that intersects a given Geometry (that is most of the time, a parcel or building). If the given feature is
+	 * overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
+	 * 
+	 * @param geometry input {@link Geometry}
+	 * @param parcels 
+	 * @return the (most) intersecting {@link SimpleFeature}}
+	 */
 	public static SimpleFeature getSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection parcels) {
-		HashMap<SimpleFeature, Double> repart = new HashMap<SimpleFeature, Double>();
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		Filter filter = ff.intersects(ff.property(parcels.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry));
-		try (SimpleFeatureIterator parcelIt = parcels.subCollection(filter).features()) {
-			while (parcelIt.hasNext()) {
-				SimpleFeature parcel = parcelIt.next();
-				Geometry parcelGeom = ((Geometry) parcel.getDefaultGeometry());
-				if (parcelGeom.buffer(0.5).contains(geometry)) {
-					return parcel;
+		Geometry givenFeatureGeom = GeometryPrecisionReducer.reduce(geometry, new PrecisionModel(10));
+		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
+		try (SimpleFeatureIterator collecIt = parcels.subCollection(filter).features()) {
+			while (collecIt.hasNext()) {
+				SimpleFeature theFeature = collecIt.next();
+				Geometry theFeatureGeom = GeometryPrecisionReducer.reduce((Geometry) theFeature.getDefaultGeometry(), new PrecisionModel(10)).buffer(1);
+				if (theFeatureGeom.contains(givenFeatureGeom)) {
+					return theFeature;
 				}
-				repart.put(parcel,
-						Geom.scaledGeometryReductionIntersection(Arrays.asList(parcelGeom, geometry)).getArea());
+				// if the parcel is in between two features, we put the cities in a sorted collection
+				else if (theFeatureGeom.intersects(givenFeatureGeom)) {
+					index.put(theFeatureGeom.getArea(), theFeature);
+				}
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
 		}
-		// in case of multi zones, we sort the entries relatively to the highest area
-		List<Entry<SimpleFeature, Double>> sorted = repart.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toList());
-		// if list is empty, we return null
-		if (sorted.isEmpty()) {
-			return null;
-		}
-		return sorted.get(sorted.size() - 1).getKey();
+		return index.get(index.lastKey());
 	}
 
 	

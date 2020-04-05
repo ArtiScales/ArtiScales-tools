@@ -2,27 +2,8 @@ package fr.ign.cogit.geoToolsFunctions;
 
 import java.io.FileNotFoundException;
 
-import org.opengis.feature.simple.SimpleFeature;
-
-import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
-
 public class Attribute {
 	
-	/**
-	 * Get the indice number on the position of the INSEE number from a shapefile
-	 * @param parcel
-	 * @return the INSEE number
-	 */
-	public static int getINSEEIndice(String[] head) throws FileNotFoundException {
-		for (int i = 0; i < head.length; i = i + 1) {
-			if (head[i].toLowerCase().contains("insee") || head[i].toLowerCase().contains("code_insee")
-					|| head[i].toLowerCase().contains("depcom")|| head[i].toLowerCase().contains("codecommune")) {
-				return i;
-			}
-		}
-		throw new FileNotFoundException(" Attribute.getINSEEindice : no INSEE number found"); 
-	}
-
 	/**
 	 * Get the indice number on the position of the Latitude field from a .csv
 	 * @param head: the header of the .csv file 
@@ -57,10 +38,12 @@ public class Attribute {
 	 * @param head: the header of the .csv file 
 	 * @return the indice on which  number
 	 */
-	public static int getZipCodeIndice (String[] head) throws FileNotFoundException {
+	public static int getCityCodeIndice (String[] head) throws FileNotFoundException {
 		for (int i = 0; i < head.length; i = i + 1) {
-			if (head[i].toLowerCase().contains("codepos") || head[i].toLowerCase().contains("code_post") 
-					|| head[i].toLowerCase().contains("zipcode")) {
+			String word = head[i].toLowerCase();
+			if (word.contains("codepos") || word.contains("code_post") 
+					|| word.contains("zipcode") || head[i].toLowerCase().contains("insee") || head[i].toLowerCase().contains("code_insee")
+					|| head[i].toLowerCase().contains("depcom")|| head[i].toLowerCase().contains("codecommune")) {
 				return i;
 			}
 		}
@@ -79,18 +62,5 @@ public class Attribute {
 			}
 		}
 		throw new FileNotFoundException("Attribute.getIndice : no "+indiceName+" indice found"); 
-	}
-	
-	/**
-	 * Construct the French community code number (INSEE) from a French parcel
-	 * @param parcel
-	 * @return the INSEE number
-	 */
-	public static String makeINSEECode(SimpleFeature parcel) {
-		if (Collec.isSimpleFeatureContainsAttribute(parcel, "CODE_DEP") && Collec.isSimpleFeatureContainsAttribute(parcel, "CODE_COM")) {
-			return ((String) parcel.getAttribute("CODE_DEP")) + ((String) parcel.getAttribute("CODE_COM"));
-		} else {
-			return null;
-		}
 	}
 }

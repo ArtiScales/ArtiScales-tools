@@ -16,7 +16,7 @@ import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
 /**
  * Class to generate shapefiles related to community shape. 
  * 
- * @author mcolomb
+ * @author Maxime Colomb
  *
  */
 public class CityGeneration {
