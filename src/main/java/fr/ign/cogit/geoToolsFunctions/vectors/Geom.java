@@ -14,9 +14,12 @@ import java.util.stream.Stream;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -320,4 +323,26 @@ public class Geom {
 			return null;
 		}
 	}
+	
+	public static MultiLineString generateLineStringFromPolygon(Geometry geom) {
+		Polygon poly = ((Polygon) Geom.getPolygon(geom));
+		List<Geometry> lines = new ArrayList<Geometry>();
+		lines.add(geom.getFactory().createMultiLineString(new LineString[] { poly.getExteriorRing() }));
+		for (int i = 0; i < poly.getNumInteriorRing(); i++) {
+			lines.add(geom.getFactory().createMultiLineString(new LineString[] { poly.getInteriorRingN(i) }));
+		}
+		return (MultiLineString) Geom.unionGeom(lines);
+	}
+	
+	  public static MultiLineString getListAsGeom(List<LineString> list, GeometryFactory fact) {
+		    return fact.createMultiLineString(list.toArray(new LineString[list.size()]));
+	  }
+	  
+	  public List<LineString> getSegments(LineString l) {
+		    List<LineString> result = new ArrayList<>();
+		    for (int i = 0; i < l.getNumPoints() - 1; i++) {
+		      result.add(l.getFactory().createLineString(new Coordinate[] { l.getCoordinateN(i), l.getCoordinateN(i + 1) }));
+		    }
+		    return result;
+		  }
 }

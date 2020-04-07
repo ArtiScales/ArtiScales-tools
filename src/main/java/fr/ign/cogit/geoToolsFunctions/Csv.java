@@ -6,7 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 
 import org.geotools.coverage.grid.GridCoordinates2D;
@@ -110,7 +110,7 @@ public class Csv {
 		// beginning of the all cells loop
 		int debI = 0;
 		int debJ = 0;
-		Hashtable<String, Double> cells = new Hashtable<String, Double>();
+		HashMap<String, Double> cells = new HashMap<String, Double>();
 
 		for (int i = debI; i < w; i++) {
 			for (int j = debJ; j < h; j++) {
@@ -146,13 +146,13 @@ public class Csv {
 	 * @param name
 	 * @throws IOException
 	 */
-	public static void generateCsvFileMultTab(Hashtable<String, Hashtable<String, Double[]>> results, String name,
+	public static void generateCsvFileMultTab(HashMap<String, HashMap<String, Double[]>> results, String name,
 			String firstLine, File folderOut) throws IOException {
 
 		File fileName = new File(folderOut + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, true);
 		for (String tab : results.keySet()) {
-			Hashtable<String, Double[]> intResult = results.get(tab);
+			HashMap<String, Double[]> intResult = results.get(tab);
 			if (needFLine) {
 				writer.append("scenario " + tab + "," + firstLine + "\n");
 				needFLine = false;
@@ -176,13 +176,13 @@ public class Csv {
 	 * @param name
 	 * @throws IOException
 	 */
-	public static void generateCsvFileMultTab(Hashtable<String, Hashtable<String, Double>> results, File folderOut,
+	public static void generateCsvFileMultTab(HashMap<String, HashMap<String, Double>> results, File folderOut,
 			String name) throws IOException {
 
 		File fileName = new File(folderOut + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, true);
 		for (String tab : results.keySet()) {
-			Hashtable<String, Double> intResult = results.get(tab);
+			HashMap<String, Double> intResult = results.get(tab);
 			writer.append("scenario " + tab + "\n");
 			for (String nomScenar : intResult.keySet()) {
 				writer.append(nomScenar + "," + intResult.get(nomScenar));
@@ -200,12 +200,12 @@ public class Csv {
 	 * @param name : name of the .csv file 
 	 * @throws IOException
 	 */
-	public static void generateLatexMultTab(Hashtable<String, Hashtable<String, Double>> results, File folderOut, String name) throws IOException {
+	public static void generateLatexMultTab(HashMap<String, HashMap<String, Double>> results, File folderOut, String name) throws IOException {
 
 		File fileName = new File(folderOut + "/" + name + ".txt");
 		FileWriter writer = new FileWriter(fileName, true);
 		for (String tab : results.keySet()) {
-			Hashtable<String, Double> intResult = results.get(tab);
+			HashMap<String, Double> intResult = results.get(tab);
 			writer.append("scenario " + tab + "\n");
 			for (String nomScenar : intResult.keySet()) {
 				writer.append(nomScenar + "&" + intResult.get(nomScenar));
@@ -226,7 +226,7 @@ public class Csv {
 	 * @param firstCol : header of the .csv file (can be null)
 	 * @throws IOException
 	 */
-	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, File folderOut, String name, String[] firstCol)
+	public static void generateCsvFile(HashMap<String, double[]> cellRepet, File folderOut, String name, String[] firstCol)
 			throws IOException {
 		generateCsvFile(cellRepet, name, folderOut, firstCol, true);
 	}
@@ -241,15 +241,16 @@ public class Csv {
 	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
 	 * @throws IOException
 	 */
-	public static void generateCsvFile(Hashtable<String, double[]> cellRepet, String name, File folderOut, String[] firstCol, boolean append)
+	public static void generateCsvFile(HashMap<String, double[]> data, String name, File folderOut, String[] firstCol, boolean append)
 			throws IOException {
-		Hashtable<String, Object[]> result = new Hashtable<String, Object[]>();
-		for (double[] ligne : cellRepet.values()) {
-			Object[] aMettre = new Object[ligne.length - 1];
-			for (int i = 1; i < ligne.length; i = i + 1) {
-				aMettre[i - 1] = ligne[i];
+		HashMap<String, Object[]> result = new HashMap<String, Object[]>();
+		for (String key : data.keySet()) {
+			double[] line = data.get(key);
+			Object[] toPut = new Object[line.length];
+			for (int i = 0; i < line.length; i++) {
+				toPut[i] = line[i];
 			}
-			result.put(String.valueOf(ligne[0]), aMettre);
+			result.put(key, toPut);
 		}
 		generateCsvFile(result, folderOut, name, firstCol, append);
 	}
@@ -257,22 +258,23 @@ public class Csv {
 	/**
 	 * generate a .csv file out of a hashtable. Each key is the first entry of a new line
 	 * 
-	 * @param cellRepet : Values are a String table (they are then converted in Object[])
+	 * @param data : Values are a String table (they are then converted in Object[])
 	 * @param folderOut : folder where the .csv file is created
 	 * @param name : name of the .csv file 
 	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
 	 * @param firstCol : header of the .csv file (can be null)
 	 * @throws IOException
 	 */
-	public static void generateCsvFile(Hashtable<String, String[]> cellRepet, File folderOut, String name, boolean append, String[] firstCol)
+	public static void generateCsvFile(HashMap<String, String[]> data, File folderOut, String name, boolean append, String[] firstCol)
 			throws IOException {
-		Hashtable<String, Object[]> result = new Hashtable<String, Object[]>();
-		for (String[] ligne : cellRepet.values()) {
-			Object[] aMettre = new Object[ligne.length - 1];
-			for (int i = 1; i < ligne.length; i = i + 1) {
-				aMettre[i - 1] = ligne[i];
+		HashMap<String, Object[]> result = new HashMap<String, Object[]>();
+		for (String key : data.keySet()) {			
+			String[] line = data.get(key);
+			Object[] toPut = new Object[line.length];
+			for (int i = 0; i < line.length; i++) {
+				toPut[i] = line[i];
 			}
-			result.put(String.valueOf(ligne[0]), aMettre);
+			result.put(key, toPut);
 		}
 		generateCsvFile(result, folderOut,name,  firstCol, append);
 	}
@@ -287,7 +289,7 @@ public class Csv {
 	 * @param firstCol : header of the .csv file (can be null)
 	 * @throws IOException
 	 */
-	public static void generateCsvFile(Hashtable<String, Object[]> cellRepet, String name, File folderOut, String[] firstCol) throws IOException {
+	public static void generateCsvFile(HashMap<String, Object[]> cellRepet, String name, File folderOut, String[] firstCol) throws IOException {
 		generateCsvFile(cellRepet, folderOut, name, firstCol, true);
 	}
 
@@ -301,7 +303,7 @@ public class Csv {
 	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
 	 * @throws IOException
 	 */
-	public static void generateCsvFile(Hashtable<String, Object[]> cellRepet, File folderOut, String name, String[] firstCol, boolean append)
+	public static void generateCsvFile(HashMap<String, Object[]> cellRepet, File folderOut, String name, String[] firstCol, boolean append)
 			throws IOException {
 		String fLine = "";
 		if (firstCol != null) {
@@ -330,8 +332,8 @@ public class Csv {
 	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
 	 * @throws IOException
 	 */
-	public static void generateCsvFileCol(Hashtable<String, double[]> cellRepet, String name, File folderOut) throws IOException {
-		Hashtable<String, Object[]> result = new Hashtable<String, Object[]>();
+	public static void generateCsvFileCol(HashMap<String, double[]> cellRepet, String name, File folderOut) throws IOException {
+		HashMap<String, Object[]> result = new HashMap<String, Object[]>();
 		for (double[] ligne : cellRepet.values()) {
 			Object[] aMettre = new Object[ligne.length - 1];
 			for (int i = 1; i < ligne.length; i = i + 1) {
@@ -351,7 +353,7 @@ public class Csv {
 	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
 	 * @throws IOException
 	 */
-	public static void generateCsvFileCol(Hashtable<String, Object[]> cellRepet, File folderOut, String name)
+	public static void generateCsvFileCol(HashMap<String, Object[]> cellRepet, File folderOut, String name)
 			throws IOException {
 		File fileName = new File(folderOut + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, false);

@@ -33,6 +33,7 @@ import org.locationtech.jts.geom.CoordinateXY;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -373,25 +374,31 @@ public class Collec {
 	}
 	
 	/**
-	 * convert a collection of simple feature (which geometries are either {@link org.locationtech.jts.geom.Polygon} or {@link org.locationtech.jts.geom.MultiPolygon}) to a list of
-	 * LineString
+	 * convert a collection of simple feature (which geometries are either {@link Polygon} or {@link MultiPolygon}) to a list of {@link LineString}. It takes into account the
+	 * exterior and the interior lines.
 	 * 
 	 * @param inputSFC
-	 * @return
+	 * @return A list of {@link LineString}
 	 */
-	public static List<LineString> fromSFCtoExteriorRingLines(SimpleFeatureCollection inputSFC) {
+	public static List<LineString> fromSFCtoListRingLines(SimpleFeatureCollection inputSFC) {
 		List<LineString> lines = new ArrayList<>();
 		SimpleFeatureIterator iterator = inputSFC.features();
 		try {
 			while (iterator.hasNext()) {
 				SimpleFeature feature = iterator.next();
-				if (feature.getDefaultGeometry() instanceof MultiPolygon) {
-					MultiPolygon mp = (MultiPolygon) feature.getDefaultGeometry();
-					for (int i = 0; i < mp.getNumGeometries(); i++) {
-						lines.add(((Polygon) mp.getGeometryN(i)).getExteriorRing());
+				Geometry geom = (Geometry) feature.getDefaultGeometry();
+				if (geom instanceof MultiPolygon) {
+					for (int i = 0; i < ((MultiPolygon) geom).getNumGeometries(); i++) {
+						MultiLineString mls = Geom.generateLineStringFromPolygon(((Polygon) ((MultiPolygon) geom).getGeometryN(i)));
+						for (int j = 0; j < mls.getNumGeometries(); j++) {
+							lines.add((LineString) mls.getGeometryN(j));
+						}
 					}
 				} else {
-					lines.add(((Polygon) feature.getDefaultGeometry()).getExteriorRing());
+					MultiLineString mls = Geom.generateLineStringFromPolygon((Polygon) geom);
+					for (int j = 0; j < mls.getNumGeometries(); j++) {
+						lines.add((LineString) mls.getGeometryN(j));
+					}
 				}
 			}
 		} finally {
@@ -400,6 +407,17 @@ public class Collec {
 		return lines;
 	}
 
+	/**
+	 * convert a collection of simple feature (which geometries are either {@link org.locationtech.jts.geom.Polygon} or {@link org.locationtech.jts.geom.MultiPolygon}) to a
+	 * {@link MultiLineString}. It takes into account the exterior and the interior lines.
+	 * 
+	 * @param inputSFC
+	 * @return A list of {@link LineString}
+	 */
+	public static MultiLineString fromSFCtoRingMultiLines(SimpleFeatureCollection inputSFC) {
+		return Geom.getListAsGeom(fromSFCtoListRingLines(inputSFC), new GeometryFactory());
+	}
+	
 	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut) throws Exception {
 		return exportSFC(listFeature, fileOut, true);
 	}
