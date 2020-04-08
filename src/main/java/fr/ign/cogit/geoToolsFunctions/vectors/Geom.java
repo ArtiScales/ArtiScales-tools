@@ -329,7 +329,13 @@ public class Geom {
 		List<Geometry> lines = new ArrayList<Geometry>();
 		lines.add(geom.getFactory().createMultiLineString(new LineString[] { poly.getExteriorRing() }));
 		for (int i = 0; i < poly.getNumInteriorRing(); i++) {
-			lines.add(geom.getFactory().createMultiLineString(new LineString[] { poly.getInteriorRingN(i) }));
+			LineString interiorLines = poly.getInteriorRingN(i);
+			if (interiorLines.getLength() > 100.0) {
+				lines.add(geom.getFactory().createMultiLineString(new LineString[] { interiorLines }));
+			}
+			else {
+				System.out.println(interiorLines);
+			}
 		}
 		return (MultiLineString) Geom.unionGeom(lines);
 	}
@@ -338,7 +344,7 @@ public class Geom {
 		    return fact.createMultiLineString(list.toArray(new LineString[list.size()]));
 	  }
 	  
-	  public List<LineString> getSegments(LineString l) {
+	  public static List<LineString> getSegments(LineString l) {
 		    List<LineString> result = new ArrayList<>();
 		    for (int i = 0; i < l.getNumPoints() - 1; i++) {
 		      result.add(l.getFactory().createLineString(new Coordinate[] { l.getCoordinateN(i), l.getCoordinateN(i + 1) }));
