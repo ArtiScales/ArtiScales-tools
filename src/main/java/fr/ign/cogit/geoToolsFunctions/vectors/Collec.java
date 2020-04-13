@@ -333,6 +333,33 @@ public class Collec {
 		}
 		return result.collection();
 	}
+	
+	
+	/**
+	 * Check if a given {@link SimpleFeature} intersects the input {@link SimpleFeatureCollection}.
+	 * 
+	 * @param inputFeat
+	 *            input {@link SimpleFeature}
+	 * @param inputSFC
+	 *            input {@link SimpleFeatureCollection}
+	 * @return true if there's an intersection, false otherwise
+	 * @throws Exception
+	 */
+	public static boolean isFeatIntersectsSFC(SimpleFeature inputFeat, SimpleFeatureCollection inputSFC)
+			throws Exception {
+		Geometry geom = (Geometry) inputFeat.getDefaultGeometry();
+		// import of the cells of MUP-City outputs
+		try (SimpleFeatureIterator cellsCollectionIt = Collec.snapDatas(inputSFC, geom).features()) {
+			while (cellsCollectionIt.hasNext()) {
+				if (((Geometry) cellsCollectionIt.next().getDefaultGeometry()).intersects(geom)) {
+					return true;
+				}
+			}
+		} catch (Exception problem) {
+			problem.printStackTrace();
+		}
+		return false;
+	}
 
 	/**
 	 * Check if the given Simple Feature contains the given field name. Uses the {@link #isSchemaContainsAttribute(SimpleFeatureType, String)} method.
@@ -446,7 +473,7 @@ public class Collec {
 	}
 	
 	/**
-	 * Get the value of a feature's field from a SimpleFeatureCollection that intersects a given Geometry (that is most of the time, a parcel or building). If the given feature is
+	 * Get the {@link SimpleFeature} out of a {@link SimpleFeatureCollection} that intersects a given Geometry (that is most of the time, a parcel or building). If the given feature is
 	 * overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
 	 * 
 	 * @param geometry input {@link Geometry}
@@ -465,9 +492,9 @@ public class Collec {
 				if (theFeatureGeom.contains(givenFeatureGeom)) {
 					return theFeature;
 				}
-				// if the parcel is in between two features, we put the cities in a sorted collection
+				// if the parcel is in between two features, we put the feature in a sorted collection
 				else if (theFeatureGeom.intersects(givenFeatureGeom)) {
-					index.put(theFeatureGeom.getArea(), theFeature);
+					index.put(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, givenFeatureGeom)).getArea(), theFeature);
 				}
 			}
 		} catch (Exception problem) {

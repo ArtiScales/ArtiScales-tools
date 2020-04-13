@@ -330,11 +330,9 @@ public class Geom {
 		lines.add(geom.getFactory().createMultiLineString(new LineString[] { poly.getExteriorRing() }));
 		for (int i = 0; i < poly.getNumInteriorRing(); i++) {
 			LineString interiorLines = poly.getInteriorRingN(i);
+			//avoid silvers 
 			if (interiorLines.getLength() > 100.0) {
 				lines.add(geom.getFactory().createMultiLineString(new LineString[] { interiorLines }));
-			}
-			else {
-				System.out.println(interiorLines);
 			}
 		}
 		return (MultiLineString) Geom.unionGeom(lines);
