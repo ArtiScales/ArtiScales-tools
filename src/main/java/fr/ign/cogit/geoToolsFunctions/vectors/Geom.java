@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.SchemaException;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -29,6 +30,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
+import fr.ign.cogit.FeaturePolygonizer;
 import fr.ign.cogit.geoToolsFunctions.Schemas;
 
 public class Geom {
@@ -348,5 +350,18 @@ public class Geom {
 		      result.add(l.getFactory().createLineString(new Coordinate[] { l.getCoordinateN(i), l.getCoordinateN(i + 1) }));
 		    }
 		    return result;
-		  }
+	}
+
+	  /**
+	   * Get the border of a studied zone. Buffers have fixed values and can be parametrized. 
+	   * @param in
+	   * @return
+	   * @throws IOException
+	   * @throws SchemaException
+	   */
+	public static Geometry createBufferBorder(SimpleFeatureCollection in) throws IOException, SchemaException {
+		Geometry hull = Geom.unionSFC(in).buffer(30).buffer(-30);
+		List<Geometry> list = Arrays.asList(hull, hull.buffer(50));
+		return Geom.unionGeom(FeaturePolygonizer.getPolygons(list).stream().filter(x -> !hull.buffer(1).contains(x)).collect(Collectors.toList()));
+	}
 }
