@@ -3,7 +3,6 @@ package fr.ign.cogit.geoToolsFunctions.vectors;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +25,7 @@ import org.opengis.filter.FilterFactory2;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
+import fr.ign.cogit.geoToolsFunctions.Attribute;
 import fr.ign.cogit.geoToolsFunctions.Schemas;
 
 public class Shp {
@@ -38,22 +38,26 @@ public class Shp {
 	}
 
 	/**
-	 * Merge a list of shapeFiles. The method employed is depending on the schemas of the shapefiles and if the attributes need to be kept. 
+	 * Merge a list of shapeFiles. The method employed is depending on the schemas of the shapefiles and if the attributes need to be kept.
 	 * <ul>
 	 * <li>If shemas are the same, the simplefeatures are added to a defaultfeature collection</li>
-	 * <li>If shemas aren't the same but have the same number of attributes, simple features are  (a warning is sent)</li> 
-	 * <li>If shemas aren't the same with different number of attributes, only the geometry of the file are kept.</li> 
+	 * <li>If shemas aren't the same but have the same number of attributes, simple features are (a warning is sent)</li>
+	 * <li>If shemas aren't the same with different number of attributes, only the geometry of the file are kept.</li>
 	 * </ul>
-	 * Possible to define an geometric bound on which only the intersecting data are kept. 
+	 * Possible to define an geometric bound on which only the intersecting data are kept.
 	 * 
-	 * @param file2MergeIn : list of shapefiles to merge
-	 * @param fileOut : output shapefile
-	 * @param boundFile : bound shapefile
-	 * @param keepAttributes : do we need to keep the attributes or not
-	 * @return
-	 * @throws Exception
+	 * @param file2MergeIn
+	 *            List of shapefiles to merge
+	 * @param fileOut
+	 *            Output shapefile
+	 * @param boundFile
+	 *            Bound shapefile
+	 * @param keepAttributes
+	 *            Do we need to keep the attributes or not
+	 * @return The merged ShapeFile
+	 * @throws IOException
 	 */
-	public static File mergeVectFiles(List<File> file2MergeIn, File fileOut, File boundFile, boolean keepAttributes) throws Exception {
+	public static File mergeVectFiles(List<File> file2MergeIn, File fileOut, File boundFile, boolean keepAttributes) throws IOException  {
 		//		org.geotools.util.logging.Logging.getLogger("org.geotools.feature").setLevel(Level.OFF);
 		// stupid basic checkout
 		if (file2MergeIn.isEmpty()) {
@@ -134,14 +138,14 @@ public class Shp {
 				// containing only geometry
 				Arrays.stream(parcelSFC.toArray(new SimpleFeature[0])).forEach(feat -> {
 					defaultSFBuilder.set("the_geom", feat.getDefaultGeometry());
-					newParcel.add(defaultSFBuilder.buildFeature(null));
+					newParcel.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId()));
 				});
 			}
 			parcelSDS.dispose();
 		}
 		SimpleFeatureCollection output = newParcel.collection();
 		if (boundFile != null && boundFile.exists()) {
-			output = Collec.cropSFC(output, boundFile);
+			output = Collec.snapDatas(output, boundFile);
 		}
 		return Collec.exportSFC(output, fileOut);
 	}
@@ -149,28 +153,31 @@ public class Shp {
 	/**
 	 * clean the shapefile of feature which area is inferior to areaMin
 	 * 
-	 * @param fileIn :input shapefile
+	 * @param fileIn Input shapefile
 	 * @param areaMin
-	 * @return
-	 * @throws Exception
+	 * @return The {@link SimpleFeatureCollection} without tiny parcels
+	 * @throws IOException 
 	 */
-	public static File delTinyParcels(File fileIn, File fileOut, double areaMin) throws Exception {
+	public static File delTinyParcels(File fileIn, File fileOut, double areaMin) throws IOException {
 		ShapefileDataStore SDSParcel = new ShapefileDataStore(fileIn.toURI().toURL());
-		SimpleFeatureCollection sfc = SDSParcel.getFeatureSource().getFeatures();
-		SimpleFeatureCollection result = Collec.delTinyParcels(sfc, areaMin);
-		Collec.exportSFC(result, fileOut);
+		File result = Collec.exportSFC(Collec.delTinyParcels(SDSParcel.getFeatureSource().getFeatures(), areaMin), fileOut);
 		SDSParcel.dispose();
-		return fileIn;
+		return result;
 	}
 	
 	/**
-	 * Algorithm to spit a shapefile with a squared grid.  
-	 * @warning untested since MC's PhD
+	 * Algorithm to spit a shapefile with a squared grid.
 	 * 
-	 * @param inFile : input shapeFile
-	 * @param outFile : output shapeFile
-	 * @param name : name of the simpleFeatureCollection
-	 * @param gridResolution : size of a side of the squared mesh
+	 * Warning !! untested since MC's PhD
+	 * 
+	 * @param inFile
+	 *            Input shapeFile
+	 * @param outFile
+	 *            Output shapeFile
+	 * @param name
+	 *            Name of the simpleFeatureCollection
+	 * @param gridResolution
+	 *            Size of a side of the squared mesh
 	 * 
 	 * @return a shapefile with the cuted features
 	 * @throws IOException
@@ -179,7 +186,7 @@ public class Shp {
 	 */
 	public static File discretizeShp(File inFile, File outFile, String name, int gridResolution)
 			throws IOException, NoSuchAuthorityCodeException, FactoryException {
-		
+
 		ShapefileDataStore sds = new ShapefileDataStore(inFile.toURI().toURL());
 		SimpleFeatureCollection input = sds.getFeatureSource().getFeatures();
 		DefaultFeatureCollection dfCuted = new DefaultFeatureCollection();
@@ -232,39 +239,36 @@ public class Shp {
 		return Collec.exportSFC(dfCuted.collection(), outFile);
 	}
 	
-	public static File cropSFC(File inFile, File empriseFile, File tmpFile) throws MalformedURLException, IOException {
 
-		ShapefileDataStore envSDS = new ShapefileDataStore(empriseFile.toURI().toURL());
-		ShapefileDataStore inSDS = new ShapefileDataStore(inFile.toURI().toURL());
-
-		SimpleFeatureCollection result = Collec.cropSFC(inSDS.getFeatureSource().getFeatures(),
-				envSDS.getFeatureSource().getFeatures());
-		envSDS.dispose();
-		inSDS.dispose();
-		// return exportSFC(result, new File(tmpFile, inFile.getName().replace(".shp",
-		// "")+"-croped.shp"));
-		return Collec.exportSFC(result, new File(tmpFile, inFile.getName()));
-	}
-	
-	public static File snapDatas(File fileIn, File bBoxFile, File fileOut) throws Exception {
-
+	public static File snapDatas(File fileIn, File fileOut, SimpleFeatureCollection box) throws IOException {
 		// load the input from the general folder
 		ShapefileDataStore shpDSIn = new ShapefileDataStore(fileIn.toURI().toURL());
-		SimpleFeatureCollection inCollection = shpDSIn.getFeatureSource().getFeatures();
-
+		File result = Collec.exportSFC(Collec.snapDatas(shpDSIn.getFeatureSource().getFeatures(), Geom.unionSFC(box)), fileOut);
+		shpDSIn.dispose();
+		return result;
+	}
+	
+	public static File snapDatas(File fileIn, File bBoxFile, File fileOut) throws IOException {
+		// load the input from the general folder
+		ShapefileDataStore shpDSIn = new ShapefileDataStore(fileIn.toURI().toURL());
 		// load the file to make the bbox and selectin with
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(bBoxFile.toURI().toURL());
-		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
-		Geometry bBox = Geom.unionSFC(zoneCollection);
+		File result = Collec.exportSFC(
+				Collec.snapDatas(shpDSIn.getFeatureSource().getFeatures(), Geom.unionSFC(shpDSZone.getFeatureSource().getFeatures())), fileOut);
 		shpDSZone.dispose();
-		return Collec.exportSFC(Collec.snapDatas(inCollection, bBox), fileOut);
+		shpDSIn.dispose();
+		return result;
 	}
 	
 	/**
 	 * copy the files of a shapefile to an other folder
-	 * @param name: name of the shapefile
-	 * @param fromFolder: folder where the shapefile are located
-	 * @param destinationFolder: destination to where the folder is located 
+	 * 
+	 * @param name
+	 *            Name of the shapefile
+	 * @param fromFolder
+	 *            Folder where the shapefile are located
+	 * @param destinationFolder
+	 *            Destination to where the folder is located
 	 * @throws IOException
 	 */
 	public static void copyShp(String name, File fromFolder, File destinationFolder) throws IOException {
@@ -279,8 +283,11 @@ public class Shp {
 	
 	/**
 	 * delete the files of a shapefile to an other folder
-	 * @param name: name of the shapefile
-	 * @param fromFolder: folder where the shapefile are located
+	 * 
+	 * @param name
+	 *            name of the shapefile
+	 * @param fromFolder
+	 *            folder where the shapefile are located
 	 * @throws IOException
 	 */
 	public static void deleteShp(String name, File fromFolder) throws IOException {

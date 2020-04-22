@@ -3,7 +3,6 @@ package fr.ign.cogit.geoToolsFunctions.vectors;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,41 +55,37 @@ public class Collec {
 //	}
 	
 	/**
-	 * return the sum of area of every features of a simpleFeatureCollection
+	 * Return the sum of area of every features of a simpleFeatureCollection
 	 * 
-	 * @param markedParcels
-	 * @return
+	 * @param parcels
+	 *            input {@link SimpleFeatureCollection}
+	 * @return The sum of area of every features
 	 * @throws IOException
 	 */
-	public static double area(SimpleFeatureCollection markedParcels) throws IOException {
-		SimpleFeatureIterator parcels = markedParcels.features();
+	public static double area(SimpleFeatureCollection parcels) throws IOException {
 		double totArea = 0.0;
-		try {
-			while (parcels.hasNext()) {
-				totArea = totArea + ((Geometry) parcels.next().getDefaultGeometry()).getArea();
+		try (SimpleFeatureIterator parcelIt = parcels.features()){
+			while (parcelIt.hasNext()) {
+				totArea = totArea + ((Geometry) parcelIt.next().getDefaultGeometry()).getArea();
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
-		} finally {
-			parcels.close();
 		}
 		return totArea;
 	}
 	
 	/**
-	 * clean the SimpleFeatureCollection of feature which area is inferior to areaMin
+	 * clean the {@link SimpleFeatureCollection} of feature which area is inferior to areaMin
 	 * 
-	 * @param collecIn : Input SimpleFeatureCollection
+	 * @param collecIn
+	 *            Input {@link SimpleFeatureCollection}
 	 * @param areaMin
-	 * @return
-	 * @throws Exception
+	 * @return the cleaned {@link SimpleFeatureCollection}
+	 * @throws IOException
 	 */
-	public static SimpleFeatureCollection delTinyParcels(SimpleFeatureCollection collecIn, double areaMin)
-			throws Exception {
-
+	public static SimpleFeatureCollection delTinyParcels(SimpleFeatureCollection collecIn, double areaMin) throws IOException {
 		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
-		SimpleFeatureIterator it = collecIn.features();
-		try {
+		try (SimpleFeatureIterator it = collecIn.features()) {
 			while (it.hasNext()) {
 				SimpleFeature feat = it.next();
 				try {
@@ -103,21 +98,19 @@ public class Collec {
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
-		} finally {
-			it.close();
-		}
+		} 
 		return newParcel.collection();
 	}
 
 	/**
-	 * export a simple feature collection. If the shapefile already exists , either overwrite it or merge it with the existing shapefile.
+	 * Export a simple feature collection. If the shapefile already exists , either overwrite it or merge it with the existing shapefile.
 	 * 
 	 * @param toExport
 	 * @param fileOut
 	 * @param overwrite
-	 *            : if true, the shapefile is overwritten if it exists. If false, the shapefiles (ne existing and the export) are merged together with the
+	 *            If true, the shapefile is overwritten if it exists. If false, the shapefiles (ne existing and the export) are merged together with the
 	 *            {@link fr.ign.cogit.geoToolsFunctions.vectors.Shp#mergeVectFiles(List, File)} method
-	 * @return
+	 * @return the ShapeFile
 	 * @throws Exception
 	 */
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, boolean overwrite) throws Exception {
@@ -148,11 +141,11 @@ public class Collec {
 		
 	
 	/**
-	 * export a simple feature collection. Overwrite file if already exists
+	 * Export a simple feature collection. Overwrite file if already exists
 	 * 
 	 * @param toExport
 	 * @param fileOut
-	 * @return
+	 * @return the ShapeFile
 	 * @throws IOException
 	 */
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut) throws IOException {
@@ -165,11 +158,11 @@ public class Collec {
 	
 
 	/**
-	 * export a simple feature collection. If the shapefile already exists , either overwrite it or merge it with the existing shapefile.
+	 * Export a simple feature collection. If the shapefile already exists , either overwrite it or merge it with the existing shapefile.
 	 * 
 	 * @param toExport
 	 * @param fileOut
-	 * @return
+	 * @return the ShapeFile
 	 * @throws IOException
 	 */
 	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft)
@@ -240,32 +233,6 @@ public class Collec {
 		newDataStore.dispose();
 		return fileOut;
 	}
-	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, File empriseFile)
-			throws MalformedURLException, IOException {
-		if (inSFC.isEmpty()) {
-			return inSFC;
-		}
-		ShapefileDataStore envSDS = new ShapefileDataStore(empriseFile.toURI().toURL());
-		SimpleFeatureCollection result = cropSFC(inSFC, envSDS.getFeatureSource().getFeatures());
-		envSDS.dispose();
-		return result;
-	}
-
-	public static SimpleFeatureCollection cropSFC(SimpleFeatureCollection inSFC, SimpleFeatureCollection empriseSFC)
-			throws MalformedURLException, IOException {
-		if (inSFC.isEmpty()) {
-			return inSFC;
-		}
-		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-		return DataUtilities.collection(inSFC.subCollection(ff.bbox(ff.property(inSFC.getSchema().getGeometryDescriptor().getLocalName()), empriseSFC.getBounds())));
-	}
-	public static SimpleFeatureCollection snapDatas(File fileIn, SimpleFeatureCollection box) throws IOException {
-		// load the input from the general folder
-		ShapefileDataStore shpDSIn = new ShapefileDataStore(fileIn.toURI().toURL());
-		SimpleFeatureCollection inCollection = shpDSIn.getFeatureSource().getFeatures();
-		Geometry bBox = Geom.unionSFC(box);
-		return snapDatas(inCollection, bBox);
-	}
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile) throws IOException {
 		return snapDatas(SFCIn, boxFile, 0);
@@ -273,8 +240,7 @@ public class Collec {
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws IOException {
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
-		SimpleFeatureCollection zoneCollection = shpDSZone.getFeatureSource().getFeatures();
-		Geometry bBox = Geom.unionSFC(zoneCollection);
+		Geometry bBox = Geom.unionSFC(shpDSZone.getFeatureSource().getFeatures());
 		if (distance != 0) {
 			bBox = bBox.buffer(distance);
 		}
@@ -283,15 +249,12 @@ public class Collec {
 	}
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox) {
-		Geometry geomBBox = Geom.unionSFC(bBox);
-		return snapDatas(SFCIn, geomBBox);
+		return snapDatas(SFCIn, Geom.unionSFC(bBox));
 	}
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-		Filter filterIn = ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox));
-		SimpleFeatureCollection inTown = DataUtilities.collection(SFCIn.subCollection(filterIn));
-		return inTown;
+		return DataUtilities.collection(SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox))));
 	}
 	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String attribute)
 			throws IOException {
@@ -315,11 +278,11 @@ public class Collec {
 	}
 	
 	/**
-	 * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). 
-	 * Uses a sorted collection and a stream method. 
-	 * @param sFCToSort :SimpleFeature
-	 * @return The sorted SimpleFeatureCollection
-	 * @author Maxime Colomb
+	 * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.
+	 * 
+	 * @param sFCToSort
+	 *            SimpleFeature
+	 * @return The sorted {@link SimpleFeatureCollection}
 	 * @throws IOException
 	 */
 	public static SimpleFeatureCollection sortSFCWithArea(SimpleFeatureCollection sFCToSort) throws IOException {
@@ -334,7 +297,6 @@ public class Collec {
 		return result.collection();
 	}
 	
-	
 	/**
 	 * Check if a given {@link SimpleFeature} intersects the input {@link SimpleFeatureCollection}.
 	 * 
@@ -343,10 +305,8 @@ public class Collec {
 	 * @param inputSFC
 	 *            input {@link SimpleFeatureCollection}
 	 * @return true if there's an intersection, false otherwise
-	 * @throws Exception
 	 */
-	public static boolean isFeatIntersectsSFC(SimpleFeature inputFeat, SimpleFeatureCollection inputSFC)
-			throws Exception {
+	public static boolean isFeatIntersectsSFC(SimpleFeature inputFeat, SimpleFeatureCollection inputSFC){
 		Geometry geom = (Geometry) inputFeat.getDefaultGeometry();
 		// import of the cells of MUP-City outputs
 		try (SimpleFeatureIterator cellsCollectionIt = Collec.snapDatas(inputSFC, geom).features()) {
@@ -375,9 +335,12 @@ public class Collec {
 	}
 
 	/**
-	 * Check if the given collection contains the given field name
-	 * @param collec input SimpleFeatureCollecton
-	 * @param attributeFiledName : name of the field (must respect case)
+	 * Check if the given collection contains the given field name.
+	 * 
+	 * @param collec
+	 *            Input SimpleFeatureCollecton
+	 * @param attributeFiledName
+	 *            Name of the field (must respect case)
 	 * @return true if the collec contains the field name, false otherwise
 	 */
 	public static boolean isCollecContainsAttribute(SimpleFeatureCollection collec, String attributeFiledName) {
@@ -385,9 +348,12 @@ public class Collec {
 	}
 	
 	/**
-	 * Check if the given schema contains the given field name
-	 * @param schema SimpleFeatureType schema
-	 * @param attributeFiledName : name of the field (must respect case)
+	 * Check if the given schema contains the given field name.
+	 * 
+	 * @param schema
+	 *            SimpleFeatureType schema
+	 * @param attributeFiledName
+	 *            Name of the field (must respect case)
 	 * @return true if the collec contains the field name, false otherwise
 	 */
 	public static boolean isSchemaContainsAttribute(SimpleFeatureType schema, String attributeFiledName) {
@@ -482,10 +448,9 @@ public class Collec {
 	 */
 	public static SimpleFeature getSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection parcels) {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-		Filter filter = ff.intersects(ff.property(parcels.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry));
 		Geometry givenFeatureGeom = GeometryPrecisionReducer.reduce(geometry, new PrecisionModel(10));
 		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
-		try (SimpleFeatureIterator collecIt = parcels.subCollection(filter).features()) {
+		try (SimpleFeatureIterator collecIt = parcels.subCollection(ff.intersects(ff.property(parcels.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry))).features()) {
 			while (collecIt.hasNext()) {
 				SimpleFeature theFeature = collecIt.next();
 				Geometry theFeatureGeom = GeometryPrecisionReducer.reduce((Geometry) theFeature.getDefaultGeometry(), new PrecisionModel(10)).buffer(1);
@@ -500,9 +465,8 @@ public class Collec {
 		} catch (Exception problem) {
 			problem.printStackTrace();
 		}
-		return index.get(index.lastKey());
+		return index.size() > 0 ? index.get(index.lastKey()) : null ;
 	}
-
 	
 	// public static HashMap<String, SimpleFeatureCollection>
 	// divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {

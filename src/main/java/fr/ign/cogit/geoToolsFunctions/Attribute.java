@@ -1,13 +1,20 @@
 package fr.ign.cogit.geoToolsFunctions;
 
 import java.io.FileNotFoundException;
+import java.rmi.server.UID;
 
 public class Attribute {
 	
+	public static String makeUniqueId(){
+		return String.valueOf(Math.random()*1000)+new UID().toString().replace(':', '_');
+	}
+	
 	/**
 	 * Get the indice number on the position of the Latitude field from a .csv
-	 * @param head: the header of the .csv file 
-	 * @return the indice on which  number
+	 * 
+	 * @param head
+	 *            the header of the .csv file
+	 * @return the indice on which number
 	 */
 	public static int getLatIndice (String[] head) throws FileNotFoundException {
 		for (int i = 0; i < head.length; i = i + 1) {
@@ -21,8 +28,10 @@ public class Attribute {
 	
 	/**
 	 * Get the indice number on the position of the Latitude field from a .csv
-	 * @param head: the header of the .csv file 
-	 * @return the indice on which  number
+	 * 
+	 * @param head
+	 *            the header of the .csv file
+	 * @return the indice on which number
 	 */
 	public static int getLongIndice (String[] head) throws FileNotFoundException {
 		for (int i = 0; i < head.length; i = i + 1) {
@@ -35,8 +44,10 @@ public class Attribute {
 	
 	/**
 	 * Get the indice number on the position of the Latitude field from a .csv
-	 * @param head: the header of the .csv file 
-	 * @return the indice on which  number
+	 * 
+	 * @param head
+	 *            the header of the .csv file
+	 * @return the indice on which number
 	 */
 	public static int getCityCodeIndice (String[] head) throws FileNotFoundException {
 		for (int i = 0; i < head.length; i = i + 1) {
@@ -52,8 +63,10 @@ public class Attribute {
 	
 	/**
 	 * Get the indice number on the position of the Latitude field from a .csv
-	 * @param head: the header of the .csv file 
-	 * @return the indice on which  number
+	 * 
+	 * @param head
+	 *            the header of the .csv file
+	 * @return the indice on which number
 	 */
 	public static int getIndice (String[] head, String indiceName) throws FileNotFoundException {
 		for (int i = 0; i < head.length; i = i + 1) {

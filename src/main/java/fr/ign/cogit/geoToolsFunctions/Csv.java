@@ -37,7 +37,6 @@ public class Csv {
 //
 //	}
 
-	
 	public static void mergeCSVFiles(File rootFolder, File outFile) throws IOException {
 		List<File> listCSV = new ArrayList<File>();
 		for (File folderToMerge : rootFolder.listFiles()) {
@@ -234,11 +233,16 @@ public class Csv {
 	/**
 	 * generate a .csv file out of a hashtable. Each key is the first entry of a new line
 	 * 
-	 * @param cellRepet : Values are a double table (they are then converted in Object[])
-	 * @param name : name of the .csv file 
-	 * @param folderOut : folder where the .csv file is created
-	 * @param firstCol : header of the .csv file (can be null)
-	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
+	 * @param data
+	 *            Values are a double table (they are then converted in Object[])
+	 * @param name
+	 *            name of the .csv file
+	 * @param folderOut
+	 *            folder where the .csv file is created
+	 * @param firstCol
+	 *            header of the .csv file (can be null)
+	 * @param append
+	 *            in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one.
 	 * @throws IOException
 	 */
 	public static void generateCsvFile(HashMap<String, double[]> data, String name, File folderOut, String[] firstCol, boolean append)
@@ -326,10 +330,12 @@ public class Csv {
 	/**
 	 * Generate a .csv file out of a hashtable. Data are dispalyed in colomn and each key is placed in the header
 	 * 
- 	 * @param cellRepet : Values are a double table (they are then converted in Object[])
-	 * @param name : name of the .csv file 
-	 * @param folderOut : folder where the .csv file is created
-	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
+	 * @param cellRepet
+	 *            Values are a double table (they are then converted in Object[])
+	 * @param name
+	 *            name of the .csv file
+	 * @param folderOut
+	 *            folder where the .csv file is created
 	 * @throws IOException
 	 */
 	public static void generateCsvFileCol(HashMap<String, double[]> cellRepet, String name, File folderOut) throws IOException {
@@ -347,11 +353,12 @@ public class Csv {
 	/**
 	 * Generate a .csv file out of a hashtable. Data are dispalyed in colomn and each key is placed in the header
 	 * 
-	 * @param cellRepet : Values are an Object table
-	 * @param folderOut : folder where the .csv file is created
-	 * @param name : name of the .csv file 
-	 * @param append : in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one. 
-	 * @throws IOException
+	 * @param cellRepet
+	 *            Values are an Object table
+	 * @param folderOut
+	 *            Folder where the .csv file is created
+	 * @param name
+	 *            Name of the .csv file * @throws IOException
 	 */
 	public static void generateCsvFileCol(HashMap<String, Object[]> cellRepet, File folderOut, String name)
 			throws IOException {

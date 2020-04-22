@@ -31,6 +31,7 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 import fr.ign.cogit.FeaturePolygonizer;
+import fr.ign.cogit.geoToolsFunctions.Attribute;
 import fr.ign.cogit.geoToolsFunctions.Schemas;
 
 public class Geom {
@@ -73,9 +74,10 @@ public class Geom {
 	
 	/**
 	 * export a simple geometry in a shapeFile
+	 * 
 	 * @param geom
 	 * @param fileName
-	 * @return
+	 * @return A ShapeFile containing the exported {@link Geometry}
 	 * @throws IOException
 	 * @throws NoSuchAuthorityCodeException
 	 * @throws FactoryException
@@ -84,7 +86,7 @@ public class Geom {
 			throws IOException, NoSuchAuthorityCodeException, FactoryException {
 		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaMultiPolygon("geom");
 		sfBuilder.add(geom);
-		SimpleFeature feature = sfBuilder.buildFeature(null);
+		SimpleFeature feature = sfBuilder.buildFeature(Attribute.makeUniqueId());
 		DefaultFeatureCollection dFC = new DefaultFeatureCollection();
 		dFC.add(feature);
 		return Collec.exportSFC(dFC.collection(), fileName);
@@ -244,9 +246,9 @@ public class Geom {
 	}
 	
 	/**
-	 * get a polygon and return a multiplolygon
+	 * Get a polygon and return a multiplolygon
 	 * @param geom
-	 * @return
+	 * @return The {@link Geometry} as a {@link MultiPolygon}
 	 */
 	public static Geometry getMultiPolygonGeom(Geometry geom) {
 		// force the cast into multipolygon
@@ -265,11 +267,11 @@ public class Geom {
 	/**
 	 * Return the intersecting geometry with the highest area of intersection.
 	 * 
-	 * @param lG:
-	 *            input list of geometries
-	 * @param geom:
-	 *            intersection polygon
-	 * @return the largest
+	 * @param lG
+	 *            Input list of geometries
+	 * @param geom
+	 *            Intersection polygon
+	 * @return the largest {@link Geometry}
 	 * @throws Exception
 	 */
 	public static Geometry getBiggestIntersectingGeometry(List<Geometry> lG, Geometry geom) {
@@ -289,9 +291,9 @@ public class Geom {
 	}
 	
 	/**
-	 * Get geometry as a Polygon. If it already is a Polygon, returns it. If a MultiPolygon, returns the biggest Polygon Geometry of the list. 
+	 * Get {@link Geometry} as a Polygon. If it already is a Polygon, returns it. If a MultiPolygon, returns the biggest Polygon Geometry of the list. 
 	 * @param geom
-	 * @return
+	 * @return the {@link Geometry} as a {@link Polygon}
 	 */
 	public static Geometry getPolygon(Geometry geom) {
 		return getBiggestIntersectingGeometry(getPolygons(geom),geom);
@@ -355,7 +357,7 @@ public class Geom {
 	  /**
 	   * Get the border of a studied zone. Buffers have fixed values and can be parametrized. 
 	   * @param in
-	   * @return
+	   * @return the border without the inside geometry
 	   * @throws IOException
 	   * @throws SchemaException
 	   */

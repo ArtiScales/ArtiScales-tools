@@ -35,7 +35,6 @@ public class Schemas {
 	}
 
 	public static SimpleFeatureBuilder getBasicSchemaMultiPolygon(String name) throws NoSuchAuthorityCodeException, FactoryException {
-
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		sfTypeBuilder.setCRS(CRS.decode("EPSG:2154"));
 		sfTypeBuilder.setName(name);
