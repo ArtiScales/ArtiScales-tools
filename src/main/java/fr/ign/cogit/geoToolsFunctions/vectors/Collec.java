@@ -429,13 +429,15 @@ public class Collec {
 	 * 
 	 * @param geometry
 	 *            input {@link Geometry}
-	 * @param parcels
+	 * @param sfc
+	 *            Input {@link SimpleFeatureCollection}
 	 * @param fieldName
 	 *            The name of the field in which to look for the attribute
 	 * @return the wanted filed from the (most) intersecting {@link SimpleFeature}}
 	 */
-	public static String getFieldFromSFC(Geometry geometry, SimpleFeatureCollection parcels, String fieldName) {
-		return (String) getSimpleFeatureFromSFC(geometry, parcels).getAttribute(fieldName);
+	public static String getFieldFromSFC(Geometry geometry, SimpleFeatureCollection sfc, String fieldName) {
+		SimpleFeature feat = getSimpleFeatureFromSFC(geometry, sfc);
+		return feat != null ? (String) feat.getAttribute(fieldName) : null ; 
 	}
 	
 	/**
@@ -450,7 +452,13 @@ public class Collec {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		Geometry givenFeatureGeom = GeometryPrecisionReducer.reduce(geometry, new PrecisionModel(10));
 		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
-		try (SimpleFeatureIterator collecIt = parcels.subCollection(ff.intersects(ff.property(parcels.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry))).features()) {
+		SimpleFeatureCollection collec = parcels
+				.subCollection(ff.intersects(ff.property(parcels.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
+		if (collec.isEmpty()) {
+			System.out.println("intersection between " + geometry + " and " + parcels.getSchema().getName() + " null");
+			return null;
+		}
+		try (SimpleFeatureIterator collecIt = collec.features()) {
 			while (collecIt.hasNext()) {
 				SimpleFeature theFeature = collecIt.next();
 				Geometry theFeatureGeom = GeometryPrecisionReducer.reduce((Geometry) theFeature.getDefaultGeometry(), new PrecisionModel(10)).buffer(1);
