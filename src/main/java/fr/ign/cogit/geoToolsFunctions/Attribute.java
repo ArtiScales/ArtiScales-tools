@@ -6,7 +6,7 @@ import java.rmi.server.UID;
 public class Attribute {
 	
 	public static String makeUniqueId(){
-		return String.valueOf(Math.random()*1000)+new UID().toString().replace(':', '_');
+		return String.valueOf(Math.random()*100000)+new UID().toString().replace(':', '_');
 	}
 	
 	/**
@@ -18,8 +18,9 @@ public class Attribute {
 	 */
 	public static int getLatIndice (String[] head) throws FileNotFoundException {
 		for (int i = 0; i < head.length; i = i + 1) {
-			if (head[i].toLowerCase().contains("latitude") || head[i].toLowerCase().equals("lat")
-					|| head[i].toLowerCase().equals("latitude")) {
+			if (head[i].toLowerCase().contains("latitude") || head[i].toLowerCase().equals("lat") || head[i].toLowerCase().equals("latitude")
+					|| head[i].toLowerCase().equals("x") || head[i].toLowerCase().equals("lambert_x")
+					|| (head[i].toLowerCase().contains("x") && head[i].toLowerCase().contains("coord"))) {
 				return i;
 			}
 		}
@@ -35,7 +36,9 @@ public class Attribute {
 	 */
 	public static int getLongIndice (String[] head) throws FileNotFoundException {
 		for (int i = 0; i < head.length; i = i + 1) {
-			if (head[i].toLowerCase().contains("longitude") || head[i].toLowerCase().contains("longitude")|| head[i].toLowerCase().equals("long") ) {
+			if (head[i].toLowerCase().contains("longitude") || head[i].toLowerCase().contains("longitude") || head[i].toLowerCase().equals("long")
+					|| head[i].toLowerCase().equals("y") || head[i].toLowerCase().equals("lambert_y")
+					|| (head[i].toLowerCase().contains("y") && head[i].toLowerCase().contains("coord"))) {
 				return i;
 			}
 		}

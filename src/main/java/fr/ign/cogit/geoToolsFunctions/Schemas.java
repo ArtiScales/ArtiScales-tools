@@ -83,6 +83,4 @@ public class Schemas {
 		sfTypeBuilder.add("log-icone", String.class);
 		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 	}
-
-
 }

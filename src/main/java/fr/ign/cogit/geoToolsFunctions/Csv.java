@@ -33,39 +33,48 @@ public class Csv {
 	
 	public static boolean needFLine = true;
 
-//	public static void main(String[] args) {
-//
+//	public static void main(String[] args) throws IOException {
+//		mergeCSVFiles(new File("/home/ubuntu/donnees/rootFileType/dataIn/amenity/sirene"), new File("/tmp/sa.csv"));
 //	}
 
-	public static void mergeCSVFiles(File rootFolder, File outFile) throws IOException {
-		List<File> listCSV = new ArrayList<File>();
-		for (File folderToMerge : rootFolder.listFiles()) {
-			for (File fileToMerge : folderToMerge.listFiles()) {
-				if (fileToMerge.toString().endsWith(".csv")) {
-					listCSV.add(fileToMerge);
-				}
-			}
-		}
-		mergeCSVFiles(listCSV, outFile);
-	}
-
-	public static void mergeCSVFiles(List<File> filesToMerge, File outFile) throws IOException {
-		mergeCSVFiles(filesToMerge, outFile, false);
-	}
-
-	public static void mergeCSVFiles(List<File> filesToMerge, File outFile, boolean replace) throws IOException {
+	/**
+	 * Merge every .csv file contained into a folder and its subfolders with a recursive method. Must have the same header. 
+	 * @param rootFolder
+	 * @param outFile
+	 * @throws IOException
+	 */
+	public static File mergeCSVFiles(File rootFolder, File outFile) throws IOException {
 		if (outFile.exists()) {
-			if (replace) {
-				Files.delete(outFile.toPath());
-			} else {
-				return;
+			Files.delete(outFile.toPath());
+		}
+		List<File> listCSV = getCSVFiles(rootFolder);
+		return mergeCSVFiles(listCSV, outFile);
+	}
+	
+	public static List<File> getCSVFiles(File folder) {
+		List<File> result = new ArrayList<File>();
+		for (File f : folder.listFiles()) {
+			if (f.isDirectory()) {
+				result.addAll(getCSVFiles(f));
+			} else if (f.getName().endsWith(".csv")) {
+				result.add(f);
 			}
 		}
+		return result;
+	}
 
+	/**
+	 * Merge a given list of .csv files. Only the first header is pasted (and all files must have one).
+	 * @param filesToMerge
+	 * @param outFile
+	 * @return
+	 * @throws IOException
+	 */
+	public static File mergeCSVFiles(List<File> filesToMerge, File outFile) throws IOException {
 		CSVReader defCsv = new CSVReader(new FileReader(filesToMerge.get(0)));
 		String[] firstLineDef = defCsv.readNext();
 		defCsv.close();
-		CSVWriter output = new CSVWriter(new FileWriter(outFile));
+		CSVWriter output = new CSVWriter(new FileWriter(outFile,true));
 		output.writeNext(firstLineDef);
 		for (File fileToMerge : filesToMerge) {
 			CSVReader ptCsv = new CSVReader(new FileReader(fileToMerge));
@@ -79,6 +88,7 @@ public class Csv {
 			ptCsv.close();
 		}
 		output.close();
+		return outFile;
 	}
 	
 	/**

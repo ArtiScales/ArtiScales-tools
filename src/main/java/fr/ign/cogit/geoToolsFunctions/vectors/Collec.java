@@ -240,11 +240,11 @@ public class Collec {
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws IOException {
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
-		Geometry bBox = Geom.unionSFC(shpDSZone.getFeatureSource().getFeatures());
+		Geometry bBox = Geom.unionSFC(DataUtilities.collection(shpDSZone.getFeatureSource().getFeatures()));
+		shpDSZone.dispose();
 		if (distance != 0) {
 			bBox = bBox.buffer(distance);
 		}
-		shpDSZone.dispose();
 		return snapDatas(SFCIn, bBox);
 	}
 

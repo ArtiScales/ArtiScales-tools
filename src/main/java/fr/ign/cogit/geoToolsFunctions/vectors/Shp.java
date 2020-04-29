@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.geotools.coverage.util.IntersectUtils;
 import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -85,7 +84,6 @@ public class Shp {
 		sfTypeBuilder.init(schemaRef);
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
 		SimpleFeatureBuilder defaultSFBuilder = new SimpleFeatureBuilder(featureType);
-		boolean sameSchemas = true;
 		lookOutAttribute: if (keepAttributes) {
 			// check if the schemas of the shape are the same and if not, if they have the
 			// same number of attributes
@@ -99,7 +97,6 @@ public class Shp {
 				if (!schemaRef.equals(schemaComp)) {
 					System.out.println(f + " have not the same schema as " + fRef
 							+ ". Try to still add attribute if number is the same but output may be fuzzy");
-					sameSchemas = false;
 				}
 				if (nbAttr != schemaComp.getAttributeCount()) {
 					System.out.println(
@@ -115,24 +112,16 @@ public class Shp {
 			ShapefileDataStore parcelSDS = new ShapefileDataStore(file.toURI().toURL());
 			SimpleFeatureCollection parcelSFC = parcelSDS.getFeatureSource().getFeatures();
 			if (keepAttributes) {
-				// easy way
-				if (sameSchemas) {
-					Arrays.stream(parcelSFC.toArray(new SimpleFeature[0])).forEach(feat -> {
-						newParcel.add(feat);
-					});
-				}
-				// complicate case : if they doesn't have the exactly same schema but the same
-				// number of attributes, we add every attribute regarding their position
-				else {
-					Arrays.stream(parcelSFC.toArray(new SimpleFeature[0])).forEach(feat -> {
-						Object[] attr = new Object[feat.getAttributeCount() - 1];
-						for (int h = 1; h < feat.getAttributeCount(); h++) {
-							attr[h - 1] = feat.getAttribute(h);
+				// Merge the feature and assignate a new id number. If collections doesn't have the exactly same schema but the same number of attributes, we add every attribute
+				// regarding their position
+				Arrays.stream(parcelSFC.toArray(new SimpleFeature[0])).forEach(feat -> {
+					Object[] attr = new Object[feat.getAttributeCount() - 1];
+					for (int h = 1; h < feat.getAttributeCount(); h++) {
+						attr[h - 1] = feat.getAttribute(h);
 						}
 						defaultSFBuilder.add((Geometry) feat.getDefaultGeometry());
-						newParcel.add(defaultSFBuilder.buildFeature(null, attr));
+						newParcel.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId(), attr));
 					});
-				}
 			} else {
 				// if we don't want to keep attributes, we create features out of new features
 				// containing only geometry
@@ -218,7 +207,7 @@ public class Shp {
 						coll = y;
 				} catch (Exception e) {
 				}
-				Geometry unionGeom = IntersectUtils.intersection(coll, gridGeometry);
+				Geometry unionGeom = Geom.scaledGeometryReductionIntersection(Arrays.asList(coll, gridGeometry));
 				try {
 					Geometry y = unionGeom.buffer(0);
 					if (y.isValid()) {
