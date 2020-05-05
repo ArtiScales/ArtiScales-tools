@@ -373,13 +373,11 @@ public class Collec {
 	 * @param inputSFC
 	 * @return A list of {@link LineString}
 	 */
-	public static List<LineString> fromSFCtoListRingLines(SimpleFeatureCollection inputSFC) {
+	public static List<LineString> fromPolygonSFCtoListRingLines(SimpleFeatureCollection inputSFC) {
 		List<LineString> lines = new ArrayList<>();
-		SimpleFeatureIterator iterator = inputSFC.features();
-		try {
+		try (SimpleFeatureIterator iterator = inputSFC.features()){
 			while (iterator.hasNext()) {
-				SimpleFeature feature = iterator.next();
-				Geometry geom = (Geometry) feature.getDefaultGeometry();
+				Geometry geom = (Geometry) iterator.next().getDefaultGeometry();
 				if (geom instanceof MultiPolygon) {
 					for (int i = 0; i < ((MultiPolygon) geom).getNumGeometries(); i++) {
 						MultiLineString mls = Geom.generateLineStringFromPolygon(((Polygon) ((MultiPolygon) geom).getGeometryN(i)));
@@ -394,9 +392,7 @@ public class Collec {
 					}
 				}
 			}
-		} finally {
-			iterator.close();
-		}
+		} 
 		return lines;
 	}
 
@@ -407,8 +403,8 @@ public class Collec {
 	 * @param inputSFC
 	 * @return A list of {@link LineString}
 	 */
-	public static MultiLineString fromSFCtoRingMultiLines(SimpleFeatureCollection inputSFC) {
-		return Geom.getListAsGeom(fromSFCtoListRingLines(inputSFC), new GeometryFactory());
+	public static MultiLineString fromPolygonSFCtoRingMultiLines(SimpleFeatureCollection inputSFC) {
+		return Geom.getListAsGeom(fromPolygonSFCtoListRingLines(inputSFC), new GeometryFactory());
 	}
 	
 	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut) throws Exception {

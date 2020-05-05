@@ -25,7 +25,9 @@ public class ProfileUrbanFabric {
 	int largeStreetLevel;
 	int decompositionLevelWithoutStreet;
 	double lenDriveway;
-
+	double noise = 0;
+	double roadEpsilon = 0.55; 
+	
 	static String profileFolder;
 
 	public ProfileUrbanFabric(double maximalArea, double minimalArea, double maximalWidth, double smallStreetWidth,
@@ -116,5 +118,21 @@ public class ProfileUrbanFabric {
 		ProfileUrbanFabric profile = mapper.readValue(fileInputStream, ProfileUrbanFabric.class);
 		fileInputStream.close();
 		return profile;
+	}
+
+	public double getNoise() {
+		return noise;
+	}
+
+	public void setNoise(double noise) {
+		this.noise = noise;
+	}
+
+	public double getRoadEpsilon() {
+		return roadEpsilon;
+	}
+
+	public void setRoadEpsilon(double roadEpsilon) {
+		this.roadEpsilon = roadEpsilon;
 	}
 }

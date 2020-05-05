@@ -149,6 +149,16 @@ public class Geom {
 		}
 	}
 
+	public static Geometry unionPrecisionReduce(List<Geometry> collection, int scale) {
+		if (collection.size() == 1) {
+			return GeometryPrecisionReducer.reduce(collection.get(0), new PrecisionModel(scale));
+		}
+		GeometryFactory factory = new GeometryFactory();
+		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(
+				collection.stream().map(g -> GeometryPrecisionReducer.reduce(g, new PrecisionModel(scale))).collect(Collectors.toList()));
+		return geometryCollection.union();
+	}
+	
 	public static Geometry unionPrecisionReduce(SimpleFeatureCollection collection, int scale) {
 		GeometryFactory factory = new GeometryFactory();
 		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[collection.size()])).map(
@@ -166,11 +176,9 @@ public class Geom {
 			return union;
 		} catch (TopologyException e) {
 			try {
-				System.out.println("precision reduced");
 				Geometry union = unionPrecisionReduce(collection, 100);
 				return union;
 			} catch (TopologyException ee) {
-				System.out.println("precision reduced again");
 				Geometry union = unionPrecisionReduce(collection, 10);
 				return union;
 			}
@@ -352,6 +360,13 @@ public class Geom {
 		    return fact.createMultiLineString(list.toArray(new LineString[list.size()]));
 	  }
 	  
+	  public static List<LineString> fromMultiToLineString(MultiLineString ml) {
+		  List<LineString> lL = new ArrayList<LineString>();
+		  for (int i = 0 ; i < ml.getNumGeometries() ; i++)
+			  lL.add((LineString) ml.getGeometryN(i));  
+		  return lL ;
+	  }
+	  
 	  public static List<LineString> getSegments(LineString l) {
 		    List<LineString> result = new ArrayList<>();
 		    for (int i = 0; i < l.getNumPoints() - 1; i++) {
@@ -373,5 +388,24 @@ public class Geom {
 		Geometry hull = Geom.unionSFC(in).buffer(20).buffer(-20);
 		List<Geometry> list = Arrays.asList(hull, hull.buffer(50));
 		return Geom.unionGeom(FeaturePolygonizer.getPolygons(list).stream().filter(x -> !hull.buffer(1).contains(x)).collect(Collectors.toList()));
+	}
+
+	public static List<LineString> getLineString(Geometry geom) {
+		if (geom instanceof LineString) {
+			return Arrays.asList((LineString) geom);
+		}
+		else if (geom instanceof MultiLineString) {
+			return Geom.fromMultiToLineString((MultiLineString) geom);
+		}
+		else if (geom instanceof Polygon) {
+			return Geom.fromMultiToLineString(Geom.generateLineStringFromPolygon(geom));
+		}
+		else if (geom instanceof MultiPolygon) {
+			return getPolygons(geom).stream().map(g -> Geom.fromMultiToLineString(generateLineStringFromPolygon(g))).collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
+		}
+		else {
+			System.out.println("getLineString(): Geometry class unknown - " +geom.getGeometryType());
+		}
+		return null;
 	}
 }
