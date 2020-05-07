@@ -13,7 +13,6 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 public class Schemas {
 	public static SimpleFeatureBuilder getBasicSchema(String name) throws NoSuchAuthorityCodeException, FactoryException {
-
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		sfTypeBuilder.setCRS(CRS.decode("EPSG:2154"));
 		sfTypeBuilder.setName(name);
@@ -52,7 +51,6 @@ public class Schemas {
 		PointSfTypeBuilder.setDefaultGeometry("the_geom");
 		PointSfTypeBuilder.add("TYPE", String.class);
 		PointSfTypeBuilder.add("LEVEL", Integer.class);
-
 		SimpleFeatureType pointFeatureType = PointSfTypeBuilder.buildFeatureType();
 		return new SimpleFeatureBuilder(pointFeatureType);
 	}

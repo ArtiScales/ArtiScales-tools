@@ -64,10 +64,9 @@ public class Collec {
 	 */
 	public static double area(SimpleFeatureCollection parcels) throws IOException {
 		double totArea = 0.0;
-		try (SimpleFeatureIterator parcelIt = parcels.features()){
-			while (parcelIt.hasNext()) {
+		try (SimpleFeatureIterator parcelIt = parcels.features()) {
+			while (parcelIt.hasNext())
 				totArea = totArea + ((Geometry) parcelIt.next().getDefaultGeometry()).getArea();
-			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
 		}
@@ -89,16 +88,15 @@ public class Collec {
 			while (it.hasNext()) {
 				SimpleFeature feat = it.next();
 				try {
-					if (((Geometry) feat.getDefaultGeometry()).getArea() > areaMin) {
+					if (((Geometry) feat.getDefaultGeometry()).getArea() > areaMin)
 						newParcel.add(feat);
-					}
 				} catch (NullPointerException np) {
 					System.out.println("this feature has no gemoetry : TODO check if normal " + feat);
 				}
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
-		} 
+		}
 		return newParcel.collection();
 	}
 
@@ -242,9 +240,8 @@ public class Collec {
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
 		Geometry bBox = Geom.unionSFC(DataUtilities.collection(shpDSZone.getFeatureSource().getFeatures()));
 		shpDSZone.dispose();
-		if (distance != 0) {
+		if (distance != 0)
 			bBox = bBox.buffer(distance);
-		}
 		return snapDatas(SFCIn, bBox);
 	}
 
@@ -262,18 +259,15 @@ public class Collec {
 		return getSFCPart(sFCToDivide, code, attributes);
 	}
 
-	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code,
-			String[] attributes) throws IOException {
+	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String[] attributes) throws IOException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		Arrays.stream(sFCToDivide.toArray(new SimpleFeature[0])).forEach(feat -> {
-				String attribute = "";
-				for (String a : attributes) {
-					attribute = attribute + ((String) feat.getAttribute(a));
-				}
-				if (attribute.equals(code)) {
-					result.add(feat);
-				}
-			});
+			String attribute = "";
+			for (String a : attributes)
+				attribute = attribute + ((String) feat.getAttribute(a));
+			if (attribute.equals(code))
+				result.add(feat);
+		});
 		return result.collection();
 	}
 	
@@ -287,13 +281,12 @@ public class Collec {
 	 */
 	public static SimpleFeatureCollection sortSFCWithArea(SimpleFeatureCollection sFCToSort) throws IOException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
-		SortedMap<Double,SimpleFeature> parcelMap = new TreeMap<>();
+		SortedMap<Double, SimpleFeature> parcelMap = new TreeMap<>();
 		Arrays.stream(sFCToSort.toArray(new SimpleFeature[0])).forEach(parcel -> {
-			parcelMap.put(((Geometry) parcel.getDefaultGeometry()).getArea(),parcel);
+			parcelMap.put(((Geometry) parcel.getDefaultGeometry()).getArea(), parcel);
 		});
-		for (Entry<Double, SimpleFeature> entry : parcelMap.entrySet()) {
+		for (Entry<Double, SimpleFeature> entry : parcelMap.entrySet())
 			result.add(entry.getValue());
-		}
 		return result.collection();
 	}
 	
@@ -311,9 +304,8 @@ public class Collec {
 		// import of the cells of MUP-City outputs
 		try (SimpleFeatureIterator cellsCollectionIt = Collec.snapDatas(inputSFC, geom).features()) {
 			while (cellsCollectionIt.hasNext()) {
-				if (((Geometry) cellsCollectionIt.next().getDefaultGeometry()).intersects(geom)) {
+				if (((Geometry) cellsCollectionIt.next().getDefaultGeometry()).intersects(geom))
 					return true;
-				}
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
@@ -357,17 +349,15 @@ public class Collec {
 	 * @return true if the collec contains the field name, false otherwise
 	 */
 	public static boolean isSchemaContainsAttribute(SimpleFeatureType schema, String attributeFiledName) {
-		if (schema.getAttributeDescriptors().stream().filter(s -> s.getName().toString().equals(attributeFiledName))
-		.collect(Collectors.toList()).size() == 0) {
+		if (schema.getAttributeDescriptors().stream().filter(s -> s.getName().toString().equals(attributeFiledName)).collect(Collectors.toList())
+				.size() == 0)
 			return false;
-		}
-		else {
+		else
 			return true;
-		}
 	}
-	
+
 	/**
-	 * convert a collection of simple feature (which geometries are either {@link Polygon} or {@link MultiPolygon}) to a list of {@link LineString}. It takes into account the
+	 * Convert a collection of simple feature (which geometries are either {@link Polygon} or {@link MultiPolygon}) to a list of {@link LineString}. It takes into account the
 	 * exterior and the interior lines.
 	 * 
 	 * @param inputSFC
@@ -381,15 +371,13 @@ public class Collec {
 				if (geom instanceof MultiPolygon) {
 					for (int i = 0; i < ((MultiPolygon) geom).getNumGeometries(); i++) {
 						MultiLineString mls = Geom.generateLineStringFromPolygon(((Polygon) ((MultiPolygon) geom).getGeometryN(i)));
-						for (int j = 0; j < mls.getNumGeometries(); j++) {
+						for (int j = 0; j < mls.getNumGeometries(); j++)
 							lines.add((LineString) mls.getGeometryN(j));
-						}
 					}
 				} else {
 					MultiLineString mls = Geom.generateLineStringFromPolygon((Polygon) geom);
-					for (int j = 0; j < mls.getNumGeometries(); j++) {
+					for (int j = 0; j < mls.getNumGeometries(); j++)
 						lines.add((LineString) mls.getGeometryN(j));
-					}
 				}
 			}
 		} 
@@ -413,9 +401,8 @@ public class Collec {
 	
 	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut, boolean overwrite) throws Exception {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
-		for (SimpleFeature feat : listFeature) {
+		for (SimpleFeature feat : listFeature)
 			result.add(feat);
-		}
 		return exportSFC(result.collection(), fileOut, overwrite);
 	}
 	
@@ -437,11 +424,12 @@ public class Collec {
 	}
 	
 	/**
-	 * Get the {@link SimpleFeature} out of a {@link SimpleFeatureCollection} that intersects a given Geometry (that is most of the time, a parcel or building). If the given feature is
-	 * overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
+	 * Get the {@link SimpleFeature} out of a {@link SimpleFeatureCollection} that intersects a given Geometry (that is most of the time, a parcel or building). If the given
+	 * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
 	 * 
-	 * @param geometry input {@link Geometry}
-	 * @param parcels 
+	 * @param geometry
+	 *            input {@link Geometry}
+	 * @param parcels
 	 * @return the (most) intersecting {@link SimpleFeature}}
 	 */
 	public static SimpleFeature getSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection parcels) {
@@ -458,13 +446,11 @@ public class Collec {
 			while (collecIt.hasNext()) {
 				SimpleFeature theFeature = collecIt.next();
 				Geometry theFeatureGeom = GeometryPrecisionReducer.reduce((Geometry) theFeature.getDefaultGeometry(), new PrecisionModel(10)).buffer(1);
-				if (theFeatureGeom.contains(givenFeatureGeom)) {
+				if (theFeatureGeom.contains(givenFeatureGeom))
 					return theFeature;
-				}
 				// if the parcel is in between two features, we put the feature in a sorted collection
-				else if (theFeatureGeom.intersects(givenFeatureGeom)) {
+				else if (theFeatureGeom.intersects(givenFeatureGeom))
 					index.put(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, givenFeatureGeom)).getArea(), theFeature);
-				}
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();

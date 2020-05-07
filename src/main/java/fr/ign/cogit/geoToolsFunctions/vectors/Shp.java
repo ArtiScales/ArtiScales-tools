@@ -89,18 +89,15 @@ public class Shp {
 			// same number of attributes
 			int nbAttr = schemaRef.getAttributeCount();
 			for (File f : file2MergeIn) {
-				if (f.equals(fRef)) {
+				if (f.equals(fRef))
 					continue;
-				}
 				ShapefileDataStore dSComp = new ShapefileDataStore(f.toURI().toURL());
 				SimpleFeatureType schemaComp = dSComp.getFeatureSource().getFeatures().getSchema();
-				if (!schemaRef.equals(schemaComp)) {
+				if (!schemaRef.equals(schemaComp))
 					System.out.println(f + " have not the same schema as " + fRef
 							+ ". Try to still add attribute if number is the same but output may be fuzzy");
-				}
 				if (nbAttr != schemaComp.getAttributeCount()) {
-					System.out.println(
-							"Not the same amount of attributes in the shapefile : Output won't have any attributes");
+					System.out.println("Not the same amount of attributes in the shapefile : Output won't have any attributes");
 					keepAttributes = false;
 					break lookOutAttribute;
 				}
@@ -116,12 +113,11 @@ public class Shp {
 				// regarding their position
 				Arrays.stream(parcelSFC.toArray(new SimpleFeature[0])).forEach(feat -> {
 					Object[] attr = new Object[feat.getAttributeCount() - 1];
-					for (int h = 1; h < feat.getAttributeCount(); h++) {
+					for (int h = 1; h < feat.getAttributeCount(); h++)
 						attr[h - 1] = feat.getAttribute(h);
-						}
-						defaultSFBuilder.add((Geometry) feat.getDefaultGeometry());
-						newParcel.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId(), attr));
-					});
+					defaultSFBuilder.add((Geometry) feat.getDefaultGeometry());
+					newParcel.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId(), attr));
+				});
 			} else {
 				// if we don't want to keep attributes, we create features out of new features
 				// containing only geometry
@@ -133,9 +129,8 @@ public class Shp {
 			parcelSDS.dispose();
 		}
 		SimpleFeatureCollection output = newParcel.collection();
-		if (boundFile != null && boundFile.exists()) {
+		if (boundFile != null && boundFile.exists())
 			output = Collec.snapDatas(output, boundFile);
-		}
 		return Collec.exportSFC(output, fileOut);
 	}
 	
@@ -183,10 +178,9 @@ public class Shp {
 
 		SpatialIndexFeatureCollection sifc = new SpatialIndexFeatureCollection(input);
 		SimpleFeatureCollection gridFeatures = Grids.createSquareGrid(input.getBounds(), gridResolution).getFeatures();
-		SimpleFeatureIterator iterator = gridFeatures.features();
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
 		int finalId = 0;
-		try {
+		try (SimpleFeatureIterator iterator = gridFeatures.features()){
 			while (iterator.hasNext()) {
 				SimpleFeature featureGrid = iterator.next();
 				Geometry gridGeometry = (Geometry) featureGrid.getDefaultGeometry();
@@ -195,12 +189,10 @@ public class Shp {
 				while (chosenFeatIterator.hasNext()) {
 					SimpleFeature f = chosenFeatIterator.next();
 					Geometry g = (Geometry) f.getDefaultGeometry();
-					if (g.intersects(gridGeometry)) {
+					if (g.intersects(gridGeometry))
 						list.add(g);
-					}
 				}
-				Geometry coll = gridGeometry.getFactory()
-						.createGeometryCollection(list.toArray(new Geometry[list.size()]));
+				Geometry coll = gridGeometry.getFactory().createGeometryCollection(list.toArray(new Geometry[list.size()]));
 				try {
 					Geometry y = coll.union();
 					if (y.isValid())
@@ -210,9 +202,8 @@ public class Shp {
 				Geometry unionGeom = Geom.scaledGeometryReductionIntersection(Arrays.asList(coll, gridGeometry));
 				try {
 					Geometry y = unionGeom.buffer(0);
-					if (y.isValid()) {
+					if (y.isValid())
 						unionGeom = y;
-					}
 				} catch (Exception e) {
 				}
 				if (unionGeom != null) {
@@ -222,8 +213,6 @@ public class Shp {
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
-		} finally {
-			iterator.close();
 		}
 		return Collec.exportSFC(dfCuted.collection(), outFile);
 	}
@@ -281,9 +270,8 @@ public class Shp {
 	 */
 	public static void deleteShp(String name, File fromFolder) throws IOException {
 		for (File f : fromFolder.listFiles()) {
-			if (f.getName().startsWith(name) && f.getName().substring(0, f.getName().length()-4).equals(name)) {
+			if (f.getName().startsWith(name) && f.getName().substring(0, f.getName().length()-4).equals(name))
 				Files.delete(f.toPath());
-			}
 		}
 	}
 

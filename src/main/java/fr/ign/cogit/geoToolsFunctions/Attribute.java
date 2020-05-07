@@ -20,9 +20,8 @@ public class Attribute {
 		for (int i = 0; i < head.length; i = i + 1) {
 			if (head[i].toLowerCase().contains("latitude") || head[i].toLowerCase().equals("lat") || head[i].toLowerCase().equals("latitude")
 					|| head[i].toLowerCase().equals("x") || head[i].toLowerCase().equals("lambert_x")
-					|| (head[i].toLowerCase().contains("x") && head[i].toLowerCase().contains("coord"))) {
+					|| (head[i].toLowerCase().contains("x") && head[i].toLowerCase().contains("coord")))
 				return i;
-			}
 		}
 		throw new FileNotFoundException("Attribute.getLatIndice : no latitude indice found"); 
 	}
@@ -38,9 +37,8 @@ public class Attribute {
 		for (int i = 0; i < head.length; i = i + 1) {
 			if (head[i].toLowerCase().contains("longitude") || head[i].toLowerCase().contains("longitude") || head[i].toLowerCase().equals("long")
 					|| head[i].toLowerCase().equals("y") || head[i].toLowerCase().equals("lambert_y")
-					|| (head[i].toLowerCase().contains("y") && head[i].toLowerCase().contains("coord"))) {
+					|| (head[i].toLowerCase().contains("y") && head[i].toLowerCase().contains("coord")))
 				return i;
-			}
 		}
 		throw new FileNotFoundException("Attribute.getLongIndice : no longitude indice found"); 
 	}
@@ -57,9 +55,8 @@ public class Attribute {
 			String word = head[i].toLowerCase();
 			if (word.contains("codepos") || word.contains("code_post") 
 					|| word.contains("zipcode") || head[i].toLowerCase().contains("insee") || head[i].toLowerCase().contains("code_insee")
-					|| head[i].toLowerCase().contains("depcom")|| head[i].toLowerCase().contains("codecommune")) {
+					|| head[i].toLowerCase().contains("depcom")|| head[i].toLowerCase().contains("codecommune"))
 				return i;
-			}
 		}
 		throw new FileNotFoundException("Attribute.getZipCodeIndice : no zipcode indice found"); 
 	}
@@ -73,9 +70,8 @@ public class Attribute {
 	 */
 	public static int getIndice (String[] head, String indiceName) throws FileNotFoundException {
 		for (int i = 0; i < head.length; i = i + 1) {
-			if (head[i].contains(indiceName)) {
+			if (head[i].contains(indiceName)) 
 				return i;
-			}
 		}
 		throw new FileNotFoundException("Attribute.getIndice : no "+indiceName+" indice found"); 
 	}
