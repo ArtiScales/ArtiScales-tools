@@ -4,28 +4,19 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
-import org.geotools.data.simple.SimpleFeatureIterator;
-import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
-import org.geotools.grid.Grids;
 import org.locationtech.jts.geom.Geometry;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.filter.FilterFactory2;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 import fr.ign.cogit.geoToolsFunctions.Attribute;
-import fr.ign.cogit.geoToolsFunctions.Schemas;
 
 public class Shp {
 	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws Exception {
@@ -152,71 +143,23 @@ public class Shp {
 	/**
 	 * Algorithm to spit a shapefile with a squared grid.
 	 * 
-	 * Warning !! untested since MC's PhD
-	 * 
 	 * @param inFile
 	 *            Input shapeFile
 	 * @param outFile
 	 *            Output shapeFile
-	 * @param name
-	 *            Name of the simpleFeatureCollection
 	 * @param gridResolution
 	 *            Size of a side of the squared mesh
 	 * 
 	 * @return a shapefile with the cuted features
 	 * @throws IOException
-	 * @throws NoSuchAuthorityCodeException
-	 * @throws FactoryException
 	 */
-	public static File discretizeShp(File inFile, File outFile, String name, int gridResolution)
-			throws IOException, NoSuchAuthorityCodeException, FactoryException {
-
+	public static File gridDiscretizeShp(File inFile, File outFile, int gridResolution) throws IOException {
 		ShapefileDataStore sds = new ShapefileDataStore(inFile.toURI().toURL());
 		SimpleFeatureCollection input = sds.getFeatureSource().getFeatures();
-		DefaultFeatureCollection dfCuted = new DefaultFeatureCollection();
-		SimpleFeatureBuilder finalFeatureBuilder = Schemas.getBasicSchemaMultiPolygon(name+"-discretized");
-
-		SpatialIndexFeatureCollection sifc = new SpatialIndexFeatureCollection(input);
-		SimpleFeatureCollection gridFeatures = Grids.createSquareGrid(input.getBounds(), gridResolution).getFeatures();
-		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
-		int finalId = 0;
-		try (SimpleFeatureIterator iterator = gridFeatures.features()){
-			while (iterator.hasNext()) {
-				SimpleFeature featureGrid = iterator.next();
-				Geometry gridGeometry = (Geometry) featureGrid.getDefaultGeometry();
-				SimpleFeatureIterator chosenFeatIterator = sifc.subCollection(ff.bbox(ff.property("the_geom"), featureGrid.getBounds())).features();
-				List<Geometry> list = new ArrayList<>();
-				while (chosenFeatIterator.hasNext()) {
-					SimpleFeature f = chosenFeatIterator.next();
-					Geometry g = (Geometry) f.getDefaultGeometry();
-					if (g.intersects(gridGeometry))
-						list.add(g);
-				}
-				Geometry coll = gridGeometry.getFactory().createGeometryCollection(list.toArray(new Geometry[list.size()]));
-				try {
-					Geometry y = coll.union();
-					if (y.isValid())
-						coll = y;
-				} catch (Exception e) {
-				}
-				Geometry unionGeom = Geom.scaledGeometryReductionIntersection(Arrays.asList(coll, gridGeometry));
-				try {
-					Geometry y = unionGeom.buffer(0);
-					if (y.isValid())
-						unionGeom = y;
-				} catch (Exception e) {
-				}
-				if (unionGeom != null) {
-					finalFeatureBuilder.add(unionGeom);
-					dfCuted.add(finalFeatureBuilder.buildFeature(String.valueOf(finalId++)));
-				}
-			}
-		} catch (Exception problem) {
-			problem.printStackTrace();
-		}
-		return Collec.exportSFC(dfCuted.collection(), outFile);
+		File result = Collec.exportSFC(Collec.gridDiscretize(input, gridResolution), outFile);
+		sds.dispose();
+		return result;
 	}
-	
 
 	public static File snapDatas(File fileIn, File fileOut, SimpleFeatureCollection box) throws IOException {
 		// load the input from the general folder

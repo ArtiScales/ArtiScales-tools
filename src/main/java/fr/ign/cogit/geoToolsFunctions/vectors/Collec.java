@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.DefaultTransaction;
 import org.geotools.data.Transaction;
+import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -26,6 +27,7 @@ import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.grid.Grids;
 import org.geotools.util.factory.GeoTools;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateXY;
@@ -42,6 +44,9 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.FilterVisitor;
+
+import fr.ign.cogit.geoToolsFunctions.Attribute;
+import fr.ign.cogit.geoToolsFunctions.Schemas;
 
 public class Collec {
 	
@@ -156,7 +161,7 @@ public class Collec {
 	
 
 	/**
-	 * Export a simple feature collection. If the shapefile already exists , either overwrite it or merge it with the existing shapefile.
+	 * Export a simple feature collection. If the shapefile already exists, either overwrite it or merge it with the existing shapefile.
 	 * 
 	 * @param toExport
 	 * @param fileOut
@@ -456,6 +461,52 @@ public class Collec {
 			problem.printStackTrace();
 		}
 		return index.size() > 0 ? index.get(index.lastKey()) : null ;
+	}
+	
+	/**
+	 * Discretize the input {@link SimpleFeatureCollection} by generating a grid and cuting features by it. Should preserve attributes (untested).
+	 * 
+	 * @param in
+	 *            Input {@link SimpleFeatureCollection}
+	 * @param gridResolution
+	 *            Resolution of the grid's mesh
+	 * @return the discretized {@link SimpleFeatureCollection}
+	 * @throws IOException
+	 */
+	public static SimpleFeatureCollection gridDiscretize(SimpleFeatureCollection in, int gridResolution) throws IOException {
+		DefaultFeatureCollection dfCuted = new DefaultFeatureCollection();
+		SimpleFeatureBuilder finalFeatureBuilder = Schemas.getSFBSchemaWithMultiPolygon(in.getSchema());
+		SpatialIndexFeatureCollection sifc = new SpatialIndexFeatureCollection(in);
+		SimpleFeatureCollection gridFeatures = Grids.createSquareGrid(in.getBounds(), gridResolution).getFeatures();
+		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
+		String geomName = in.getSchema().getGeometryDescriptor().getLocalName();
+		try (SimpleFeatureIterator iterator = gridFeatures.features()) {
+			while (iterator.hasNext()) {
+				SimpleFeature featureGrid = iterator.next();
+				Geometry gridGeometry = (Geometry) featureGrid.getDefaultGeometry();
+				SimpleFeatureIterator chosenFeatIterator = sifc.subCollection(ff.bbox(ff.property(geomName), featureGrid.getBounds())).features();
+				List<Geometry> list = new ArrayList<>();
+				List<Object> attr = new ArrayList<Object>();
+				while (chosenFeatIterator.hasNext()) {
+					SimpleFeature f = chosenFeatIterator.next();
+					Geometry g = (Geometry) f.getDefaultGeometry();
+					if (g.intersects(gridGeometry)) {
+						attr = f.getAttributes();
+						list.add(g);
+					}
+				}
+				Geometry diffGeom = Geom.scaledGeometryReductionIntersection(Arrays.asList(Geom.unionGeom(list), gridGeometry));
+				if (diffGeom != null && !diffGeom.isEmpty()) {
+					for (Object a : attr)
+						finalFeatureBuilder.add(a);
+					finalFeatureBuilder.set(geomName, diffGeom);
+					dfCuted.add(finalFeatureBuilder.buildFeature(Attribute.makeUniqueId()));
+				}
+			}
+		} catch (Exception problem) {
+			problem.printStackTrace();
+		}
+		return dfCuted.collection();
 	}
 	
 	// public static HashMap<String, SimpleFeatureCollection>

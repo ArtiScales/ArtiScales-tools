@@ -7,7 +7,9 @@ import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
+import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
@@ -80,5 +82,27 @@ public class Schemas {
 		sfTypeBuilder.add("scot", String.class);
 		sfTypeBuilder.add("log-icone", String.class);
 		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	}
+	
+	public static SimpleFeatureBuilder getSFBSchemaWithMultiPolygon(SimpleFeatureType schema) {
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		String geomName = schema.getGeometryDescriptor().getLocalName();
+		for (AttributeDescriptor attr : schema.getAttributeDescriptors()) {
+			if (attr.getLocalName().equals(geomName))
+				continue;
+			sfTypeBuilder.add(attr);
+		}
+		sfTypeBuilder.setName(schema.getName());
+		sfTypeBuilder.setCRS(schema.getCoordinateReferenceSystem());
+		sfTypeBuilder.add(geomName, MultiPolygon.class);
+		sfTypeBuilder.setDefaultGeometry(geomName);
+		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+	}
+	
+	public static SimpleFeatureBuilder setSFBSchemaWithMultiPolygon(SimpleFeature feat) {
+		SimpleFeatureBuilder builder = getSFBSchemaWithMultiPolygon(feat.getFeatureType());
+		for (AttributeDescriptor attr : feat.getFeatureType().getAttributeDescriptors())
+			builder.set(attr.getName(), feat.getAttribute(attr.getName()));
+		return builder;
 	}
 }
