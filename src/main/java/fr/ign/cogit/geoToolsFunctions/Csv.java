@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
@@ -34,9 +35,66 @@ public class Csv {
 	public static boolean needFLine = true;
 
 //	public static void main(String[] args) throws IOException {
-//		mergeCSVFiles(new File("/home/ubuntu/donnees/rootFileType/dataIn/amenity/sirene"), new File("/tmp/sa.csv"));
+//		calculateColumnsBasicStat(
+//				new File("/home/ubuntu/workspace/ParcelManager/src/main/resources/DensificationStudy/out/densificationStudyResult.csv"), 2, true);
 //	}
+	/**
+	 * Add some basic statistic for a predeterminde column of a csv file. Add extra lines to the end of the .csv.
+	 * 
+	 * @param csvFile
+	 *            path to the .csv {@link File}
+	 * @param nbCol
+	 *            number of the column to calulate stats (begins at 0)
+	 * @param isFirstCol
+	 *            true if there's a header and it will be ignored
+	 * @throws IOException
+	 */
+	public static void calculateColumnsBasicStat(File csvFile, int nbCol, boolean isFirstCol) throws IOException {
+		CSVReader r = new CSVReader(new FileReader(csvFile));
+		String[] fCol = null;
+		if (isFirstCol)
+			fCol = r.readNext();
+		List<String[]> lines = r.readAll();
+		DescriptiveStatistics ds = new DescriptiveStatistics();
+		for (String[] line : lines) {
+			try {
+				ds.addValue(Double.valueOf(line[nbCol]));
+			} catch (NumberFormatException e) {
+			}
+		}
+		r.close();
+		CSVWriter w = new CSVWriter(new FileWriter(csvFile));
+		if (isFirstCol)
+			w.writeNext(fCol);
+		w.writeAll(lines);
 
+		String[] line = new String[lines.get(0).length];
+		line[0] = "mean";
+		line[nbCol] =String.valueOf(ds.getMean());
+		w.writeNext(line);
+
+		line[0] = "median";
+		line[nbCol] = String.valueOf(ds.getPercentile(50));
+		w.writeNext(line);
+
+		line[0] = "min";
+		line[nbCol] = String.valueOf(ds.getMin());
+		w.writeNext(line);
+
+		line[0] = "max";
+		line[nbCol] = String.valueOf(ds.getMax());
+		w.writeNext(line);
+
+		line[0] = "StandardDeviation";
+		line[nbCol] = String.valueOf(ds.getStandardDeviation());
+		w.writeNext(line);
+
+		line[0] = "sum";
+		line[nbCol] = String.valueOf(ds.getSum());
+		w.writeNext(line);
+		w.close();
+	}
+	
 	/**
 	 * Merge every .csv file contained into a folder and its subfolders with a recursive method. Must have the same header.
 	 * 
