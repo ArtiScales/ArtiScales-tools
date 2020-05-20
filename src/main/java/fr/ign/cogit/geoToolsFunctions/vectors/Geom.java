@@ -93,6 +93,27 @@ public class Geom {
 	}
 	
 	/**
+	 * Export a list of geometries in a shapeFile
+	 * 
+	 * @param geoms {@link List} of {@link Geometry}s
+	 * @param fileName
+	 * @return A ShapeFile containing the exported {@link Geometry}
+	 * @throws IOException
+	 * @throws NoSuchAuthorityCodeException
+	 * @throws FactoryException
+	 */
+	public static File exportGeom(List<Geometry> geoms, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+		DefaultFeatureCollection dFC = new DefaultFeatureCollection();
+		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaMultiPolygon("geom");
+		for (Geometry geom : geoms) {
+			sfBuilder.add(geom);
+			SimpleFeature feature = sfBuilder.buildFeature(Attribute.makeUniqueId());
+			dFC.add(feature);
+		}
+		return Collec.exportSFC(dFC.collection(), fileName);
+	}
+	
+	/**
 	 * Make an intersection of a list of {@link Geometry} and catch {@link TopologyException} to redo the intersection with a reduced precision. Precision reduction comes from 2 to
 	 * 1000.
 	 * 
@@ -183,6 +204,21 @@ public class Geom {
 		}
 	}
 
+	public static List<Geometry> unionTouchingGeometries(List<Geometry> geomsIn){
+		List<Geometry> result = new ArrayList<Geometry>();
+		for (Geometry gIn : geomsIn) {
+			List<Geometry> intersectingGeom = result.stream().filter(g -> g.intersects(gIn)).collect(Collectors.toList());
+			if (intersectingGeom.isEmpty()) {
+				result.add(gIn);
+			} else {
+				result.removeAll(intersectingGeom);
+				intersectingGeom.add(gIn);
+				result.add(unionGeom(intersectingGeom));
+			}
+		}
+		return result; 
+	}
+	
 	public static Geometry unionGeom(List<Geometry> lG) {
 		if (lG.size() == 1)
 			return lG.get(0);

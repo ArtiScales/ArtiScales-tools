@@ -19,11 +19,11 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import fr.ign.cogit.geoToolsFunctions.Attribute;
 
 public class Shp {
-	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws Exception {
+	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws IOException {
 		return mergeVectFiles(file2MergeIn, f, true);
 	}
 	
-	public static File mergeVectFiles(List<File> file2MergeIn,File fileOut, boolean keepAttributes) throws Exception {
+	public static File mergeVectFiles(List<File> file2MergeIn,File fileOut, boolean keepAttributes) throws IOException {
 		return  mergeVectFiles(file2MergeIn, fileOut, null, keepAttributes) ;
 	}
 

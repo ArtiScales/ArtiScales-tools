@@ -114,9 +114,9 @@ public class Collec {
 	 *            If true, the shapefile is overwritten if it exists. If false, the shapefiles (ne existing and the export) are merged together with the
 	 *            {@link fr.ign.cogit.geoToolsFunctions.vectors.Shp#mergeVectFiles(List, File)} method
 	 * @return the ShapeFile
-	 * @throws Exception
+	 * @throws IOException 
 	 */
-	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, boolean overwrite) throws Exception {
+	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, boolean overwrite) throws IOException {
 		if (toExport.isEmpty()) {
 			System.out.println(fileOut.getName() + " is empty");
 			return fileOut;
@@ -308,10 +308,9 @@ public class Collec {
 		Geometry geom = (Geometry) inputFeat.getDefaultGeometry();
 		// import of the cells of MUP-City outputs
 		try (SimpleFeatureIterator cellsCollectionIt = Collec.snapDatas(inputSFC, geom).features()) {
-			while (cellsCollectionIt.hasNext()) {
+			while (cellsCollectionIt.hasNext())
 				if (((Geometry) cellsCollectionIt.next().getDefaultGeometry()).intersects(geom))
 					return true;
-			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
 		}
@@ -508,7 +507,7 @@ public class Collec {
 		}
 		return dfCuted.collection();
 	}
-	
+
 	// public static HashMap<String, SimpleFeatureCollection>
 	// divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {
 	// HashMap<String, SimpleFeatureCollection> result = new HashMap<String,
