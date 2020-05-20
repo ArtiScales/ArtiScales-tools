@@ -443,7 +443,7 @@ public class Collec {
 		SimpleFeatureCollection collec = parcels
 				.subCollection(ff.intersects(ff.property(parcels.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
 		if (collec.isEmpty()) {
-			System.out.println("intersection between " + geometry + " and " + parcels.getSchema().getName() + " null");
+//			logger.debug("intersection between " + geometry + " and " + parcels.getSchema().getName() + " null");
 			return null;
 		}
 		try (SimpleFeatureIterator collecIt = collec.features()) {
