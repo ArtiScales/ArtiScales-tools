@@ -433,15 +433,15 @@ public class Collec {
 	 * 
 	 * @param geometry
 	 *            input {@link Geometry}
-	 * @param parcels
+	 * @param inputSFC
 	 * @return the (most) intersecting {@link SimpleFeature}}
 	 */
-	public static SimpleFeature getSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection parcels) {
+	public static SimpleFeature getSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC) {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		Geometry givenFeatureGeom = GeometryPrecisionReducer.reduce(geometry, new PrecisionModel(10));
 		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
-		SimpleFeatureCollection collec = parcels
-				.subCollection(ff.intersects(ff.property(parcels.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
+		SimpleFeatureCollection collec = inputSFC
+				.subCollection(ff.intersects(ff.property(inputSFC.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
 		if (collec.isEmpty()) {
 //			logger.debug("intersection between " + geometry + " and " + parcels.getSchema().getName() + " null");
 			return null;

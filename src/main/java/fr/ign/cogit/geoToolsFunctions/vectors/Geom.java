@@ -113,7 +113,7 @@ public class Geom {
 	 *            List of {@link Geometry}
 	 * @param sfBuilder
 	 *            Builder for simple features
-	 * @return
+	 * @return the collection of {@link Geometry}s 
 	 * @throws IOException
 	 */
 	public static SimpleFeatureCollection geomsToCollec(List<? extends Geometry > geoms, SimpleFeatureBuilder sfBuilder) throws IOException {
