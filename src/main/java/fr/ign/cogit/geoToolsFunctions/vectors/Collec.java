@@ -13,7 +13,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import org.geotools.data.DataUtilities;
 import org.geotools.data.DefaultTransaction;
 import org.geotools.data.Transaction;
 import org.geotools.data.collection.SpatialIndexFeatureCollection;
@@ -243,10 +242,10 @@ public class Collec {
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws IOException {
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
-		Geometry bBox = Geom.unionSFC(DataUtilities.collection(shpDSZone.getFeatureSource().getFeatures()));
-		shpDSZone.dispose();
+		Geometry bBox = Geom.unionSFC(shpDSZone.getFeatureSource().getFeatures());
 		if (distance != 0)
 			bBox = bBox.buffer(distance);
+		shpDSZone.dispose();
 		return snapDatas(SFCIn, bBox);
 	}
 
@@ -256,8 +255,9 @@ public class Collec {
 
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-		return DataUtilities.collection(SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox))));
+		return SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox)));
 	}
+	
 	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String attribute)
 			throws IOException {
 		String[] attributes = { attribute };

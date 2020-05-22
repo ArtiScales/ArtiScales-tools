@@ -3,6 +3,7 @@ package fr.ign.cogit.geometryGeneration;
 import java.io.File;
 import java.io.IOException;
 
+import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
@@ -70,6 +71,6 @@ public class CityGeneration {
 			Object[] obj = {i};
 			df.add(sfBuilder.buildFeature(String.valueOf(count++), obj));
 		}
-		return df.collection();
+		return new SpatialIndexFeatureCollection(df.collection());
 	}
 }

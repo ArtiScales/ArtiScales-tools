@@ -103,14 +103,26 @@ public class Geom {
 	 * @throws FactoryException
 	 */
 	public static File exportGeom(List<Geometry> geoms, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+		return Collec.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon("geom")), fileName);
+	}
+	
+	/**
+	 * Export a list of {@link Geometry}s in a {@link DefaultFeatureCollection}.
+	 * 
+	 * @param geoms
+	 *            List of {@link Geometry}
+	 * @param sfBuilder
+	 *            Builder for simple features
+	 * @return
+	 * @throws IOException
+	 */
+	public static SimpleFeatureCollection geomsToCollec(List<? extends Geometry > geoms, SimpleFeatureBuilder sfBuilder) throws IOException {
 		DefaultFeatureCollection dFC = new DefaultFeatureCollection();
-		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaMultiPolygon("geom");
 		for (Geometry geom : geoms) {
 			sfBuilder.add(geom);
-			SimpleFeature feature = sfBuilder.buildFeature(Attribute.makeUniqueId());
-			dFC.add(feature);
+			dFC.add(sfBuilder.buildFeature(Attribute.makeUniqueId()));
 		}
-		return Collec.exportSFC(dFC.collection(), fileName);
+		return dFC.collection();
 	}
 	
 	/**
