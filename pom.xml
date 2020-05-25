@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>fr.ign.cogit</groupId>
@@ -88,11 +87,6 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.locationtech.jts</groupId>
-			<artifactId>jts-core</artifactId>
-			<version>1.17.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-grid</artifactId>
 			<version>${geotools.version}</version>
@@ -138,19 +132,22 @@
 			<version>3.6</version>
 		</dependency>
 		<dependency>
-			<groupId>com.opencsv</groupId>
-			<artifactId>opencsv</artifactId>
-			<version>4.0</version>
+		    <groupId>com.opencsv</groupId>
+		    <artifactId>opencsv</artifactId>
+		    <version>4.0</version>
 		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.10.0</version>
+		<dependency> 
+		    <groupId>com.fasterxml.jackson.core</groupId>
+		    <artifactId>jackson-databind</artifactId>
+		    <version>2.10.0</version>
 		</dependency>
 	</dependencies>
 	<repositories>
-		<!--<repository> <id>maven2-repository.dev.java.net</id> <name>Java.net 
-			repository</name> <url>http://download.java.net/maven/2</url> </repository> -->
+		<!--<repository>
+			<id>maven2-repository.dev.java.net</id>
+			<name>Java.net repository</name>
+			<url>http://download.java.net/maven/2</url>
+		</repository> -->
 		<repository>
 			<id>osgeo</id>
 			<name>Open Source Geospatial Foundation Repository</name>
@@ -166,10 +163,16 @@
 			<name>Cogit Releases Repository</name>
 			<url>https://forge-cogit.ign.fr/nexus/content/repositories/releases/</url>
 		</repository>
-		<!-- <repository> <id>thema-sf</id> <name>ThéMA libs Repository</name> 
-			<url>http://themalibs.sourceforge.net/repository/</url> </repository> <repository> 
-			<id>mupcity</id> <name>ThéMA libs Repository</name> <url>http://sourcesup.renater.fr/nexus/content/repositories/mupcity-releases/</url> 
-			</repository> -->
+	 <!--   	 <repository>
+			<id>thema-sf</id>
+			<name>ThéMA libs Repository</name>
+			<url>http://themalibs.sourceforge.net/repository/</url>
+		</repository>
+		<repository>
+			<id>mupcity</id>
+			<name>ThéMA libs Repository</name>
+			<url>http://sourcesup.renater.fr/nexus/content/repositories/mupcity-releases/</url>
+		</repository> -->
 	</repositories>
 	<reporting>
 		<plugins>
@@ -204,5 +207,5 @@
 			<name>Nexus Snapshots Repository</name>
 			<url>https://forge-cogit.ign.fr/nexus/content/repositories/snapshots/</url>
 		</snapshotRepository>
-	</distributionManagement>
+</distributionManagement>
 </project>
