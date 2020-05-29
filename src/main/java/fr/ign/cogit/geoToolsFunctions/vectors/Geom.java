@@ -93,16 +93,16 @@ public class Geom {
 	}
 	
 	/**
-	 * Export a list of geometries in a shapeFile
+	 * Export a list of geometries in a shapeFile.
 	 * 
-	 * @param geoms {@link List} of {@link Geometry}s
+	 * @param geoms {@link List} of objects extending {@link Geometry} type
 	 * @param fileName
 	 * @return A ShapeFile containing the exported {@link Geometry}
 	 * @throws IOException
 	 * @throws NoSuchAuthorityCodeException
 	 * @throws FactoryException
 	 */
-	public static File exportGeom(List<Geometry> geoms, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+	public static File exportGeom(List<? extends Geometry> geoms, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
 		return Collec.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon("geom")), fileName);
 	}
 	
@@ -110,7 +110,7 @@ public class Geom {
 	 * Export a list of {@link Geometry}s in a {@link DefaultFeatureCollection}.
 	 * 
 	 * @param geoms
-	 *            List of {@link Geometry}
+	 *            List of objects extending {@link Geometry} type
 	 * @param sfBuilder
 	 *            Builder for simple features
 	 * @return the collection of {@link Geometry}s 
