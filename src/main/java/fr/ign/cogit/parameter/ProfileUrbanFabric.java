@@ -9,46 +9,50 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
- * Parameters describing an urban fabric. One different objects for each of the simulated urban scene. 
- * Must be set in a .json file and then parse into either constructor or static parser method.
+ * Parameters describing an urban fabric. One different objects for each of the simulated urban scene. Must be set in a .json file and then parse into either constructor or static
+ * parser method.
  * 
  * @author Maxime Colomb
  *
  */
 public class ProfileUrbanFabric {
-	double maximalArea;
-	double minimalArea;
-	double maximalWidth;
-	double streetWidth;
-	double largeStreetWidth;
-	int largeStreetLevel;
-	int decompositionLevelWithoutStreet;
-	double lenDriveway;
-	double noise = 0;
-	double roadEpsilon = 0.55; 
-	
+	String nameBuildingType;
+	double maximalArea, minimalArea, minimalWidthContactRoad, streetWidth, largeStreetWidth, maxDepth, maxDistanceForNearestRoad,
+			minWidth, maxWidth;
+	int largeStreetLevel, decompositionLevelWithoutStreet;
+	double lenDriveway, noise;
+	double roadEpsilon = 0.55;
+
 	static String profileFolder;
 
-	public ProfileUrbanFabric(double maximalArea, double minimalArea, double maximalWidth, double smallStreetWidth,
-			double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet, double lenDriveway) {
+	public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
+			double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet, double lenDriveway,
+			double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth) {
 		super();
+		this.nameBuildingType = nameBuildingType;
 		this.maximalArea = maximalArea;
 		this.minimalArea = minimalArea;
-		this.maximalWidth = maximalWidth;
+		this.minimalWidthContactRoad = minimalWidthContactRoad;
 		this.streetWidth = smallStreetWidth;
 		this.largeStreetWidth = largeStreetWidth;
 		this.largeStreetLevel = largeStreetLevel;
 		this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
 		this.lenDriveway = lenDriveway;
+		this.maxDepth = maxDepth;
+		this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
+		this.minWidth = minWidth;
+		this.maxWidth = maxWidth;
 	}
 
-	public ProfileUrbanFabric(int maximalArea, int minimalArea, int maximalWidth, int streetWidth,
+	public ProfileUrbanFabric(String nameBuildingType, int maximalArea, int minimalArea, int maximalWidth, int streetWidth,
 			int decompositionLevelWithoutStreet, int lenDriveway) {
 		super();
+		this.nameBuildingType = nameBuildingType;
 		this.maximalArea = maximalArea;
 		this.minimalArea = minimalArea;
-		this.maximalWidth = maximalWidth;
+		this.minimalWidthContactRoad = maximalWidth;
 		this.largeStreetWidth = streetWidth;
 		this.streetWidth = streetWidth;
 		this.largeStreetLevel = 999;
@@ -59,6 +63,10 @@ public class ProfileUrbanFabric {
 	public ProfileUrbanFabric() {
 	}
 
+	public String getNameBuildingType() {
+		return nameBuildingType;
+	}
+
 	public double getMaximalArea() {
 		return maximalArea;
 	}
@@ -67,8 +75,8 @@ public class ProfileUrbanFabric {
 		return minimalArea;
 	}
 
-	public double getMaximalWidth() {
-		return maximalWidth;
+	public double getMinimalWidthContactRoad() {
+		return minimalWidthContactRoad;
 	}
 
 	public int getDecompositionLevelWithoutStreet() {
@@ -105,12 +113,11 @@ public class ProfileUrbanFabric {
 
 	@Override
 	public String toString() {
-		return "ProfileBuilding [maximalArea=" + maximalArea + ", minimalArea=" + minimalArea + ", maximalWidth="
-				+ maximalWidth + ", smallStreetWidth=" + streetWidth + ", largeStreetWidth=" + largeStreetWidth
-				+ ", largeStreetLevel=" + largeStreetLevel + ", decompositionLevelWithoutStreet="
-				+ decompositionLevelWithoutStreet + ", lenDriveway=" + lenDriveway + "]";
+		return "ProfileBuilding " + nameBuildingType + " [maximalArea=" + maximalArea + ", minimalArea=" + minimalArea + ", minimalWidthContactRoad="
+				+ minimalWidthContactRoad + ", smallStreetWidth=" + streetWidth + ", largeStreetWidth=" + largeStreetWidth + ", largeStreetLevel="
+				+ largeStreetLevel + ", decompositionLevelWithoutStreet=" + decompositionLevelWithoutStreet + ", lenDriveway=" + lenDriveway + "]";
 	}
-	
+
 	public static ProfileUrbanFabric convertJSONtoProfile(File jsonFile) throws JsonParseException, JsonMappingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -134,5 +141,25 @@ public class ProfileUrbanFabric {
 
 	public void setRoadEpsilon(double roadEpsilon) {
 		this.roadEpsilon = roadEpsilon;
+	}
+
+	public double getMaxDepth() {
+		return maxDepth;
+	}
+
+	public double getMaxDistanceForNearestRoad() {
+		return maxDistanceForNearestRoad;
+	}
+
+	public double getMinWidth() {
+		return minWidth;
+	}
+
+	public double getMaxWidth() {
+		return maxWidth;
+	}
+
+	public void setLargeStreetWidth(double newStreetWidth) {
+		this.largeStreetWidth = newStreetWidth;
 	}
 }
