@@ -62,7 +62,7 @@ public class Geom {
 			for (int i = 0; i < geom.getNumGeometries(); i++) {
 				Geometry g = geom.getGeometryN(i);
 				if (g instanceof Polygon) {
-					sfBuilder.set("the_geom", g.buffer(1).buffer(-1));
+					sfBuilder.set(sfBuilder.getFeatureType().getGeometryDescriptor().getName(), g.buffer(1).buffer(-1));
 					result.add(sfBuilder.buildFeature(id));
 				}
 			}

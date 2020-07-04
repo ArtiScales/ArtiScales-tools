@@ -2,22 +2,19 @@ package fr.ign.cogit.geoToolsFunctions.vectors;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.geotools.data.DataStore;
 import org.geotools.data.DefaultTransaction;
 import org.geotools.data.Transaction;
 import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
-import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
@@ -49,15 +46,39 @@ import fr.ign.cogit.geoToolsFunctions.Schemas;
 
 public class Collec {
 	
+	static String defaultGISFileType = ".gpkg";
+	static String defaultGeomName;
+
 //	public static void main(String[] args) throws Exception {
-//		ShapefileDataStore shpDSParcel = new ShapefileDataStore((new File("/home/ubuntu/workspace/ParcelManager/src/main/resources/testData/parcelle.shp")).toURI().toURL());
+//		File shp1F = new File("/tmp/shp1.shp");
+//		File shp2F = new File("/tmp/shp2.shp");
+//		File gp1F = new File("/tmp/gp1.gpkg");
+//		File gp2F = new File("/tmp/gp2.gpkg");
+//		File gp3F = new File("/tmp/gp3.gpkg");
+////TODO tester ça
+//		List<File> shpL = Arrays.asList(shp1F, shp2F);
+//		List<File> gp2L = Arrays.asList(gp1F, gp2F);
+//		DataStore ds = Geopackages.getDataStore(gp2F);
+//		SimpleFeatureCollection sfc = ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures();
+////Shp.mergeVectFiles(shpL, new File("/tmp/sh.shp"));
+//		Collec.exportSFC(sfc, new File("/tmp/g.gpkg"));
+//		Collec.exportSFC(sfc, gp2F);
+//		Collec.exportSFC(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), gp3F, false);
+//ds.dispose();
+				//		ShapefileDataStore shpDSParcel = new ShapefileDataStore((new File(
+//				"/home/thema/Documents/MC/workspace/ParcelManager/src/main/resources/ParcelComparisonOM/out/parcelsInZone.shp"))
+//						.toURI().toURL());
 //		SimpleFeatureCollection parcel = shpDSParcel.getFeatureSource().getFeatures();
-//		WKTReader w = new WKTReader();
-////		Geometry g = w.read("MULTIPOLYGON (((937159.28 6688272.91, 937171.18 6688277.86, 937175.76 6688271.59, 937192.91 6688247.08, 937194.51 6688244.77, 937210.81 6688220.7, 937272.28 6688116.74, 937259.65 6688107.96, 937259.64 6688107.96, 937230.38 6688159.07, 937200.23 6688210.7, 937193.91 6688221.42, 937181.49 6688240.06, 937163.63 6688265.93, 937159.28 6688272.91)))");
-//		Geometry g = w.read("MultiPolygon(((937183.97284507064614445 6688228.66999999899417162, 937203.95069014118053019 6688237.79283098503947258, 937210.53298591589555144 6688230.05574647802859545, 937190.5551408453611657 6688216.66019718162715435, 937183.97284507064614445 6688228.66999999899417162)))");
-//		System.out.println(getSimpleFeatureFromSFC(g, parcel));
+//		File tmp = new File("/tmp/shp.shp");
+//		Collec.exportSFC(parcel, tmp);
+//		Collec.exportSFC(parcel, new File("/tmp/djadja.gpkg"));
+//		shpDSParcel.dispose();
+//		
+//		DataStore ds = Geopackages.getDataStore(new File("/tmp/djadja.gpkg"));
+//		SimpleFeatureCollection parcel2 = ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures();
+//		Collec.exportSFC(parcel2, new File("/tmp/shp2.gpkg"));
+//		ds.dispose();
 //	}
-	
 	/**
 	 * Return the sum of area of every features of a simpleFeatureCollection
 	 * 
@@ -104,43 +125,25 @@ public class Collec {
 		return newParcel.collection();
 	}
 
-	/**
-	 * Export a simple feature collection. If the shapefile already exists , either overwrite it or merge it with the existing shapefile.
-	 * 
-	 * @param toExport
-	 * @param fileOut
-	 * @param overwrite
-	 *            If true, the shapefile is overwritten if it exists. If false, the shapefiles (ne existing and the export) are merged together with the
-	 *            {@link fr.ign.cogit.geoToolsFunctions.vectors.Shp#mergeVectFiles(List, File)} method
-	 * @return the ShapeFile
-	 * @throws IOException 
-	 */
-	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, boolean overwrite) throws IOException {
-		if (toExport.isEmpty()) {
-			System.out.println(fileOut.getName() + " is empty");
-			return fileOut;
-		}
-		List<File> file2MergeIn = new ArrayList<File>();
-		// copyShp(String shpName, String newShpName, File fromFolder, File toFolder)
-
-		if (fileOut.exists() && !overwrite) {
-			String fileName = fileOut.getName().substring(0, fileOut.getName().length()-4);
-			File newFile = new File(fileOut.getParentFile(), fileName + "tmp.shp");
-			Shp.copyShp(fileName, fileName + "tmp", fileOut.getParentFile(), fileOut.getParentFile());
-			file2MergeIn.add(newFile);
-		}
-		File datFile = exportSFC(toExport, fileOut, toExport.getSchema());
-		file2MergeIn.add(datFile);
-		File result = Shp.mergeVectFiles(file2MergeIn, fileOut);
-		Shp.deleteShp(fileOut.getName().substring(0, fileOut.getName().length()-4) + "tmp", fileOut.getParentFile());
-		return result;
-	}
-
 	private static void coord2D(Coordinate c) {
 		if (!CoordinateXY.class.isInstance(c))
 			c.setZ(Double.NaN);
 	}
 		
+	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut) throws Exception {
+		return exportSFC(listFeature, fileOut, true);
+	}
+	
+	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut, boolean overwrite) throws Exception {
+		DefaultFeatureCollection result = new DefaultFeatureCollection();
+		for (SimpleFeature feat : listFeature)
+			result.add(feat);
+		return exportSFC(result.collection(), fileOut, overwrite);
+	}
+	
+	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut) throws IOException {
+		return exportSFC(toExport, fileOut, true);
+	}
 	
 	/**
 	 * Export a simple feature collection. Overwrite file if already exists
@@ -150,14 +153,20 @@ public class Collec {
 	 * @return the ShapeFile
 	 * @throws IOException
 	 */
-	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut) throws IOException {
+	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, boolean overwrite) throws IOException {
 		if (toExport.isEmpty()) {
 			System.out.println(fileOut.getName() + " is empty");
 			return fileOut;
 		}
-		return exportSFC(toExport, fileOut, toExport.getSchema());
+		String n = fileOut.getName();
+		String[] ext = n.split("\\.");
+		return exportSFC(toExport, fileOut, ext.length > 1 ? "." + ext[1] : defaultGISFileType, overwrite);
 	}
 	
+	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, String outputType,  boolean overwrite)
+			throws IOException {
+		return exportSFC(toExport, fileOut,  toExport.getSchema(), outputType, overwrite);
+	}
 
 	/**
 	 * Export a simple feature collection. If the shapefile already exists, either overwrite it or merge it with the existing shapefile.
@@ -167,23 +176,17 @@ public class Collec {
 	 * @return the ShapeFile
 	 * @throws IOException
 	 */
-	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft)
-			throws IOException {
+	public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft, String outputType, boolean overwrite) throws IOException {
+		if (outputType.equals(".shp"))
+			return Shp.exportSFCtoSHP(toExport, fileOut, ft, overwrite);
+		else if (outputType.equals(".gpkg"))
+			return Geopackages.exportSFCtoGPKG(toExport, fileOut, ft, overwrite);
+		else
+			return exportSFC(toExport, fileOut, ft, defaultGISFileType, overwrite);
+	}
 
-		ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-		
-		if (!fileOut.getName().endsWith(".shp")) {
-			fileOut = new File(fileOut + ".shp");
-		}
-		
-		Map<String, Serializable> params = new HashMap<>();
-		params.put("url", fileOut.toURI().toURL());
-		params.put("create spatial index", Boolean.TRUE);
-
-		ShapefileDataStore newDataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
-
-		newDataStore.createSchema(ft);
-
+	static File makeTransaction(DataStore newDataStore, SimpleFeatureCollection toExport, File fileOut, 
+			SimpleFeatureType ft) throws IOException {
 		Transaction transaction = new DefaultTransaction("create");
 
 		String typeName = newDataStore.getTypeNames()[0];
@@ -199,7 +202,6 @@ public class Collec {
 						SimpleFeature feature = (SimpleFeature) object;
 						return !((Geometry) feature.getDefaultGeometry()).isEmpty();
 					}
-
 					@Override
 					public Object accept(FilterVisitor visitor, Object extraData) {
 						return visitor.visit(Filter.INCLUDE, extraData);
@@ -235,7 +237,8 @@ public class Collec {
 		newDataStore.dispose();
 		return fileOut;
 	}
-
+		
+		
 	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile) throws IOException {
 		return snapDatas(SFCIn, boxFile, 0);
 	}
@@ -399,17 +402,6 @@ public class Collec {
 		return Geom.getListAsGeom(fromPolygonSFCtoListRingLines(inputSFC), new GeometryFactory());
 	}
 	
-	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut) throws Exception {
-		return exportSFC(listFeature, fileOut, true);
-	}
-	
-	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut, boolean overwrite) throws Exception {
-		DefaultFeatureCollection result = new DefaultFeatureCollection();
-		for (SimpleFeature feat : listFeature)
-			result.add(feat);
-		return exportSFC(result.collection(), fileOut, overwrite);
-	}
-	
 	/**
 	 * Get the value of a feature's field from a SimpleFeatureCollection that intersects a given Simplefeature (that is most of the time, a parcel or building). If the given
 	 * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
@@ -437,31 +429,66 @@ public class Collec {
 	 * @return the (most) intersecting {@link SimpleFeature}}
 	 */
 	public static SimpleFeature getSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC) {
-		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-		Geometry givenFeatureGeom = GeometryPrecisionReducer.reduce(geometry, new PrecisionModel(10));
-		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
-		SimpleFeatureCollection collec = inputSFC
-				.subCollection(ff.intersects(ff.property(inputSFC.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
-		if (collec.isEmpty()) {
+		try {
+			FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+			SortedMap<Double, SimpleFeature> index = new TreeMap<>();
+			SimpleFeatureCollection collec = inputSFC.subCollection(ff.intersects(
+					ff.property(inputSFC.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
+			if (collec.isEmpty()) {
 //			logger.debug("intersection between " + geometry + " and " + parcels.getSchema().getName() + " null");
+				return null;
+			}
+			try (SimpleFeatureIterator collecIt = collec.features()) {
+				while (collecIt.hasNext()) {
+					SimpleFeature theFeature = collecIt.next();
+					Geometry theFeatureGeom = ((Geometry) theFeature.getDefaultGeometry()).buffer(1);
+					if (theFeatureGeom.contains(geometry))
+						return theFeature;
+					// if the parcel is in between two features, we put the feature in a sorted
+					// collection
+					else if (theFeatureGeom.intersects(geometry))
+						index.put(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, geometry))
+								.getArea(), theFeature);
+				}
+			} catch (Exception problem) {
+				problem.printStackTrace();
+			}
+			return index.size() > 0 ? index.get(index.lastKey()) : null;
+		} catch (Exception e) {
+			return getSimpleFeatureFromSFC(geometry, inputSFC, new PrecisionModel(10));
+		}
+	}
+		
+	public static SimpleFeature getSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC,
+			PrecisionModel precisionModel) {
+		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+		Geometry givenFeatureGeom = GeometryPrecisionReducer.reduce(geometry, precisionModel);
+		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
+		SimpleFeatureCollection collec = inputSFC.subCollection(ff.intersects(
+				ff.property(inputSFC.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
+		if (collec.isEmpty()) {
+//				logger.debug("intersection between " + geometry + " and " + parcels.getSchema().getName() + " null");
 			return null;
 		}
 		try (SimpleFeatureIterator collecIt = collec.features()) {
 			while (collecIt.hasNext()) {
 				SimpleFeature theFeature = collecIt.next();
-				Geometry theFeatureGeom = GeometryPrecisionReducer.reduce((Geometry) theFeature.getDefaultGeometry(), new PrecisionModel(10)).buffer(1);
+				Geometry theFeatureGeom = GeometryPrecisionReducer
+						.reduce((Geometry) theFeature.getDefaultGeometry(), precisionModel).buffer(1);
 				if (theFeatureGeom.contains(givenFeatureGeom))
 					return theFeature;
-				// if the parcel is in between two features, we put the feature in a sorted collection
+				// if the parcel is in between two features, we put the feature in a sorted
+				// collection
 				else if (theFeatureGeom.intersects(givenFeatureGeom))
-					index.put(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, givenFeatureGeom)).getArea(), theFeature);
+					index.put(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, givenFeatureGeom))
+							.getArea(), theFeature);
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
 		}
-		return index.size() > 0 ? index.get(index.lastKey()) : null ;
+		return index.size() > 0 ? index.get(index.lastKey()) : null;
 	}
-	
+
 	/**
 	 * Discretize the input {@link SimpleFeatureCollection} by generating a grid and cuting features by it. Should preserve attributes (untested).
 	 * 
@@ -508,6 +535,86 @@ public class Collec {
 		return dfCuted.collection();
 	}
 
+	public static SimpleFeatureCollection transformGeomToMultiPolygon(SimpleFeatureCollection parcel) {
+		DefaultFeatureCollection result = new DefaultFeatureCollection();
+		try (SimpleFeatureIterator it = parcel.features()){
+			while ( it.hasNext()) {
+				result.add(Schemas.setSFBSchemaWithMultiPolygon(it.next()).buildFeature(Attribute.makeUniqueId()));
+			}
+		}
+		catch (Error r ) {
+			r.printStackTrace();
+		}
+		return result;
+	}
+	public static String getDefaultGISFileType() {
+		return defaultGISFileType;
+	}
+	public static void setDefaultGISFileType(String defaultGISFileType) {
+		Collec.defaultGISFileType = defaultGISFileType;
+	}
+
+	public static String getDefaultGeomName() {
+		if (defaultGISFileType.equals(".shp"))
+			return "the_geom";
+		else if (defaultGISFileType.equals(".gpkg"))
+			return "geom";
+		else
+			return defaultGeomName;
+	}
+
+	public static SimpleFeatureCollection mergeSFC(List<SimpleFeatureCollection> sfcs, boolean keepAttributes, File boundFile) throws IOException {
+ return mergeSFC(sfcs, sfcs.get(0).getSchema(), keepAttributes, boundFile);
+	}
+	
+	public static SimpleFeatureCollection mergeSFC(List<SimpleFeatureCollection> sfcs, SimpleFeatureType schemaRef, 
+			boolean keepAttributes, File boundFile) throws IOException {
+		// sfBuilder used only if number of attributes's the same but with different schemas
+		SimpleFeatureBuilder defaultSFBuilder = new SimpleFeatureBuilder(schemaRef);
+		DefaultFeatureCollection newParcelCollection = new DefaultFeatureCollection();
+
+		lookOutAttribute: if (keepAttributes) {
+			// check if the schemas of the shape are the same and if not, if they have the same number of attributes
+			int nbAttr = schemaRef.getAttributeCount();
+			for (SimpleFeatureCollection sfc : sfcs) {
+				SimpleFeatureType schemaComp = sfc.getSchema();
+				if (schemaComp.equals(schemaRef))
+					continue;
+//						System.out.println(f + " have not the same schema as " + fRef + ". Try to still add attribute if number is the same but output may be fuzzy"); TODO put that in a logger
+				if (nbAttr != schemaComp.getAttributeCount()) {
+					System.out.println(
+							"Not the same amount of attributes in the shapefile : Output won't have any attributes");
+					keepAttributes = false;
+					break lookOutAttribute;
+				}
+			}
+		}
+		for (SimpleFeatureCollection sfc : sfcs) {
+		if (keepAttributes) {
+			// Merge the feature and assignate a new id number. If collections doesn't have the exactly same schema but the same number of attributes,
+			// we add every attribute regarding their position
+			Arrays.stream(sfc.toArray(new SimpleFeature[0])).forEach(feat -> {
+				Object[] attr = new Object[feat.getAttributeCount() - 1];
+					for (int h = 1; h < feat.getAttributeCount(); h++)
+						attr[h - 1] = feat.getAttribute(h);
+					defaultSFBuilder.add((Geometry) feat.getDefaultGeometry());
+					newParcelCollection.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId(), attr));
+				});
+			} else {
+				// if we don't want to keep attributes, we create features out of new features
+				// containing only geometry
+				Arrays.stream(sfc.toArray(new SimpleFeature[0])).forEach(feat -> {
+					defaultSFBuilder.set("the_geom", feat.getDefaultGeometry());
+					newParcelCollection.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId()));
+				});
+			}
+		}
+		SimpleFeatureCollection output = newParcelCollection.collection();
+		if (boundFile != null && boundFile.exists())
+			output = Collec.snapDatas(output, boundFile);
+		return output;
+	}
+	
 	// public static HashMap<String, SimpleFeatureCollection>
 	// divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {
 	// HashMap<String, SimpleFeatureCollection> result = new HashMap<String,

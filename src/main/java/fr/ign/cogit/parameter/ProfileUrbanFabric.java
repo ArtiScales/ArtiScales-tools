@@ -23,10 +23,23 @@ public class ProfileUrbanFabric {
 			minWidth, maxWidth;
 	int largeStreetLevel, decompositionLevelWithoutStreet;
 	double lenDriveway, noise;
-	double roadEpsilon = 0.55;
+	double harmonyCoeff = 0.55;
 
 	static String profileFolder;
 
+	public ProfileUrbanFabric(double maximalArea, int decompositionLevelWithoutStreet,
+		      int largeStreetLevel, double streetWidth, double largeStreetWidth, double minimalWidthContactRoad, double harmonyCoeff) {
+		super();
+		this.maximalArea = maximalArea;
+		this.minimalArea = 50;
+		this.minimalWidthContactRoad = minimalWidthContactRoad;
+		this.streetWidth = streetWidth;
+		this.largeStreetWidth = largeStreetWidth;
+		this.largeStreetLevel = largeStreetLevel;
+		this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
+		this.harmonyCoeff = harmonyCoeff;
+	}
+	
 	public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
 			double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet, double lenDriveway,
 			double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth) {
@@ -61,6 +74,44 @@ public class ProfileUrbanFabric {
 	}
 
 	public ProfileUrbanFabric() {
+	}
+
+	public ProfileUrbanFabric(String[] firstLine, String[] line) {
+		int iMaximalArea = 999, iDecompositionLevelWithoutStreet = 999, iLargeStreetLevel = 999, iStreetWidth = 999,
+				iHarmonyCoeff = 999, iLargeStreetWidth = 999, iMinimalWidthContactRoad = 999;
+		for (int i = 0; i < firstLine.length; i++) {
+			String indice = firstLine[i];
+			switch (indice) {
+			case "maximalArea":
+				iMaximalArea = i;
+				break;
+			case "decompositionLevelWithoutStreet":
+				iDecompositionLevelWithoutStreet = i;
+				break;
+			case "largeStreetLevel":
+				iLargeStreetLevel = i;
+				break;
+			case "streetWidth": 
+				iStreetWidth = i;
+				break;
+			case "harmonyCoeff":
+				iHarmonyCoeff = i; 
+				break;
+			case "largeStreetWidth":
+				iLargeStreetWidth = i;
+				break;
+			case "minimalWidthContactRoad":
+				iMinimalWidthContactRoad = i;
+				break;
+			}
+		}
+		this.maximalArea = Double.valueOf(line[iMaximalArea]);
+		this.minimalWidthContactRoad = Double.valueOf(line[iMinimalWidthContactRoad]);
+		this.streetWidth = Double.valueOf(line[iStreetWidth]);
+		this.largeStreetWidth = Double.valueOf(line[iLargeStreetWidth]);
+		this.largeStreetLevel = Integer.valueOf(line[iLargeStreetLevel]);
+		this.decompositionLevelWithoutStreet = Integer.valueOf(line[iDecompositionLevelWithoutStreet]);
+		this.harmonyCoeff = Double.valueOf(line[iHarmonyCoeff]);
 	}
 
 	public String getNameBuildingType() {
@@ -135,12 +186,12 @@ public class ProfileUrbanFabric {
 		this.noise = noise;
 	}
 
-	public double getRoadEpsilon() {
-		return roadEpsilon;
+	public double getHarmonyCoeff() {
+		return harmonyCoeff;
 	}
 
-	public void setRoadEpsilon(double roadEpsilon) {
-		this.roadEpsilon = roadEpsilon;
+	public void setHarmonyCoeff(double harmonyCoeff) {
+		this.harmonyCoeff = harmonyCoeff;
 	}
 
 	public double getMaxDepth() {

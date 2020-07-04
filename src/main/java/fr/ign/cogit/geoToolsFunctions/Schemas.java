@@ -13,13 +13,15 @@ import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
+import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
+
 public class Schemas {
 	public static SimpleFeatureBuilder getBasicSchema(String name) throws NoSuchAuthorityCodeException, FactoryException {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		sfTypeBuilder.setCRS(CRS.decode("EPSG:2154"));
 		sfTypeBuilder.setName(name);
-		sfTypeBuilder.add("the_geom", Polygon.class);
-		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.add(Collec.getDefaultGeomName(), Polygon.class);
+		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
 		return new SimpleFeatureBuilder(featureType);
 	}
@@ -28,9 +30,9 @@ public class Schemas {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		sfTypeBuilder.setCRS(CRS.decode("EPSG:2154"));
 		sfTypeBuilder.setName(name);
-		sfTypeBuilder.add("the_geom", Polygon.class);
+		sfTypeBuilder.add(Collec.getDefaultGeomName(), Polygon.class);
 		sfTypeBuilder.add("id", Integer.class);
-		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
 		return new SimpleFeatureBuilder(featureType);
 	}
@@ -39,8 +41,8 @@ public class Schemas {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		sfTypeBuilder.setCRS(CRS.decode("EPSG:2154"));
 		sfTypeBuilder.setName(name);
-		sfTypeBuilder.add("the_geom", MultiPolygon.class);
-		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.add(Collec.getDefaultGeomName(), MultiPolygon.class);
+		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
 		return new SimpleFeatureBuilder(featureType);
 	}
@@ -49,8 +51,8 @@ public class Schemas {
 		SimpleFeatureTypeBuilder PointSfTypeBuilder = new SimpleFeatureTypeBuilder();
 		PointSfTypeBuilder.setCRS(CRS.decode("EPSG:2154"));
 		PointSfTypeBuilder.setName(name);
-		PointSfTypeBuilder.add("the_geom", Point.class);
-		PointSfTypeBuilder.setDefaultGeometry("the_geom");
+		PointSfTypeBuilder.add(Collec.getDefaultGeomName(), Point.class);
+		PointSfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
 		PointSfTypeBuilder.add("TYPE", String.class);
 		PointSfTypeBuilder.add("LEVEL", Integer.class);
 		SimpleFeatureType pointFeatureType = PointSfTypeBuilder.buildFeatureType();
@@ -61,8 +63,8 @@ public class Schemas {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		sfTypeBuilder.setName("road");
 		sfTypeBuilder.setCRS(CRS.decode("EPSG:2154"));
-		sfTypeBuilder.add("the_geom", MultiLineString.class);
-		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.add(Collec.getDefaultGeomName(), MultiLineString.class);
+		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
 		sfTypeBuilder.add("SPEED", Integer.class);
 		sfTypeBuilder.add("NATURE", String.class);
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
@@ -73,8 +75,8 @@ public class Schemas {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		sfTypeBuilder.setName("testType");
 		sfTypeBuilder.setCRS(CRS.decode("EPSG:2154"));
-		sfTypeBuilder.add("the_geom", MultiPolygon.class);
-		sfTypeBuilder.setDefaultGeometry("the_geom");
+		sfTypeBuilder.add(Collec.getDefaultGeomName(), MultiPolygon.class);
+		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
 		sfTypeBuilder.add("DEPCOM", String.class);
 		sfTypeBuilder.add("NOM_COM", String.class);
 		sfTypeBuilder.add("typo", String.class);

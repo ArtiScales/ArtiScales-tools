@@ -3,20 +3,17 @@ package fr.ign.cogit.geoToolsFunctions.vectors;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.geotools.data.shapefile.ShapefileDataStore;
+import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
-import org.geotools.feature.DefaultFeatureCollection;
-import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
-import org.locationtech.jts.geom.Geometry;
-import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-
-import fr.ign.cogit.geoToolsFunctions.Attribute;
 
 public class Shp {
 	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws IOException {
@@ -64,65 +61,18 @@ public class Shp {
 				nbFile--;
 			}
 		}
-		DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
 		// check to prevent event in case of a willing of keeping attributes
 		File fRef = file2MergeIn.get(0);
 		ShapefileDataStore dSref = new ShapefileDataStore(fRef.toURI().toURL());
 		SimpleFeatureType schemaRef = dSref.getFeatureSource().getFeatures().getSchema();
 		dSref.dispose();
-		// sfBuilder used only if number of attributes's the same but with different schemas
-		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-		sfTypeBuilder.init(schemaRef);
-		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
-		SimpleFeatureBuilder defaultSFBuilder = new SimpleFeatureBuilder(featureType);
-		lookOutAttribute: if (keepAttributes) {
-			// check if the schemas of the shape are the same and if not, if they have the
-			// same number of attributes
-			int nbAttr = schemaRef.getAttributeCount();
-			for (File f : file2MergeIn) {
-				if (f.equals(fRef))
-					continue;
-				ShapefileDataStore dSComp = new ShapefileDataStore(f.toURI().toURL());
-				SimpleFeatureType schemaComp = dSComp.getFeatureSource().getFeatures().getSchema();
-				if (!schemaRef.equals(schemaComp))
-					System.out.println(f + " have not the same schema as " + fRef
-							+ ". Try to still add attribute if number is the same but output may be fuzzy");
-				if (nbAttr != schemaComp.getAttributeCount()) {
-					System.out.println("Not the same amount of attributes in the shapefile : Output won't have any attributes");
-					keepAttributes = false;
-					break lookOutAttribute;
-				}
-				dSComp.dispose();
-			}
+		List<SimpleFeatureCollection> sfcs = new ArrayList<SimpleFeatureCollection>();
+		for (File f : file2MergeIn) {
+			ShapefileDataStore sds = new ShapefileDataStore(f.toURI().toURL());
+			sfcs.add(sds.getFeatureSource().getFeatures());
+			sds.dispose();
 		}
-		dSref.dispose();
-		for (File file : file2MergeIn) {
-			ShapefileDataStore parcelSDS = new ShapefileDataStore(file.toURI().toURL());
-			SimpleFeatureCollection parcelSFC = parcelSDS.getFeatureSource().getFeatures();
-			if (keepAttributes) {
-				// Merge the feature and assignate a new id number. If collections doesn't have the exactly same schema but the same number of attributes, we add every attribute
-				// regarding their position
-				Arrays.stream(parcelSFC.toArray(new SimpleFeature[0])).forEach(feat -> {
-					Object[] attr = new Object[feat.getAttributeCount() - 1];
-					for (int h = 1; h < feat.getAttributeCount(); h++)
-						attr[h - 1] = feat.getAttribute(h);
-					defaultSFBuilder.add((Geometry) feat.getDefaultGeometry());
-					newParcel.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId(), attr));
-				});
-			} else {
-				// if we don't want to keep attributes, we create features out of new features
-				// containing only geometry
-				Arrays.stream(parcelSFC.toArray(new SimpleFeature[0])).forEach(feat -> {
-					defaultSFBuilder.set("the_geom", feat.getDefaultGeometry());
-					newParcel.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId()));
-				});
-			}
-			parcelSDS.dispose();
-		}
-		SimpleFeatureCollection output = newParcel.collection();
-		if (boundFile != null && boundFile.exists())
-			output = Collec.snapDatas(output, boundFile);
-		return Collec.exportSFC(output, fileOut);
+		return Collec.exportSFC(Collec.mergeSFC(sfcs, schemaRef, keepAttributes, boundFile), fileOut, ".shp", true);
 	}
 	
 	/**
@@ -237,4 +187,36 @@ public class Shp {
 			}
 		}
 	}
+	
+	public static File exportSFCtoSHP(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft, boolean overwrite)
+			throws IOException {
+		if (toExport.isEmpty()) {
+			System.out.println(fileOut.getName() + " is empty");
+			return fileOut;
+		}
+		if (!fileOut.getName().endsWith(".shp"))
+			fileOut = new File(fileOut + ".shp");
+		List<File> file2MergeIn = new ArrayList<File>();
+		// copyShp(String shpName, String newShpName, File fromFolder, File toFolder)
+
+		if (fileOut.exists() && !overwrite) {
+			String fileName = fileOut.getName().substring(0, fileOut.getName().length()-4);
+			File newFile = new File(fileOut.getParentFile(), fileName + "tmp.shp");
+			Shp.copyShp(fileName, fileName + "tmp", fileOut.getParentFile(), fileOut.getParentFile());
+			file2MergeIn.add(newFile);
+		}
+		
+		ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
+		Map<String, Serializable> params = new HashMap<>();
+		params.put("url", fileOut.toURI().toURL());
+		params.put("create spatial index", Boolean.TRUE);
+		ShapefileDataStore newDataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
+		newDataStore.createSchema(ft);
+		File datFile = Collec.makeTransaction(newDataStore, toExport, fileOut, ft);
+		file2MergeIn.add(datFile);
+		File result = Shp.mergeVectFiles(file2MergeIn, fileOut);
+		Shp.deleteShp(fileOut.getName().substring(0, fileOut.getName().length() - 4) + "tmp", fileOut.getParentFile());
+		return result;
+	}
+
 }
