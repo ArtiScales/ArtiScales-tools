@@ -39,7 +39,7 @@ public class Geopackages {
 			if (overwrite)
 				Files.delete(fileOut.toPath());
 			else
-				return mergePackages(toExport, fileOut);
+				return mergeGpkg(toExport, fileOut);
 		Map<String, Object> params = new HashMap<>();
 		params.put(GeoPkgDataStoreFactory.DBTYPE.key,"geopkg");
 		params.put(GeoPkgDataStoreFactory.DATABASE.key, fileOut.getPath());
@@ -49,7 +49,7 @@ public class Geopackages {
 		return Collec.makeTransaction(newDataStore, toExport,  fileOut, ft);
 	}
 	
-	public static File mergePackages(SimpleFeatureCollection toAdd, File existingGpkg) throws IOException {
+	public static File mergeGpkg(SimpleFeatureCollection toAdd, File existingGpkg) throws IOException {
 		File tmpFile = new File(existingGpkg.getParentFile(), existingGpkg.getName().replace(".gpkg", "-temp.gpkg"));
 		Files.copy(existingGpkg.toPath(), new FileOutputStream(tmpFile));
 		Files.delete(existingGpkg.toPath());
