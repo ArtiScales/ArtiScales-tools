@@ -3,6 +3,7 @@ package fr.ign.cogit.geometryGeneration;
 import java.io.File;
 import java.io.IOException;
 
+import org.geotools.data.DataStore;
 import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -15,6 +16,7 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 import fr.ign.cogit.geoToolsFunctions.Schemas;
 import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
 import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
+import fr.ign.cogit.geoToolsFunctions.vectors.Geopackages;
 /**
  * Class to generate shapefiles related to community shape. 
  * 
@@ -24,8 +26,32 @@ import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
 public class CityGeneration {
 	
 	public static void main(String[] args) throws NoSuchAuthorityCodeException, IOException, FactoryException {
-//		createUrbanIslet(new File("/home/ubuntu/PMtest/SeineEtMarne/PARCELLE03.SHP"),  new File ("/home/ubuntu/PMtest/SeineEtMarne/"));
+		createUrbanIslet(new File("/home/ubuntu/PMtest/SeineEtMarne/PARCELLE03.SHP"), new File("/home/ubuntu/PMtest/SeineEtMarne/"));
+	}
+	
+	/**
+	 * Generate urban islet shapefile out of a parcel plan. Urban islet can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
+	 * 
+	 * @param parcelFile
+	 *            input parcel
+	 * @param outFolder
+	 *            folder where goes the generated urban islet
+	 * @return a collection of urban islet
+	 * @throws IOException
+	 * @throws NoSuchAuthorityCodeException
+	 * @throws FactoryException
+	 */
+	public static File createUrbanIsletShp(File parcelFile, File outFolder) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+		File result = new File(outFolder, "islet.shp");
+		if (result.exists()) {
+			System.out.println("createUrbanIslet(): islet already exists");
+			return result;
 		}
+		ShapefileDataStore parcelSDS = new ShapefileDataStore(parcelFile.toURI().toURL());
+		SimpleFeatureCollection islet = createUrbanIslet(parcelSDS.getFeatureSource().getFeatures());
+		parcelSDS.dispose();
+		return Collec.exportSFC(islet, new File(outFolder, "islet.shp")) ;
+	}
 	
 	/**
 	 * Generate urban islet shapefile out of a parcel plan. Urban islet can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
@@ -40,15 +66,15 @@ public class CityGeneration {
 	 * @throws FactoryException
 	 */
 	public static File createUrbanIslet(File parcelFile, File outFolder) throws IOException, NoSuchAuthorityCodeException, FactoryException {
-		File result = new File(outFolder, "islet.shp");
+		File result = new File(outFolder, "islet.gpkg");
 		if (result.exists()) {
 			System.out.println("createUrbanIslet(): islet already exists");
 			return result;
 		}
-		ShapefileDataStore parcelSDS = new ShapefileDataStore(parcelFile.toURI().toURL());
-		SimpleFeatureCollection islet = createUrbanIslet(parcelSDS.getFeatureSource().getFeatures());
-		parcelSDS.dispose();
-		return Collec.exportSFC(islet, new File(outFolder, "islet.shp")) ;
+		DataStore parcelDS = Geopackages.getDataStore(parcelFile);
+		SimpleFeatureCollection islet =  parcelDS.getFeatureSource(parcelDS.getTypeNames()[0]).getFeatures();
+		parcelDS.dispose();
+		return Collec.exportSFC(islet, result) ;
 	}
 	
 	/**

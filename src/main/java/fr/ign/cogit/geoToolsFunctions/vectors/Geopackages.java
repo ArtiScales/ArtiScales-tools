@@ -27,7 +27,7 @@ public class Geopackages {
 		return DataStoreFinder.getDataStore(map);
 	}
 	/*
-	 * sds.getFeatureSource(sds.getTypeNames()[0]).getFeatures()
+	 * ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures()
 	 */
 
 	
