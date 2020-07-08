@@ -399,7 +399,6 @@ public class Csv {
 				line = line + val + ",";
 			if (line.endsWith(",")) 
 				line = line.substring(0, line.length()-1);
-			System.out.println(line);
 			lines.add(line);
 		}
 		return simpleCSVWriter(lines, fLine, new File(folderOut, name + ".csv"), append);

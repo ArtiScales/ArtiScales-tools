@@ -4,12 +4,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
+import org.geotools.data.DataUtilities;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.geopkg.GeoPkgDataStoreFactory;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -59,5 +62,39 @@ public class Geopackages {
 		ds.dispose();
 		Files.delete(tmpFile.toPath());
 		return existingGpkg;
+	}
+	
+	public static File mergeGpkgFiles(List<File> file2MergeIn, File f) throws IOException {
+		return mergeGpkgFiles(file2MergeIn, f,null, true);
+	}
+	
+	public static File mergeGpkgFiles(List<File> file2MergeIn, File fileOut, File boundFile, boolean keepAttributes) throws IOException  {
+		// stupid basic checkout
+		if (file2MergeIn.isEmpty()) {
+			System.out.println("mergeGpkgFiles: list empty, " + fileOut + " null");
+			return null;
+		}
+		// verify that every shapefile exists and remove them from the list if not
+		int nbFile = file2MergeIn.size();
+		for (int i = 0; i < nbFile; i++) {
+			if (!file2MergeIn.get(i).exists()) {
+				System.out.println(file2MergeIn.get(i) + " doesn't exists");
+				file2MergeIn.remove(i);
+				i--;
+				nbFile--;
+			}
+		}
+		// check to prevent event in case of a willing of keeping attributes
+		File fRef = file2MergeIn.get(0);
+		DataStore dSref = getDataStore(fRef);
+		SimpleFeatureType schemaRef = dSref.getFeatureSource(dSref.getTypeNames()[0]).getFeatures().getSchema();
+		dSref.dispose();
+		List<SimpleFeatureCollection> sfcs = new ArrayList<SimpleFeatureCollection>();
+		for (File f : file2MergeIn) {
+			DataStore sds = getDataStore(f);
+			sfcs.add(DataUtilities.collection(sds.getFeatureSource(sds.getTypeNames()[0]).getFeatures()));
+			sds.dispose();
+		}
+		return Collec.exportSFC(Collec.mergeSFC(sfcs, schemaRef, keepAttributes, boundFile), fileOut, ".gpkg", true);
 	}
 }
