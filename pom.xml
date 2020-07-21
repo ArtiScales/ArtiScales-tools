@@ -91,11 +91,6 @@
 			<artifactId>gt-grid</artifactId>
 			<version>21.0</version>
 		</dependency>
-<!--			<dependency>
-			<groupId>org.geotools</groupId>
-			<artifactId>gt-graph</artifactId>
-			<version>${geotools.version}</version>
-		</dependency> -->
 		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-shapefile</artifactId>
@@ -106,11 +101,6 @@
 		   <artifactId>gt-geopkg</artifactId>
 		   <version>${geotools.version}</version>
 		 </dependency>
-<!--		<dependency>
-			<groupId>org.geotools</groupId>
-			<artifactId>gt-arcgrid</artifactId>
-			<version>${geotools.version}</version>
-		</dependency>-->
 		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-coverage</artifactId>

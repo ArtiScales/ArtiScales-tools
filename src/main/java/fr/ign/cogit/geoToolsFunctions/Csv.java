@@ -38,6 +38,21 @@ public class Csv {
 //		calculateColumnsBasicStat(
 //				new File("/home/ubuntu/workspace/ParcelManager/src/main/resources/DensificationStudy/out/densificationStudyResult.csv"), 2, true);
 //	}
+	
+	/**
+	 * Create a String out of a CSV line with only the indicated indexes. Separate the values with a "-"  
+	 * @param headers list of indexes to put 
+	 * @param line the csv line in a tab
+	 * @return the concatenated string
+	 */
+	public static String makeLine(List<Integer> headers, String[] line) {
+		String result = "";
+		for (int i = 0; i < line.length; i++)
+			if (headers.contains(i))
+				result = result + "-" + line[i];
+		return result.substring(1, result.length());
+	}
+
 	/**
 	 * Add some basic statistic for a predeterminde column of a csv file. Add extra lines to the end of the .csv.
 	 * 
@@ -150,7 +165,7 @@ public class Csv {
 	/**
 	 * Put the raw values of a .tif raster file cells to a .csv format.
 	 * 
-	 * @param FileToConvert
+	 * @param fileToConvert
 	 * @throws IOException
 	 */
 	public static File convertRasterToCsv(File fileToConvert) throws IOException {

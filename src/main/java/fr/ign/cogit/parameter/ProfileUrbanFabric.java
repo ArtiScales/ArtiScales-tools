@@ -22,8 +22,7 @@ public class ProfileUrbanFabric {
 	double maximalArea, minimalArea, minimalWidthContactRoad, streetWidth, largeStreetWidth, maxDepth, maxDistanceForNearestRoad,
 			minWidth, maxWidth;
 	int largeStreetLevel, decompositionLevelWithoutStreet;
-	double lenDriveway, noise;
-	double harmonyCoeff = 0.55;
+	double lenDriveway, noise, harmonyCoeff ;
 
 	static String profileFolder;
 
