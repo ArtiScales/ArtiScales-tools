@@ -53,7 +53,12 @@ public class Collec {
 	static String defaultGISFileType = ".gpkg";
 	static String defaultGeomName;
 
-	// public static void main(String[] args) throws Exception {
+//	public static void main(String[] args) throws Exception {
+//		String[] vals = { "DEPCOM", "LIBELLE" };
+//		DataStore ds = Geopackages.getDataStore(new File("/home/thema/Documents/MC/workspace/ParcelManager/src/main/resources/ParcelComparison/zoning.gpkg"));
+//		SimpleFeatureCollection sfc = ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures();
+//		System.out.println(getEachUniqueFieldFromSFC(sfc, vals));
+//	
 	// File shp1F = new File("/tmp/shp1.shp");
 	// File shp2F = new File("/tmp/shp2.shp");
 	// File gp1F = new File("/tmp/gp1.gpkg");
@@ -264,18 +269,43 @@ public class Collec {
 		return SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox)));
 	}
 
-	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String attribute) throws IOException {
+	/**
+	 * Create a {@link SimpleFeatureCollection} with features which designed attribute field matches a precise attribute value.
+	 * 
+	 * @param sFCToDivide SimpleFeatureCollection to sort 
+	 * @param fieldName field name to select features from
+	 * @param attribute wanted field 
+	 * @return a collection with matching features
+	 * @throws IOException
+	 */
+	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String fieldName, String attribute) throws IOException {
 		String[] attributes = { attribute };
-		return getSFCPart(sFCToDivide, code, attributes);
+		String[] fieldNames = { fieldName };
+		return getSFCPart(sFCToDivide, fieldNames, attributes);
 	}
 
-	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String code, String[] attributes) throws IOException {
+	/**
+	 * Create a {@link SimpleFeatureCollection} with features which a list of attribute field matches a list of strings. The index of the couple fieldName/attribute must match.
+	 * 
+	 * @param sFCToDivide SimpleFeatureCollection to sort 
+	 * @param fieldNames array of field names 
+	 * @param attributes array of values 
+	 * @return a collection with matching features
+	 * @throws IOException
+	 */
+	public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String[] fieldNames, String[] attributes) throws IOException {
+		int shortestIndice = Math.min(fieldNames.length, attributes.length);
+		if (fieldNames.length != attributes.length)
+			System.out.println("not same number of indices between fieldNames and attributes. Took the shortest one");
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		Arrays.stream(sFCToDivide.toArray(new SimpleFeature[0])).forEach(feat -> {
-			String attribute = "";
-			for (String a : attributes)
-				attribute = attribute + ((String) feat.getAttribute(a));
-			if (attribute.equals(code))
+			boolean add = true;
+			for (int i = 0; i < shortestIndice; i++) 
+				if (!((String) feat.getAttribute(fieldNames[i])).equals(attributes[i])) {
+					add = false;
+					break;
+				}
+			if (add) 
 				result.add(feat);
 		});
 		return result.collection();
@@ -403,6 +433,23 @@ public class Collec {
 	public static MultiLineString fromPolygonSFCtoRingMultiLines(SimpleFeatureCollection inputSFC) {
 		return Geom.getListAsGeom(fromPolygonSFCtoListRingLines(inputSFC), new GeometryFactory());
 	}
+	
+	public static SimpleFeatureCollection getSFCfromSFCIntersection(SimpleFeatureCollection sfcToSort, SimpleFeatureCollection sfcIntersection){
+		DefaultFeatureCollection result = new DefaultFeatureCollection();
+		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+		Geometry geometry = Geom.unionSFC(sfcIntersection);
+		SimpleFeatureCollection collec = sfcToSort.subCollection(ff.intersects(
+				ff.property(sfcToSort.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
+		if (collec.isEmpty()) 
+			return null;
+		Arrays.stream(collec.toArray(new SimpleFeature[0])).forEach(theFeature -> {
+				Geometry theFeatureGeom = (Geometry) theFeature.getDefaultGeometry();
+				if (geometry.contains(theFeatureGeom) || (theFeatureGeom.intersects(geometry) && 
+						geometry.intersection(theFeatureGeom).getArea() > theFeatureGeom.getArea() * 0.5))
+					result.add(theFeature);					
+			});
+		return result;
+	}
 
 	/**
 	 * Get the value of a feature's field from a SimpleFeatureCollection that intersects a given Simplefeature (that is most of the time, a parcel or building). If the given
@@ -416,8 +463,8 @@ public class Collec {
 	 *            The name of the field in which to look for the attribute
 	 * @return the wanted filed from the (most) intersecting {@link SimpleFeature}}
 	 */
-	public static String getFieldFromSFC(Geometry geometry, SimpleFeatureCollection sfc, String fieldName) {
-		SimpleFeature feat = getSimpleFeatureFromSFC(geometry, sfc);
+	public static String getIntersectingFieldFromSFC(Geometry geometry, SimpleFeatureCollection sfc, String fieldName) {
+		SimpleFeature feat = getIntersectingSimpleFeatureFromSFC(geometry, sfc);
 		return feat != null ? (String) feat.getAttribute(fieldName) : null;
 	}
 
@@ -426,11 +473,11 @@ public class Collec {
 	 * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
 	 * 
 	 * @param geometry
-	 *            input {@link Geometry}
+	 *            input {@link Geometry} 
 	 * @param inputSFC
 	 * @return the (most) intersecting {@link SimpleFeature}}
 	 */
-	public static SimpleFeature getSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC) {
+	public static SimpleFeature getIntersectingSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC) {
 		try {
 			FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 			SortedMap<Double, SimpleFeature> index = new TreeMap<>();
@@ -446,8 +493,7 @@ public class Collec {
 					Geometry theFeatureGeom = ((Geometry) theFeature.getDefaultGeometry()).buffer(1);
 					if (theFeatureGeom.contains(geometry))
 						return theFeature;
-					// if the parcel is in between two features, we put the feature in a sorted
-					// collection
+					// if the parcel is in between two features, we put the feature in a sorted collection
 					else if (theFeatureGeom.intersects(geometry))
 						index.put(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, geometry)).getArea(), theFeature);
 				}
@@ -456,11 +502,21 @@ public class Collec {
 			}
 			return index.size() > 0 ? index.get(index.lastKey()) : null;
 		} catch (Exception e) {
-			return getSimpleFeatureFromSFC(geometry, inputSFC, new PrecisionModel(10));
+			return getIntersectingSimpleFeatureFromSFC(geometry, inputSFC, new PrecisionModel(10));
 		}
 	}
 
-	public static SimpleFeature getSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC, PrecisionModel precisionModel) {
+	/**
+	 * Get the {@link SimpleFeature} out of a {@link SimpleFeatureCollection} that intersects a given Geometry (that is most of the time, a parcel or building). If the given
+	 * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection. Reduce the precision of the {@link Geometry}s
+	 * 
+	 * @param geometry
+	 *            input {@link Geometry}
+	 * @param inputSFC
+	 * @param precisionModel 
+	 * @return the (most) intersecting {@link SimpleFeature}}
+	 */
+	public static SimpleFeature getIntersectingSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC, PrecisionModel precisionModel) {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		Geometry givenFeatureGeom = GeometryPrecisionReducer.reduce(geometry, precisionModel);
 		SortedMap<Double, SimpleFeature> index = new TreeMap<>();
@@ -614,18 +670,40 @@ public class Collec {
 		return output;
 	}
 
-	public static List<String> getEachUniqueFieldFromSFC(SimpleFeatureCollection in, String attribute) {
-		if (!Collec.isCollecContainsAttribute(in, attribute)) {
-			System.out.println("getEachUniqueFieldFromSFC:  no " + attribute + " found");
-			return null;
-		}
+	
+	/**
+	 * Get the unique values of a SimpleFeatureCollection from a combination of fields. Each fields are separated with a "-" character.
+	 * @param in
+	 * @param attribute
+	 * @return
+	 */
+
+	public static List<String> getEachUniqueFieldFromSFC(SimpleFeatureCollection in, String[] attributes) {
+		for (String attribute : attributes)
+			if (!Collec.isCollecContainsAttribute(in, attribute)) {
+				System.out.println("getEachUniqueFieldFromSFC:  no " + attribute + " found");
+				return null;
+			}
 		List<String> result = new ArrayList<String>();
 		Arrays.stream(in.toArray(new SimpleFeature[0])).forEach(sf -> {
-			String val = (String) sf.getAttribute(attribute);
+			String val = "";
+			for (int i = 0; i < attributes.length; i++)
+				val = val + "-" +  (String) sf.getAttribute(attributes[i]);
+			val = val.substring(1, val.length());
 			if (!result.contains(val))
 				result.add(val);
 		});
 		return result;
+	}
+	/**
+	 * Get the unique values of a SimpleFeatureCollection from a single field 
+	 * @param in
+	 * @param attribute
+	 * @return
+	 */
+	public static List<String> getEachUniqueFieldFromSFC(SimpleFeatureCollection in, String attribute) {
+		String[] attributes = {attribute}; 
+		return getEachUniqueFieldFromSFC(in, attributes);
 	}
 
 	/**

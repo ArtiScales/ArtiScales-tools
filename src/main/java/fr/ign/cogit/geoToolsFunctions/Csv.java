@@ -126,12 +126,11 @@ public class Csv {
 	
 	public static List<File> getCSVFiles(File folder) {
 		List<File> result = new ArrayList<File>();
-		for (File f : folder.listFiles()) {
+		for (File f : folder.listFiles())
 			if (f.isDirectory())
 				result.addAll(getCSVFiles(f));
 			else if (f.getName().endsWith(".csv"))
 				result.add(f);
-		}
 		return result;
 	}
 
@@ -189,14 +188,13 @@ public class Csv {
 		int debI = 0;
 		int debJ = 0;
 		HashMap<String, Double> cells = new HashMap<String, Double>();
-		for (int i = debI; i < w; i++) {
+		for (int i = debI; i < w; i++)
 			for (int j = debJ; j < h; j++) {
 				GridCoordinates2D coord = new GridCoordinates2D(i, j);
 				double[] temp = coverage.evaluate(coord, vals);
 				if (temp[0] > 0.001)
 					cells.put(coord.toString(), temp[0]);
 			}
-		}
 
 		// RasterAnalyse.generateCsvFileCol(cells,new File (rastFile.getParent()),);
 		File fileName = new File(fileToConvert + "-tocsv.csv");
