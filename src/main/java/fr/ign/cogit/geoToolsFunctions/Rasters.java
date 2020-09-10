@@ -39,10 +39,10 @@ public class Rasters {
 		return coverage;
 	}
 
-	public static void cut(File fileToCut, File envelope, File fileOut) throws IOException, InvalidParameterValueException, ParameterNotFoundException, TransformException {
-		ShapefileDataStore envDS = new ShapefileDataStore(envelope.toURI().toURL());
-		Geometry env = Geom.unionSFC(envDS.getFeatureSource().getFeatures());
-		writeGeotiff(fileOut, Rasters.importRaster(fileToCut, env));
+	public static void crop(File fileToCut, File envelope, File fileOut) throws IOException, InvalidParameterValueException, ParameterNotFoundException, TransformException {
+		ShapefileDataStore envSDS = new ShapefileDataStore(envelope.toURI().toURL());
+		writeGeotiff(fileOut, Rasters.importRaster(fileToCut, Geom.unionSFC(envSDS.getFeatureSource().getFeatures())));
+		envSDS.dispose();
 	}
 
 //	public static void main(String[] args) throws InvalidParameterValueException, ParameterNotFoundException, IOException, TransformException {

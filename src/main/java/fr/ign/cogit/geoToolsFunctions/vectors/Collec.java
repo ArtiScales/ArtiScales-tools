@@ -673,19 +673,19 @@ public class Collec {
 	
 	/**
 	 * Get the unique values of a SimpleFeatureCollection from a combination of fields. Each fields are separated with a "-" character.
-	 * @param in
-	 * @param attribute
-	 * @return
+	 * @param sfcIn input {@link SimpleFeatureCollection}
+	 * @param attributes field name to create the combination of unique values
+	 * @return the list of unique values
 	 */
 
-	public static List<String> getEachUniqueFieldFromSFC(SimpleFeatureCollection in, String[] attributes) {
+	public static List<String> getEachUniqueFieldFromSFC(SimpleFeatureCollection sfcIn, String[] attributes) {
 		for (String attribute : attributes)
-			if (!Collec.isCollecContainsAttribute(in, attribute)) {
+			if (!Collec.isCollecContainsAttribute(sfcIn, attribute)) {
 				System.out.println("getEachUniqueFieldFromSFC:  no " + attribute + " found");
 				return null;
 			}
 		List<String> result = new ArrayList<String>();
-		Arrays.stream(in.toArray(new SimpleFeature[0])).forEach(sf -> {
+		Arrays.stream(sfcIn.toArray(new SimpleFeature[0])).forEach(sf -> {
 			String val = "";
 			for (int i = 0; i < attributes.length; i++)
 				val = val + "-" +  (String) sf.getAttribute(attributes[i]);
@@ -696,14 +696,14 @@ public class Collec {
 		return result;
 	}
 	/**
-	 * Get the unique values of a SimpleFeatureCollection from a single field 
-	 * @param in
-	 * @param attribute
-	 * @return
+	 * Get the unique values of a SimpleFeatureCollection from a single field.
+	 * @param sfcIn input {@link SimpleFeatureCollection}
+	 * @param attribute field name to create the unique list
+	 * @return the list of unique values
 	 */
-	public static List<String> getEachUniqueFieldFromSFC(SimpleFeatureCollection in, String attribute) {
+	public static List<String> getEachUniqueFieldFromSFC(SimpleFeatureCollection sfcIn, String attribute) {
 		String[] attributes = {attribute}; 
-		return getEachUniqueFieldFromSFC(in, attributes);
+		return getEachUniqueFieldFromSFC(sfcIn, attributes);
 	}
 
 	/**
