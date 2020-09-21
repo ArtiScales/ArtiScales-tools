@@ -26,12 +26,12 @@ import org.opengis.referencing.FactoryException;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
-import fr.ign.artiscales.tools.graph.GraphElement;
 
 public class TopologicalGraph {
   Map<Coordinate, Node> nodes = new HashMap<>();
   List<HalfEdge> edges = new ArrayList<>();
   List<Face> faces = new ArrayList<>();
+ static  int SRIDNumber;
   private static boolean DEBUG = false;
 
   public Collection<Node> getNodes() {
@@ -164,14 +164,15 @@ public class TopologicalGraph {
     }
   }
   
-  public static <G extends Geometry, E extends GraphElement<G>> void export(List<E> feats, File fileOut,
+  public static <G extends Geometry, T extends GraphElement<G,T>, E extends GraphElement<G,T>> void export(List<E> feats, File fileOut,
 			Class<? extends Geometry> geomType) {
 		System.out.println("save " + feats.size() + " to " + fileOut);
 		if (feats.isEmpty())
 			return;
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		try {
-			sfTypeBuilder.setCRS(CRS.decode("EPSG:" + feats.get(0).getGeometry().getSRID()));
+			sfTypeBuilder.setCRS(CRS.decode("EPSG:" + SRIDNumber));
+//			sfTypeBuilder.setCRS(CRS.decode("EPSG:2154" ));
 		} catch (FactoryException e) {
 			e.printStackTrace();
 		}
@@ -188,8 +189,10 @@ public class TopologicalGraph {
 		DefaultFeatureCollection dfc = new DefaultFeatureCollection();
 		for (E element : feats) {
 			builder.set(Collec.getDefaultGeomName(), element.getGeometry());
-			for (int i = 0; i < attributes.size(); i++)
-				builder.set(i, element.getAttribute(attributes.get(i)));
+//			for (int i = 0; i < attributes.size(); i++) {
+//			System.out.println("elttt : "+element.getAttribute(attributes.get(i)));
+//				builder.set(i, element.getAttribute(attributes.get(i)));
+//			}
 			dfc.add(builder.buildFeature(Attribute.makeUniqueId()));
 		}
 		try {
@@ -204,6 +207,15 @@ public class TopologicalGraph {
   public Node getNode(Coordinate c) {
     return this.nodes.get(c);
   }
+  
+  public static void setSRID(int srid) {
+	  SRIDNumber= srid;
+  }
+  
+  public static int getSRID() {
+	  return SRIDNumber;
+  }
+
 
   public Node getNode(Coordinate c, double tolerance) {
     List<Coordinate> candidates = this.nodes.keySet().stream().filter(coord -> coord.distance(c) <= tolerance).collect(Collectors.toList());
