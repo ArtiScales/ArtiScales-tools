@@ -1,4 +1,4 @@
-package fr.ign.cogit.outputs;
+package fr.ign.artiscales.tools.outputs;
 
 import java.io.File;
 import java.io.FileWriter;

@@ -1,4 +1,4 @@
-package fr.ign.cogit.geoToolsFunctions;
+package fr.ign.artiscales.tools.geoToolsFunctions;
 
 import java.io.File;
 import java.io.FileReader;

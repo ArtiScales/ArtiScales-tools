@@ -1,4 +1,4 @@
-package fr.ign.cogit.carto;
+package fr.ign.artiscales.tools.carto;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,8 +12,8 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
-import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
-import fr.ign.cogit.geoToolsFunctions.vectors.Geopackages;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
 
 public class MergeByAttribute {
 

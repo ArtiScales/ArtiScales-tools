@@ -1,4 +1,4 @@
-package fr.ign.cogit.geoToolsFunctions.vectors;
+package fr.ign.artiscales.tools.geoToolsFunctions.vectors;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,8 +45,8 @@ import org.opengis.filter.FilterVisitor;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
-import fr.ign.cogit.geoToolsFunctions.Attribute;
-import fr.ign.cogit.geoToolsFunctions.Schemas;
+import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
+import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
 
 public class Collec {
 

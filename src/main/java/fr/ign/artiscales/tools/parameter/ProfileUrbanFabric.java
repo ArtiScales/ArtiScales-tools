@@ -1,4 +1,4 @@
-package fr.ign.cogit.parameter;
+package fr.ign.artiscales.tools.parameter;
 
 import java.io.File;
 import java.io.FileInputStream;

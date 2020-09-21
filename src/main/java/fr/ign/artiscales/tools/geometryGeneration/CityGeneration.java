@@ -1,4 +1,4 @@
-package fr.ign.cogit.geometryGeneration;
+package fr.ign.artiscales.tools.geometryGeneration;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,10 +13,10 @@ import org.locationtech.jts.geom.Geometry;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
-import fr.ign.cogit.geoToolsFunctions.Schemas;
-import fr.ign.cogit.geoToolsFunctions.vectors.Collec;
-import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
-import fr.ign.cogit.geoToolsFunctions.vectors.Geopackages;
+import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
 /**
  * Class to generate shapefiles related to community shape. 
  * 

@@ -1,4 +1,4 @@
-package fr.ign.cogit.geoToolsFunctions;
+package fr.ign.artiscales.tools.geoToolsFunctions;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +23,7 @@ import org.opengis.parameter.ParameterValue;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.operation.TransformException;
 
-import fr.ign.cogit.geoToolsFunctions.vectors.Geom;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
 
 public class Rasters {
 

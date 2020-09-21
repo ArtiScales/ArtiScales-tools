@@ -1,4 +1,4 @@
-package fr.ign.cogit.geoToolsFunctions.vectors;
+package fr.ign.artiscales.tools.geoToolsFunctions.vectors;
 
 import java.io.File;
 import java.io.FileOutputStream;

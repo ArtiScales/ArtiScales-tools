@@ -1,4 +1,4 @@
-package fr.ign.cogit;
+package fr.ign.artiscales.tools;
 
 import java.io.File;
 import java.io.IOException;
