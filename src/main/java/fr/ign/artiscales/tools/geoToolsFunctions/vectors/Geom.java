@@ -46,12 +46,20 @@ public class Geom {
 //		ShapefileDataStore sd = new ShapefileDataStore(((new File("/tmp/tmp.shp")).toURI().toURL()));
 //		System.out.println(createBufferBorder(sd.getFeatureSource().getFeatures()));
 //	}
-	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder,
-			DefaultFeatureCollection result, String geometryOutputName, Geometry geom) {
-		return addSimpleGeometry(sfBuilder, result, geometryOutputName, geom, null);
+	
+	public static DefaultFeatureCollection addSimplePolygonialGeometries(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
+			String geometryOutputName, List<Geometry> geoms) {
+		for (Geometry g : geoms)
+			result = addSimplePolygonialGeometry(sfBuilder, result, geometryOutputName, g);
+		return result;
 	}
 
-	public static DefaultFeatureCollection addSimpleGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
+	public static DefaultFeatureCollection addSimplePolygonialGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
+			String geometryOutputName, Geometry geom) {
+		return addSimplePolygonialGeometry(sfBuilder, result, geometryOutputName, geom, Attribute.makeUniqueId());
+	}
+
+	public static DefaultFeatureCollection addSimplePolygonialGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
 			String geometryOutputName, Geometry geom, String id) {
 		if (geom instanceof MultiPolygon) {
 			for (int i = 0; i < geom.getNumGeometries(); i++) {
