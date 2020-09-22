@@ -20,6 +20,8 @@ import org.locationtech.jts.math.Vector2D;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
+
 /**
  * 
  * @author mickael brasebin
@@ -80,6 +82,7 @@ public class FindObjectInDirection {
 		double distance = Double.POSITIVE_INFINITY;
 		SimpleFeature bestcandidateParcel = null;
 		SimpleFeatureIterator iterator = Util.select(collectionToSelect, ls).features();
+//		SimpleFeatureIterator iterator = Collec.getIntersectingSimpleFeatureFromSFC(geometry, inputSFC)ngSimpleFeatureFromSFC(ls, collectionToSelect).;
 		while (iterator.hasNext()) {
 		  SimpleFeature boundaryTemp = iterator.next();
 //		  System.out.println("candidate " + boundaryTemp.getDefaultGeometry());

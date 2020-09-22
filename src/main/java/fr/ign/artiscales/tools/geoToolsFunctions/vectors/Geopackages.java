@@ -19,6 +19,18 @@ import org.opengis.feature.simple.SimpleFeatureType;
 
 public class Geopackages {
 
+//	public static void main(String[] args) throws IOException {
+//		try {
+//			ArrayList<File> fs = new ArrayList<File>();
+//			for (File f : (new File("/tmp/CampSkeletonValues")).listFiles())
+//				if (f.getName().endsWith(".gpkg"))
+//					fs.add(f);
+//			mergeGpkgFiles(fs, new File("/tmp/merged"));
+//		}catch (Error e) {
+//			
+//		}
+//	}
+	
 	public static DataStore getDataStore(File file) throws IOException {
 		if (!file.exists() || !file.getName().endsWith(".gpkg")) {
 			System.out.println(file + " doesn't exists or is not a geopackage");

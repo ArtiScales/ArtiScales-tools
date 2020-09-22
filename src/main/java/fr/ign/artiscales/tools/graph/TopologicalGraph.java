@@ -1,14 +1,27 @@
 package fr.ign.artiscales.tools.graph;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.referencing.CRS;
+import org.locationtech.jts.geom.Geometry;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.referencing.FactoryException;
+
+import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 
 public class TopologicalGraph {
   List<Node> nodes = new ArrayList<>();
   List<Edge> edges = new ArrayList<>();
   List<Face> faces = new ArrayList<>();
-
+  static int SRIDNumber = 2154;
   public List<Node> getNodes() {
     return nodes;
   }
@@ -50,4 +63,39 @@ public class TopologicalGraph {
       return e1.getOrigin();
     return e1.getTarget();
   }
+  
+  public static <G extends Geometry, E extends GraphElement<G>> void export(List<E> feats, File fileOut,	Class<? extends Geometry> geomType) {
+		System.out.println("save " + feats.size() + " to " + fileOut);
+		if (feats.isEmpty())
+			return;
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		try {
+			sfTypeBuilder.setCRS(CRS.decode("EPSG:" + SRIDNumber));
+//			sfTypeBuilder.setCRS(CRS.decode("EPSG:2154" ));
+		} catch (FactoryException e) {
+			e.printStackTrace();
+		}
+		sfTypeBuilder.setName(fileOut.getName());
+		sfTypeBuilder.add(Collec.getDefaultGeomName(), geomType);
+		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
+		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
+		List<String> attributes = feats.get(0).getAttributes();
+		for (String attribute : attributes)
+			sfTypeBuilder.add(attribute, String.class);
+		SimpleFeatureBuilder builder = new SimpleFeatureBuilder(featureType);
+		DefaultFeatureCollection dfc = new DefaultFeatureCollection();
+		for (E element : feats) {
+			builder.set(Collec.getDefaultGeomName(), element.getGeometry());
+//			for (int i = 0; i < attributes.size(); i++) {
+//			System.out.println("elttt : "+element.getAttribute(attributes.get(i)));
+//				builder.set(i, element.getAttribute(attributes.get(i)));
+//			}
+			dfc.add(builder.buildFeature(Attribute.makeUniqueId()));
+		}
+		try {
+			Collec.exportSFC(dfc, fileOut);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }

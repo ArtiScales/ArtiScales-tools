@@ -164,8 +164,7 @@ public class TopologicalGraph {
     }
   }
   
-  public static <G extends Geometry, T extends GraphElement<G,T>, E extends GraphElement<G,T>> void export(List<E> feats, File fileOut,
-			Class<? extends Geometry> geomType) {
+  public static <G extends Geometry, E extends GraphElement<G,E>> void export(List<E> feats, File fileOut,	Class<? extends Geometry> geomType) {
 		System.out.println("save " + feats.size() + " to " + fileOut);
 		if (feats.isEmpty())
 			return;
