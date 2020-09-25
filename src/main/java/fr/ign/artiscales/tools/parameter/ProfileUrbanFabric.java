@@ -196,7 +196,11 @@ public class ProfileUrbanFabric {
 	public double getMaxDepth() {
 		return maxDepth;
 	}
-
+	
+	public void setMaxDepth(double maxDepth) {
+		this.maxDepth= maxDepth ;
+	}
+	
 	public double getMaxDistanceForNearestRoad() {
 		return maxDistanceForNearestRoad;
 	}
