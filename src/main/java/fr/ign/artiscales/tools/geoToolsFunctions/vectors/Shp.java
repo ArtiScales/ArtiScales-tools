@@ -114,7 +114,7 @@ public class Shp {
 	public static File snapDatas(File fileIn, File fileOut, SimpleFeatureCollection box) throws IOException {
 		// load the input from the general folder
 		ShapefileDataStore shpDSIn = new ShapefileDataStore(fileIn.toURI().toURL());
-		File result = Collec.exportSFC(Collec.snapDatas(shpDSIn.getFeatureSource().getFeatures(), Geom.unionSFC(box)), fileOut);
+		File result = Collec.exportSFC(Collec.selectIntersection(shpDSIn.getFeatureSource().getFeatures(), Geom.unionSFC(box)), fileOut);
 		shpDSIn.dispose();
 		return result;
 	}
@@ -125,7 +125,7 @@ public class Shp {
 		// load the file to make the bbox and selectin with
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(bBoxFile.toURI().toURL());
 		File result = Collec.exportSFC(
-				Collec.snapDatas(shpDSIn.getFeatureSource().getFeatures(), Geom.unionSFC(shpDSZone.getFeatureSource().getFeatures())), fileOut);
+				Collec.selectIntersection(shpDSIn.getFeatureSource().getFeatures(), Geom.unionSFC(shpDSZone.getFeatureSource().getFeatures())), fileOut);
 		shpDSZone.dispose();
 		shpDSIn.dispose();
 		return result;

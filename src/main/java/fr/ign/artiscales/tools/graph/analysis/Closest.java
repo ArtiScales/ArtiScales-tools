@@ -10,12 +10,14 @@ import org.geotools.data.simple.SimpleFeatureIterator;
 import org.locationtech.jts.geom.Geometry;
 import org.opengis.feature.simple.SimpleFeature;
 
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
+
 public class Closest {
   public static Optional<SimpleFeature> find(Geometry geom, SimpleFeatureCollection collectionToSelect, double maximumDistance) {
     if (collectionToSelect.isEmpty()) {
       return Optional.empty();
     }
-    SimpleFeatureIterator iterator = Util.select(collectionToSelect, geom, maximumDistance).features();
+    SimpleFeatureIterator iterator = Collec.selectIntersection(collectionToSelect, geom, maximumDistance).features();
     List<SimpleFeature> list = new ArrayList<>();
     while (iterator.hasNext()) {
       SimpleFeature candidate = iterator.next();

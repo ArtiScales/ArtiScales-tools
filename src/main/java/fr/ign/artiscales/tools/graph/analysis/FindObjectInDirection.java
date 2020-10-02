@@ -21,6 +21,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom.Lines;
 
 /**
  * 
@@ -81,7 +82,7 @@ public class FindObjectInDirection {
 		}
 		double distance = Double.POSITIVE_INFINITY;
 		SimpleFeature bestcandidateParcel = null;
-		SimpleFeatureIterator iterator = Util.select(collectionToSelect, ls).features();
+		SimpleFeatureIterator iterator = Collec.selectIntersection(collectionToSelect, ls).features();
 //		SimpleFeatureIterator iterator = Collec.getIntersectingSimpleFeatureFromSFC(geometry, inputSFC)ngSimpleFeatureFromSFC(ls, collectionToSelect).;
 		while (iterator.hasNext()) {
 		  SimpleFeature boundaryTemp = iterator.next();
@@ -119,7 +120,7 @@ public class FindObjectInDirection {
 		boolean isInPolygonDepNeg = oppositeDirection.contains(factory.createPoint(dpDepNeg));
 
 		if (isInPolygonDep && isInPolygonDepNeg) {
-			MultiLineString iOC = Util.getMultiLineString(oppositeDirection);
+			MultiLineString iOC = Lines.getMultiLineString(oppositeDirection);
 			double distDep = iOC.distance(factory.createPoint(dpDep));
 			double distDepNeg = iOC.distance(factory.createPoint(dpDepNeg));
 			if (distDep < distDepNeg) {
@@ -132,7 +133,7 @@ public class FindObjectInDirection {
 		}
 
 		if ((!isInPolygonDep) && (!isInPolygonDepNeg)) {
-		  MultiLineString iOC = Util.getMultiLineString(oppositeDirection);
+		  MultiLineString iOC = Lines.getMultiLineString(oppositeDirection);
 			double distDep = iOC.distance(factory.createPoint(dpDep));
 			double distDepNeg = iOC.distance(factory.createPoint(dpDepNeg));
 			if (distDep > distDepNeg) {

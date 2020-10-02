@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.geotools.data.DataStore;
+import org.geotools.data.DataUtilities;
 import org.geotools.data.DefaultTransaction;
 import org.geotools.data.Transaction;
 import org.geotools.data.collection.SpatialIndexFeatureCollection;
@@ -47,11 +48,12 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom.Lines;
+import si.uom.SI;
 
 public class Collec {
 
-	static String defaultGISFileType = ".gpkg";
-	static String defaultGeomName;
+	private static String defaultGISFileType = ".gpkg";
 
 //	public static void main(String[] args) throws Exception {
 //		String[] vals = { "DEPCOM", "LIBELLE" };
@@ -247,24 +249,29 @@ public class Collec {
 		return fileOut;
 	}
 
-	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile) throws IOException {
-		return snapDatas(SFCIn, boxFile, 0);
+	public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, File boxFile) throws IOException {
+		return selectIntersection(SFCIn, boxFile, 0); 
 	}
 
-	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws IOException {
+	public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws IOException {
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
-		Geometry bBox = Geom.unionSFC(shpDSZone.getFeatureSource().getFeatures());
-		if (distance != 0)
-			bBox = bBox.buffer(distance);
+		Geometry bBox = Geom.unionSFC(DataUtilities.collection(shpDSZone.getFeatureSource().getFeatures()));
+		SimpleFeatureCollection result = selectIntersection( SFCIn,  bBox,  distance);
 		shpDSZone.dispose();
-		return snapDatas(SFCIn, bBox);
+		return result;
 	}
 
-	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox) {
-		return snapDatas(SFCIn, Geom.unionSFC(bBox));
+	public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection collection, Geometry geom, double distance) {
+		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
+		return collection.subCollection(ff.dwithin(ff.property(collection.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geom),
+				distance, SI.METRE.toString()));
 	}
 
-	public static SimpleFeatureCollection snapDatas(SimpleFeatureCollection SFCIn, Geometry bBox) {
+	public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox) {
+		return selectIntersection(SFCIn, Geom.unionSFC(bBox));
+	}
+
+	public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, Geometry bBox) {
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
 		return SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox)));
 	}
@@ -342,7 +349,7 @@ public class Collec {
 	public static boolean isFeatIntersectsSFC(SimpleFeature inputFeat, SimpleFeatureCollection inputSFC) {
 		Geometry geom = (Geometry) inputFeat.getDefaultGeometry();
 		// import of the cells of MUP-City outputs
-		try (SimpleFeatureIterator cellsCollectionIt = Collec.snapDatas(inputSFC, geom).features()) {
+		try (SimpleFeatureIterator cellsCollectionIt = Collec.selectIntersection(inputSFC, geom).features()) {
 			while (cellsCollectionIt.hasNext())
 				if (((Geometry) cellsCollectionIt.next().getDefaultGeometry()).intersects(geom))
 					return true;
@@ -409,12 +416,12 @@ public class Collec {
 				Geometry geom = (Geometry) iterator.next().getDefaultGeometry();
 				if (geom instanceof MultiPolygon) {
 					for (int i = 0; i < ((MultiPolygon) geom).getNumGeometries(); i++) {
-						MultiLineString mls = Geom.generateLineStringFromPolygon(((Polygon) ((MultiPolygon) geom).getGeometryN(i)));
+						MultiLineString mls = Lines.getMultiLineString(((Polygon) ((MultiPolygon) geom).getGeometryN(i)));
 						for (int j = 0; j < mls.getNumGeometries(); j++)
 							lines.add((LineString) mls.getGeometryN(j));
 					}
 				} else {
-					MultiLineString mls = Geom.generateLineStringFromPolygon((Polygon) geom);
+					MultiLineString mls = Lines.getMultiLineString((Polygon) geom);
 					for (int j = 0; j < mls.getNumGeometries(); j++)
 						lines.add((LineString) mls.getGeometryN(j));
 				}
@@ -431,7 +438,7 @@ public class Collec {
 	 * @return A list of {@link LineString}
 	 */
 	public static MultiLineString fromPolygonSFCtoRingMultiLines(SimpleFeatureCollection inputSFC) {
-		return Geom.getListAsGeom(fromPolygonSFCtoListRingLines(inputSFC), new GeometryFactory());
+		return Lines.getListLineStringAsMultiLS(fromPolygonSFCtoListRingLines(inputSFC), new GeometryFactory());
 	}
 	
 	public static SimpleFeatureCollection getSFCfromSFCIntersection(SimpleFeatureCollection sfcToSort, SimpleFeatureCollection sfcIntersection){
@@ -615,7 +622,7 @@ public class Collec {
 		else if (defaultGISFileType.equals(".gpkg"))
 			return "geom";
 		else
-			return defaultGeomName;
+			return "";
 	}
 
 	public static SimpleFeatureCollection mergeSFC(List<SimpleFeatureCollection> sfcs, boolean keepAttributes, File boundFile) throws IOException {
@@ -666,7 +673,7 @@ public class Collec {
 		}
 		SimpleFeatureCollection output = newParcelCollection.collection();
 		if (boundFile != null && boundFile.exists())
-			output = Collec.snapDatas(output, boundFile);
+			output = Collec.selectIntersection(output, boundFile);
 		return output;
 	}
 
@@ -707,14 +714,14 @@ public class Collec {
 	}
 
 	/**
-	 * Return a SimpleFeature with the schema of the collection but no attribute
+	 * Return a SimpleFeature with the merged geometries and the schema of the input collection but no attribute
 	 * 
 	 * @param collec
 	 *            input {@link SimpleFeatureCollection}
 	 * @return a {@link SimpleFeature} with no values
 	 */
 	public static SimpleFeature unionSFC(SimpleFeatureCollection collec) {
-		SimpleFeatureBuilder builder = new SimpleFeatureBuilder(collec.getSchema());
+		SimpleFeatureBuilder builder = Schemas.getSFBSchemaWithMultiPolygon(collec.getSchema());
 		builder.set(collec.getSchema().getGeometryDescriptor().getLocalName(), Geom.unionSFC(collec));
 		return builder.buildFeature(Attribute.makeUniqueId());
 	}
@@ -745,10 +752,12 @@ public class Collec {
 		sfTypeBuilder.add(field, String.class);
 		sfTypeBuilder.setDefaultGeometry(geomName);
 		SimpleFeatureBuilder builder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
-		builder.set(geomName, Geom.unionSFC(collec));
+		builder.set(geomName, unionSFC(collec));
 		builder.set(field, attribute);
 		return builder.buildFeature(Attribute.makeUniqueId());
 	}
+	
+
 
 	// public static HashMap<String, SimpleFeatureCollection>
 	// divideSFCIntoPart(SimpleFeatureCollection sFCToDivide, String attribute) {

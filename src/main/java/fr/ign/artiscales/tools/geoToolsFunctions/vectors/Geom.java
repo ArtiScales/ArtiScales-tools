@@ -13,16 +13,10 @@ import java.util.stream.Stream;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
-import org.geotools.feature.SchemaException;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.MultiLineString;
-import org.locationtech.jts.geom.MultiPolygon;
-import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.geom.TopologyException;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
@@ -30,7 +24,6 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
-import fr.ign.artiscales.tools.FeaturePolygonizer;
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
 
@@ -47,39 +40,7 @@ public class Geom {
 //		System.out.println(createBufferBorder(sd.getFeatureSource().getFeatures()));
 //	}
 	
-	public static DefaultFeatureCollection addSimplePolygonialGeometries(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
-			String geometryOutputName, List<Geometry> geoms) {
-		for (Geometry g : geoms)
-			result = addSimplePolygonialGeometry(sfBuilder, result, geometryOutputName, g);
-		return result;
-	}
 
-	public static DefaultFeatureCollection addSimplePolygonialGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
-			String geometryOutputName, Geometry geom) {
-		return addSimplePolygonialGeometry(sfBuilder, result, geometryOutputName, geom, Attribute.makeUniqueId());
-	}
-
-	public static DefaultFeatureCollection addSimplePolygonialGeometry(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
-			String geometryOutputName, Geometry geom, String id) {
-		if (geom instanceof MultiPolygon) {
-			for (int i = 0; i < geom.getNumGeometries(); i++) {
-				sfBuilder.set(geometryOutputName, geom.getGeometryN(i));
-				result.add(sfBuilder.buildFeature(id));
-			}
-		} else if (geom instanceof GeometryCollection) {
-			for (int i = 0; i < geom.getNumGeometries(); i++) {
-				Geometry g = geom.getGeometryN(i);
-				if (g instanceof Polygon) {
-					sfBuilder.set(sfBuilder.getFeatureType().getGeometryDescriptor().getName(), g.buffer(1).buffer(-1));
-					result.add(sfBuilder.buildFeature(id));
-				}
-			}
-		} else if (geom instanceof Polygon) {
-			sfBuilder.set(geometryOutputName, geom);
-			result.add(sfBuilder.buildFeature(id));
-		}
-		return result;
-	}
 	
 	/**
 	 * Export a simple geometry in a shapeFile
@@ -111,7 +72,7 @@ public class Geom {
 	 * @throws FactoryException
 	 */
 	public static File exportGeom(List<? extends Geometry> geoms, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
-		return Collec.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon("geom")), fileName);
+		return Collec.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon(Collec.getDefaultGeomName())), fileName);
 	}
 	
 	/**
@@ -239,96 +200,77 @@ public class Geom {
 		return result; 
 	}
 	
-	public static Geometry unionGeom(List<Geometry> lG) {
+	public static Geometry unionGeom(List<? extends Geometry> lG) {
 		if (lG.size() == 1)
 			return lG.get(0);
 		GeometryFactory factory = new GeometryFactory();
-		Stream<Geometry> s = lG.stream();
+		Stream<? extends Geometry> s = lG.stream();
 		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
 		return geometryCollection.union();
 	}
 	
-	public static Geometry unionGeom(Geometry g1, Geometry g2) {
-		if (g1 instanceof GeometryCollection) {
-			if (g2 instanceof GeometryCollection)
-				return union((GeometryCollection) g1, (GeometryCollection) g2);
-			else {
-				List<Geometry> ret = unionGeom((GeometryCollection) g1, g2);
-				return g1.getFactory().createGeometryCollection(GeometryFactory.toGeometryArray(ret));
-			}
-		} else {
-			if (g2 instanceof GeometryCollection) {
-				List<Geometry> ret = unionGeom((GeometryCollection) g2, g1);
-				return g1.getFactory().createGeometryCollection(GeometryFactory.toGeometryArray(ret));
-			} else
-				return g1.intersection(g2);
-		}
-	}
-
-	private static List<Geometry> unionGeom(GeometryCollection gc, Geometry g) {
-		List<Geometry> ret = new ArrayList<Geometry>();
-		final int size = gc.getNumGeometries();
-		for (int i = 0; i < size; i++) {
-			Geometry g1 = (Geometry) gc.getGeometryN(i);
-			collect(g1.union(g), ret);
-		}
-		return ret;
-	}
-
-	/**
-	 * Helper method for {@link #union(Geometry, Geometry) union(Geometry,
-	 * Geometry)}
-	 */
-	private static GeometryCollection union(GeometryCollection gc1, GeometryCollection gc2) {
-		List<Geometry> ret = new ArrayList<Geometry>();
-		final int size = gc1.getNumGeometries();
-		for (int i = 0; i < size; i++) {
-			Geometry g1 = (Geometry) gc1.getGeometryN(i);
-			List<Geometry> partial = unionGeom(gc2, g1);
-			ret.addAll(partial);
-		}
-		return gc1.getFactory().createGeometryCollection(GeometryFactory.toGeometryArray(ret));
-	}
-
-	/**
-	 * Adds into the <TT>collector</TT> the Geometry <TT>g</TT>, or, if <TT>g</TT>
-	 * is a GeometryCollection, every geometry in it.
-	 *
-	 * @param g         the Geometry (or GeometryCollection to unroll)
-	 * @param collector the Collection where the Geometries will be added into
-	 */
-	private static void collect(Geometry g, List<Geometry> collector) {
-		if (g instanceof GeometryCollection) {
-			GeometryCollection gc = (GeometryCollection) g;
-			for (int i = 0; i < gc.getNumGeometries(); i++) {
-				Geometry loop = gc.getGeometryN(i);
-				if (!loop.isEmpty())
-					collector.add(loop);
-			}
-		} else {
-			if (!g.isEmpty())
-				collector.add(g);
-		}
-	}
-	
-	/**
-	 * Get a polygon and return a multiplolygon
-	 * @param geom
-	 * @return The {@link Geometry} as a {@link MultiPolygon}
-	 */
-	public static Geometry getMultiPolygonGeom(Geometry geom) {
-		// force the cast into multipolygon
-		if (geom instanceof Polygon) {
-			GeometryFactory gf = new GeometryFactory();
-			Polygon[] pols = { (Polygon) geom };
-			return geom = gf.createMultiPolygon(pols);
-		} else if (geom instanceof MultiPolygon)
-			return geom;
-		else {
-			System.out.println("getMultiPolygonGeom() problem with type of the geometry " + geom + " : " + geom.getGeometryType());
-			return null;
-		}
-	}
+//	public static Geometry unionGeom(Geometry g1, Geometry g2) {
+//		if (g1 instanceof GeometryCollection) {
+//			if (g2 instanceof GeometryCollection)
+//				return union((GeometryCollection) g1, (GeometryCollection) g2);
+//			else {
+//				List<Geometry> ret = unionGeom((GeometryCollection) g1, g2);
+//				return g1.getFactory().createGeometryCollection(GeometryFactory.toGeometryArray(ret));
+//			}
+//		} else {
+//			if (g2 instanceof GeometryCollection) {
+//				List<Geometry> ret = unionGeom((GeometryCollection) g2, g1);
+//				return g1.getFactory().createGeometryCollection(GeometryFactory.toGeometryArray(ret));
+//			} else
+//				return g1.intersection(g2);
+//		}
+//	}
+//
+//	private static List<Geometry> unionGeom(GeometryCollection gc, Geometry g) {
+//		List<Geometry> ret = new ArrayList<Geometry>();
+//		final int size = gc.getNumGeometries();
+//		for (int i = 0; i < size; i++) {
+//			Geometry g1 = (Geometry) gc.getGeometryN(i);
+//			collect(g1.union(g), ret);
+//		}
+//		return ret;
+//	}
+//
+//	/**
+//	 * Helper method for {@link #union(Geometry, Geometry) union(Geometry,
+//	 * Geometry)}
+//	 */
+//	private static GeometryCollection union(GeometryCollection gc1, GeometryCollection gc2) {
+//		List<Geometry> ret = new ArrayList<Geometry>();
+//		final int size = gc1.getNumGeometries();
+//		for (int i = 0; i < size; i++) {
+//			Geometry g1 = (Geometry) gc1.getGeometryN(i);
+//			List<Geometry> partial = unionGeom(gc2, g1);
+//			ret.addAll(partial);
+//		}
+//		return gc1.getFactory().createGeometryCollection(GeometryFactory.toGeometryArray(ret));
+//	}
+//
+//	/**
+//	 * Adds into the <TT>collector</TT> the Geometry <TT>g</TT>, or, if <TT>g</TT>
+//	 * is a GeometryCollection, every geometry in it.
+//	 *
+//	 * @param g         the Geometry (or GeometryCollection to unroll)
+//	 * @param collector the Collection where the Geometries will be added into
+//	 */
+//	private static void collect(Geometry g, List<Geometry> collector) {
+//		if (g instanceof GeometryCollection) {
+//			GeometryCollection gc = (GeometryCollection) g;
+//			for (int i = 0; i < gc.getNumGeometries(); i++) {
+//				Geometry loop = gc.getGeometryN(i);
+//				if (!loop.isEmpty())
+//					collector.add(loop);
+//			}
+//		} else {
+//			if (!g.isEmpty())
+//				collector.add(g);
+//		}
+//	}
 	
 	/**
 	 * Return the intersecting geometry with the highest area of intersection.
@@ -340,7 +282,7 @@ public class Geom {
 	 * @return the largest {@link Geometry}
 	 * @throws Exception
 	 */
-	public static Geometry getBiggestIntersectingGeometry(List<Geometry> lG, Geometry geom) {
+	public static Geometry getBiggestIntersectingGeometry(List<? extends Geometry> lG, Geometry geom) {
 		HashMap<Geometry, Double> result = new HashMap<Geometry, Double>();
 		for (Geometry g : lG) {
 			double area = (scaledGeometryReductionIntersection(Arrays.asList(g, geom)).getArea());
@@ -352,102 +294,5 @@ public class Geom {
 		if (sorted.isEmpty())
 			return null;
 		return sorted.get(sorted.size() - 1).getKey();
-	}
-	
-	/**
-	 * Get {@link Geometry} as a Polygon. If it already is a Polygon, returns it. If a MultiPolygon, returns the biggest Polygon Geometry of the list. 
-	 * @param geom
-	 * @return the {@link Geometry} as a {@link Polygon}
-	 */
-	public static Geometry getPolygon(Geometry geom) {
-		return getBiggestIntersectingGeometry(getPolygons(geom),geom);
-	}
-	
-	/**
-	 * Get geometry as a Polygon. If it already is a Polygon, returns it. If a MultiPolygon, return the list of polygons. 
-	 * @param geom input geometry 
-	 * @return a list of Polygon Geometry
-	 */
-	public static List<Geometry> getPolygons(Geometry geom) {
-		if (geom instanceof Polygon)
-			return Arrays.asList(geom);
-		else if (geom instanceof MultiPolygon) {
-			List<Geometry> lG = new ArrayList<Geometry>();
-			for (int i = 0; i < ((MultiPolygon) geom).getNumGeometries(); i++)
-				lG.add(geom.getGeometryN(i));
-			return lG;
-		} else if (geom instanceof GeometryCollection) {
-			List<Geometry> lG = new ArrayList<Geometry>();
-			for (int i = 0; i < ((GeometryCollection) geom).getNumGeometries(); i++) {
-				Geometry thatGeom = geom.getGeometryN(i);
-				if (thatGeom instanceof Polygon)
-					lG.add(thatGeom);
-			}
-			return lG;
-		} else {
-			System.out.println("getPolygonGeom() problem with type of the geometry " + geom + " : " + geom.getGeometryType());
-			return null;
-		}
-	}
-	
-	public static MultiLineString generateLineStringFromPolygon(Geometry geom) {
-		Polygon poly = ((Polygon) Geom.getPolygon(geom));
-		List<Geometry> lines = new ArrayList<Geometry>();
-		lines.add(geom.getFactory().createMultiLineString(new LineString[] { poly.getExteriorRing() }));
-		for (int i = 0; i < poly.getNumInteriorRing(); i++) {
-			LineString interiorLines = poly.getInteriorRingN(i);
-			//avoid silvers 
-			if (interiorLines.getLength() > 100.0)
-				lines.add(geom.getFactory().createMultiLineString(new LineString[] { interiorLines }));
-		}
-		return (MultiLineString) Geom.unionGeom(lines);
-	}
-	
-	  public static MultiLineString getListAsGeom(List<LineString> list, GeometryFactory fact) {
-		    return fact.createMultiLineString(list.toArray(new LineString[list.size()]));
-	  }
-	  
-	  public static List<LineString> fromMultiToLineString(MultiLineString ml) {
-		  List<LineString> lL = new ArrayList<LineString>();
-		  for (int i = 0 ; i < ml.getNumGeometries() ; i++)
-			  lL.add((LineString) ml.getGeometryN(i));  
-		  return lL ;
-	  }
-	  
-	  public static List<LineString> getSegments(LineString l) {
-		    List<LineString> result = new ArrayList<>();
-		    for (int i = 0; i < l.getNumPoints() - 1; i++)
-		      result.add(l.getFactory().createLineString(new Coordinate[] { l.getCoordinateN(i), l.getCoordinateN(i + 1) }));
-		    return result;
-	}
-
-	  /**
-	 * Get the border of a studied zone. Buffers have fixed values and could be parametrized.
-	 * 
-	 * @param in
-	 *            input {@link SimpleFeatureCollection}
-	 * @return the border without the inside geometry
-	 * @throws IOException
-	 * @throws SchemaException
-	 */
-	public static Geometry createBufferBorder(SimpleFeatureCollection in) throws IOException, SchemaException {
-		Geometry hull = Geom.unionSFC(in).buffer(20).buffer(-20);
-		List<Geometry> list = Arrays.asList(hull, hull.buffer(50));
-		return Geom.unionGeom(FeaturePolygonizer.getPolygons(list).stream().filter(x -> !hull.buffer(1).contains(x)).collect(Collectors.toList()));
-	}
-
-	public static List<LineString> getLineString(Geometry geom) {
-		if (geom instanceof LineString)
-			return Arrays.asList((LineString) geom);
-		else if (geom instanceof MultiLineString)
-			return Geom.fromMultiToLineString((MultiLineString) geom);
-		else if (geom instanceof Polygon)
-			return Geom.fromMultiToLineString(Geom.generateLineStringFromPolygon(geom));
-		else if (geom instanceof MultiPolygon)
-			return getPolygons(geom).stream().map(g -> Geom.fromMultiToLineString(generateLineStringFromPolygon(g))).collect(ArrayList::new,
-					ArrayList::addAll, ArrayList::addAll);
-		else
-			System.out.println("getLineString(): Geometry class unknown - " + geom.getGeometryType());
-		return null;
 	}
 }
