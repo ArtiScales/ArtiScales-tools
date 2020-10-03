@@ -440,7 +440,12 @@ public class Collec {
 	public static MultiLineString fromPolygonSFCtoRingMultiLines(SimpleFeatureCollection inputSFC) {
 		return Lines.getListLineStringAsMultiLS(fromPolygonSFCtoListRingLines(inputSFC), new GeometryFactory());
 	}
-	
+	/**
+	 * 
+	 * @param sfcToSort
+	 * @param sfcIntersection
+	 * @return
+	 */
 	public static SimpleFeatureCollection getSFCfromSFCIntersection(SimpleFeatureCollection sfcToSort, SimpleFeatureCollection sfcIntersection){
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
@@ -725,7 +730,19 @@ public class Collec {
 		builder.set(collec.getSchema().getGeometryDescriptor().getLocalName(), Geom.unionSFC(collec));
 		return builder.buildFeature(Attribute.makeUniqueId());
 	}
-
+	
+	/**
+	 * Return a SimpleFeature with the merged geometries and the schema of the input collection but no attribute
+	 * 
+	 * @param collec
+	 *            input {@link SimpleFeatureCollection}
+	 * @return a {@link SimpleFeature} with no values
+	 */
+	public static SimpleFeature unionSFC(SimpleFeatureCollection collec, int precision) {
+		SimpleFeatureBuilder builder = Schemas.getSFBSchemaWithMultiPolygon(collec.getSchema());
+		builder.set(collec.getSchema().getGeometryDescriptor().getLocalName(), Geom.unionPrecisionReduce(collec, precision));
+		return builder.buildFeature(Attribute.makeUniqueId());
+	}
 	/**
 	 * Return a SimpleFeature with the schema of the collection with an attribute on the corresponding field.
 	 * 
