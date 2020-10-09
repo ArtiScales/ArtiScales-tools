@@ -45,6 +45,13 @@ public class TopologicalGraph {
   public void setFaces(List<Face> faces) {
     this.faces = faces;
   }
+  public static void setSRID(int srid) {
+    SRIDNumber= srid;
+  }
+  
+  public static int getSRID() {
+    return SRIDNumber;
+  }
 
   public List<Edge> edgesOf(Node node) {
     return edgesOf(node, this.edges);

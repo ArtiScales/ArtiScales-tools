@@ -93,7 +93,7 @@ public class Lines {
 		return splitLine(line, lil.indexOf(c));
 	}
 
-	static boolean getRayLineSegmentIntersects(Coordinate o, Coordinate d, Coordinate a, Coordinate b) {
+	public static boolean getRayLineSegmentIntersects(Coordinate o, Coordinate d, Coordinate a, Coordinate b) {
 		Vector2D ortho = Vector2D.create(-d.y, d.x);
 		Vector2D aToO = Vector2D.create(a, o);
 		Vector2D aToB = Vector2D.create(a, b);
@@ -113,7 +113,7 @@ public class Lines {
 		return t2 >= 0 && t2 <= 1 && t1 >= 0;
 	}
 
-	static Coordinate getRayLineSegmentIntersection(Coordinate o, Coordinate d, Coordinate a, Coordinate b) {
+	public static Coordinate getRayLineSegmentIntersection(Coordinate o, Coordinate d, Coordinate a, Coordinate b) {
 		Vector2D ortho = Vector2D.create(-d.y, d.x);
 		Vector2D aToO = Vector2D.create(a, o);
 		Vector2D aToB = Vector2D.create(a, b);

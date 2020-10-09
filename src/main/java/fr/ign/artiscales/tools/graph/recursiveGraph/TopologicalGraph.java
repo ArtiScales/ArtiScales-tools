@@ -31,7 +31,7 @@ public class TopologicalGraph {
   Map<Coordinate, Node> nodes = new HashMap<>();
   List<HalfEdge> edges = new ArrayList<>();
   List<Face> faces = new ArrayList<>();
- static  int SRIDNumber;
+  static int SRIDNumber;
   private static boolean DEBUG = false;
 
   public Collection<Node> getNodes() {
@@ -164,7 +164,7 @@ public class TopologicalGraph {
     }
   }
   
-  public static <G extends Geometry, E extends GraphElement<G,E>> void export(List<E> feats, File fileOut,	Class<? extends Geometry> geomType) {
+  public static <G extends Geometry, E extends GraphElement<G,E>> void export(Collection<E> feats, File fileOut,	Class<? extends Geometry> geomType) {
 		System.out.println("save " + feats.size() + " to " + fileOut);
 		if (feats.isEmpty())
 			return;
@@ -179,7 +179,7 @@ public class TopologicalGraph {
 		sfTypeBuilder.add(Collec.getDefaultGeomName(), geomType);
 		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
-		List<String> attributes = feats.get(0).getAttributes();
+		List<String> attributes = feats.iterator().next().getAttributes();
 		for (String attribute : attributes)
 			sfTypeBuilder.add(attribute, String.class);
 		SimpleFeatureBuilder builder = new SimpleFeatureBuilder(featureType);
