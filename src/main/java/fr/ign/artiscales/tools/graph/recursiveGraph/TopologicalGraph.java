@@ -66,6 +66,8 @@ public class TopologicalGraph {
    */
   public TopologicalGraph(Collection<Polygon> polygons, double tolerance) {
     for (Polygon polygon : polygons) {
+    	if (polygon == null)
+    		continue;
       Face f = new Face(polygon);
       this.faces.add(f);
       // make sure the coordinates are CCW

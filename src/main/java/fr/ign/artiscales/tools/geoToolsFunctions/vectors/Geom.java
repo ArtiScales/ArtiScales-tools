@@ -52,7 +52,7 @@ public class Geom {
 	 * @throws NoSuchAuthorityCodeException
 	 * @throws FactoryException
 	 */
-	public static File exportGeom(Geometry geom, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+	public static File exportGeom(Geometry geom, File fileName) throws IOException {
 		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaMultiPolygon("geom");
 		sfBuilder.add(geom);
 		SimpleFeature feature = sfBuilder.buildFeature(Attribute.makeUniqueId());
@@ -71,7 +71,7 @@ public class Geom {
 	 * @throws NoSuchAuthorityCodeException
 	 * @throws FactoryException
 	 */
-	public static File exportGeom(List<? extends Geometry> geoms, File fileName) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+	public static File exportGeom(List<? extends Geometry> geoms, File fileName) throws IOException {
 		return Collec.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon(Collec.getDefaultGeomName())), fileName);
 	}
 	
@@ -280,7 +280,6 @@ public class Geom {
 	 * @param geom
 	 *            Intersection polygon
 	 * @return the largest {@link Geometry}
-	 * @throws Exception
 	 */
 	public static Geometry getBiggestIntersectingGeometry(List<? extends Geometry> lG, Geometry geom) {
 		HashMap<Geometry, Double> result = new HashMap<Geometry, Double>();

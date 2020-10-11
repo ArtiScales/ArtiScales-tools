@@ -105,7 +105,7 @@ public class FeaturePolygonizer {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static List<Polygon> getPolygons(List<Geometry> features) throws IOException, SchemaException {
+	public static List<Polygon> getPolygons(List<Geometry> features) {
 		Polygonizer polygonizer = new Polygonizer();
 		addFeatures(polygonizer, features);
 		if (DEBUG)
@@ -173,7 +173,7 @@ public class FeaturePolygonizer {
 		dataStore.dispose();
 	}
 	
-  public static Geometry getIntersection(List<Geometry> features) throws IOException, SchemaException {
+  public static Geometry getIntersection(List<Geometry> features)  {
     List<Polygon> polygons = getPolygons(features);
     List<Polygon> buffer = new ArrayList<>();
     for (Polygon p : polygons) {
@@ -204,7 +204,7 @@ public class FeaturePolygonizer {
     return fact.createGeometryCollection(buffer.toArray(new Geometry[buffer.size()])).union();
   }
   @SuppressWarnings("unchecked")
-  public static Pair<Geometry,Geometry> getIntersectionDifference(List<Geometry> features, List<Geometry> featuresToRemove) throws MalformedURLException, IOException, SchemaException {
+  public static Pair<Geometry,Geometry> getIntersectionDifference(List<Geometry> features, List<Geometry> featuresToRemove) {
     Polygonizer polygonizer = new Polygonizer();
     List<Geometry> allFeatures = new ArrayList<>(features);
     allFeatures.addAll(featuresToRemove);

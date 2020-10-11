@@ -11,7 +11,6 @@ import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
-import org.geotools.feature.SchemaException;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Geometry;
 import org.opengis.referencing.FactoryException;
@@ -68,10 +67,8 @@ public class CityGeneration {
 	 *            folder where goes the generated urban islet
 	 * @return a collection of urban islet
 	 * @throws IOException
-	 * @throws NoSuchAuthorityCodeException
-	 * @throws FactoryException
 	 */
-	public static File createUrbanIslet(File parcelFile, File outFolder) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+	public static File createUrbanIslet(File parcelFile, File outFolder) throws IOException {
 		File result = new File(outFolder, "islet.gpkg");
 		if (result.exists()) {
 			System.out.println("createUrbanIslet(): islet already exists");
@@ -90,11 +87,8 @@ public class CityGeneration {
 	 *            input parcel
 	 * @return a {@link SimpleFeatureCollection} of urban islet
 	 * @throws IOException
-	 * @throws NoSuchAuthorityCodeException
-	 * @throws FactoryException
 	 */
-	public static SimpleFeatureCollection createUrbanIslet(SimpleFeatureCollection parcel)
-			throws IOException, NoSuchAuthorityCodeException, FactoryException {
+	public static SimpleFeatureCollection createUrbanIslet(SimpleFeatureCollection parcel) throws IOException {
 		Geometry bigGeom = Geom.unionSFC(parcel).buffer(1).buffer(-1);
 		DefaultFeatureCollection df = new DefaultFeatureCollection();
 		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaID("islet");
@@ -113,10 +107,8 @@ public class CityGeneration {
 	 * @param in
 	 *            input {@link SimpleFeatureCollection}
 	 * @return the border without the inside geometry
-	 * @throws IOException
-	 * @throws SchemaException
 	 */
-	public static Geometry createBufferBorder(SimpleFeatureCollection in) throws IOException, SchemaException {
+	public static Geometry createBufferBorder(SimpleFeatureCollection in) {
 		Geometry hull = Geom.unionSFC(in).buffer(20).buffer(-20);
 		List<Geometry> list = Arrays.asList(hull, hull.buffer(50));
 		return Geom.unionGeom(FeaturePolygonizer.getPolygons(list).stream().filter(x -> !hull.buffer(1).contains(x)).collect(Collectors.toList()));

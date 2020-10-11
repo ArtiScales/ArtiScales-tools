@@ -16,8 +16,6 @@ import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 import com.opencsv.CSVReader;
 
@@ -37,7 +35,7 @@ public class JoinCSVToGeoFile {
 	// }
 
 	public static File joinCSVToShapeFile(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile,
-			HashMap<String, String> statToAdd) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+			HashMap<String, String> statToAdd) throws IOException {
 		ShapefileDataStore sds = new ShapefileDataStore(geoFile.toURI().toURL());
 		File result = joinCSVToGeoFile(sds.getFeatureSource(sds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile,
 				statToAdd);
@@ -46,7 +44,7 @@ public class JoinCSVToGeoFile {
 	}
 
 	public static File joinCSVToGeopackage(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile,
-			HashMap<String, String> statToAdd) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+			HashMap<String, String> statToAdd) throws IOException {
 		DataStore ds = Geopackages.getDataStore(geoFile);
 		File result = joinCSVToGeoFile(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile,
 				statToAdd);
@@ -55,7 +53,7 @@ public class JoinCSVToGeoFile {
 	}
 
 	public static File joinCSVToGeoFile(SimpleFeatureCollection sfc, String joinGeoField, File csvFile, String joinCsvField, File outFile,
-			HashMap<String, String> statToAdd) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+			HashMap<String, String> statToAdd) throws IOException {
 		// TODO finish to develop that
 		CSVReader reader = new CSVReader(new FileReader(csvFile));
 		String[] firstline = reader.readNext();

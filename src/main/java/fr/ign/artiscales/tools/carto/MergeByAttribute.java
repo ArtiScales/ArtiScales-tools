@@ -9,15 +9,13 @@ import org.geotools.data.DataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
 
 public class MergeByAttribute {
 
-	public static void main(String[] args) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+	public static void main(String[] args) throws IOException {
 		DataStore ds = Geopackages.getDataStore(new File("/home/ubuntu/Documents/DensificationStudy-out/parcel.gpkg"));
 		Collec.exportSFC(mergeByAttribute(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), "CODE_COM"), new File("/tmp/test"));
 	}

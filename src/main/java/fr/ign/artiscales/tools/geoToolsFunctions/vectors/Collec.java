@@ -44,7 +44,6 @@ import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.FilterVisitor;
 import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
@@ -141,11 +140,11 @@ public class Collec {
 			c.setZ(Double.NaN);
 	}
 
-	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut) throws Exception {
+	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut) throws IOException {
 		return exportSFC(listFeature, fileOut, true);
 	}
 
-	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut, boolean overwrite) throws Exception {
+	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut, boolean overwrite) throws IOException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		for (SimpleFeature feat : listFeature)
 			result.add(feat);
@@ -759,8 +758,6 @@ public class Collec {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		try {
 			sfTypeBuilder.setCRS(CRS.decode("EPSG:2154"));
-		} catch (NoSuchAuthorityCodeException e) {
-			e.printStackTrace();
 		} catch (FactoryException e) {
 			e.printStackTrace();
 		}

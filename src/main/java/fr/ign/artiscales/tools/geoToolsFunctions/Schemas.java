@@ -11,7 +11,6 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 
@@ -19,9 +18,13 @@ public class Schemas {
 
 	private static String epsg = "EPSG:2154";
 
-	public static SimpleFeatureBuilder getBasicSchema(String name) throws NoSuchAuthorityCodeException, FactoryException {
+	public static SimpleFeatureBuilder getBasicSchema(String name) {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-		sfTypeBuilder.setCRS(CRS.decode(epsg));
+		try {
+			sfTypeBuilder.setCRS(CRS.decode(epsg));
+		} catch (FactoryException e) {
+			e.printStackTrace();
+		}
 		sfTypeBuilder.setName(name);
 		sfTypeBuilder.add(Collec.getDefaultGeomName(), Polygon.class);
 		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
@@ -29,9 +32,13 @@ public class Schemas {
 		return new SimpleFeatureBuilder(featureType);
 	}
 
-	public static SimpleFeatureBuilder getBasicSchemaID(String name) throws NoSuchAuthorityCodeException, FactoryException {
+	public static SimpleFeatureBuilder getBasicSchemaID(String name) {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-		sfTypeBuilder.setCRS(CRS.decode(epsg));
+		try {
+			sfTypeBuilder.setCRS(CRS.decode(epsg));
+		} catch (FactoryException e) {
+			e.printStackTrace();
+		}
 		sfTypeBuilder.setName(name);
 		sfTypeBuilder.add(Collec.getDefaultGeomName(), Polygon.class);
 		sfTypeBuilder.add("id", Integer.class);
@@ -40,9 +47,13 @@ public class Schemas {
 		return new SimpleFeatureBuilder(featureType);
 	}
 
-	public static SimpleFeatureBuilder getBasicSchemaMultiPolygon(String name) throws NoSuchAuthorityCodeException, FactoryException {
+	public static SimpleFeatureBuilder getBasicSchemaMultiPolygon(String name) {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
-		sfTypeBuilder.setCRS(CRS.decode(epsg));
+		try {
+			sfTypeBuilder.setCRS(CRS.decode(epsg));
+		} catch (FactoryException e) {
+			e.printStackTrace();
+		}
 		sfTypeBuilder.setName(name);
 		sfTypeBuilder.add(Collec.getDefaultGeomName(), MultiPolygon.class);
 		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
@@ -50,9 +61,13 @@ public class Schemas {
 		return new SimpleFeatureBuilder(featureType);
 	}
 
-	public static SimpleFeatureBuilder getMUPAmenitySchema(String name) throws NoSuchAuthorityCodeException, FactoryException {
+	public static SimpleFeatureBuilder getMUPAmenitySchema(String name) {
 		SimpleFeatureTypeBuilder PointSfTypeBuilder = new SimpleFeatureTypeBuilder();
-		PointSfTypeBuilder.setCRS(CRS.decode(epsg));
+		try {
+			PointSfTypeBuilder.setCRS(CRS.decode(epsg));
+		} catch (FactoryException e) {
+			e.printStackTrace();
+		}
 		PointSfTypeBuilder.setName(name);
 		PointSfTypeBuilder.add(Collec.getDefaultGeomName(), Point.class);
 		PointSfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
@@ -62,10 +77,14 @@ public class Schemas {
 		return new SimpleFeatureBuilder(pointFeatureType);
 	}
 
-	public static SimpleFeatureBuilder getMUPRoadSchema() throws NoSuchAuthorityCodeException, FactoryException {
+	public static SimpleFeatureBuilder getMUPRoadSchema() {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		sfTypeBuilder.setName("road");
-		sfTypeBuilder.setCRS(CRS.decode(epsg));
+		try {
+			sfTypeBuilder.setCRS(CRS.decode(epsg));
+		} catch (FactoryException e) {
+			e.printStackTrace();
+		}
 		sfTypeBuilder.add(Collec.getDefaultGeomName(), MultiLineString.class);
 		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
 		sfTypeBuilder.add("SPEED", Integer.class);
@@ -74,10 +93,14 @@ public class Schemas {
 		return new SimpleFeatureBuilder(featureType);
 	}
 
-	public static SimpleFeatureBuilder getASCommunitySchema() throws NoSuchAuthorityCodeException, FactoryException {
+	public static SimpleFeatureBuilder getASCommunitySchema() {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		sfTypeBuilder.setName("testType");
-		sfTypeBuilder.setCRS(CRS.decode(epsg));
+		try {
+			sfTypeBuilder.setCRS(CRS.decode(epsg));
+		} catch (FactoryException e) {
+			e.printStackTrace();
+		}
 		sfTypeBuilder.add(Collec.getDefaultGeomName(), MultiPolygon.class);
 		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
 		sfTypeBuilder.add("DEPCOM", String.class);

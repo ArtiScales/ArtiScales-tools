@@ -26,19 +26,6 @@ public class ProfileUrbanFabric {
 
 	static String profileFolder;
 
-	public ProfileUrbanFabric(double maximalArea, int decompositionLevelWithoutStreet,
-		      int largeStreetLevel, double streetWidth, double largeStreetWidth, double minimalWidthContactRoad, double harmonyCoeff) {
-		super();
-		this.maximalArea = maximalArea;
-		this.minimalArea = 50;
-		this.minimalWidthContactRoad = minimalWidthContactRoad;
-		this.streetWidth = streetWidth;
-		this.largeStreetWidth = largeStreetWidth;
-		this.largeStreetLevel = largeStreetLevel;
-		this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
-		this.harmonyCoeff = harmonyCoeff;
-	}
-	
 	public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
 			double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet, double lenDriveway,
 			double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth) {
