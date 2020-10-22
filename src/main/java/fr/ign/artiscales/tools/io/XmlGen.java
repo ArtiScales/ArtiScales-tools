@@ -1,4 +1,4 @@
-package fr.ign.artiscales.tools.outputs;
+package fr.ign.artiscales.tools.io;
 
 import java.io.File;
 import java.io.FileWriter;

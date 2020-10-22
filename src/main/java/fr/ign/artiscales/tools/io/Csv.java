@@ -1,4 +1,4 @@
-package fr.ign.artiscales.tools.geoToolsFunctions;
+package fr.ign.artiscales.tools.io;
 
 import java.io.File;
 import java.io.FileReader;
@@ -468,6 +468,7 @@ public class Csv {
 				try {
 					writer.append(cellRepet.get(nomm)[i] + ",");
 				} catch (ArrayIndexOutOfBoundsException a) {
+					writer.append(",");
 					// normal that it gets Arrays exceptions. 
 				}
 			}
