@@ -35,4 +35,33 @@ public class Json {
 		}
 		return header;
 	}
+
+	public static HashMap<String, Object> getFirstObject(File in) throws IOException {
+		JsonFactory factory = new JsonFactory();
+		JsonParser parser = factory.createParser(in);
+		JsonToken token = parser.nextToken();
+		HashMap<String, Object> firstObject = new HashMap<String, Object>();
+		boolean write = false;
+		String firstObjectName = "";
+		try {
+			while (!parser.isClosed()) {
+				token = parser.nextToken();
+				if (token == JsonToken.START_OBJECT && (parser.getCurrentName() == null || !parser.getCurrentName().equals("header"))) {
+					firstObjectName = parser.getCurrentName();
+					write = true;
+				}
+				if (token == JsonToken.END_OBJECT && parser.getCurrentName() == firstObjectName)
+					break;
+				if (token == JsonToken.FIELD_NAME && write) {
+					String key = parser.getCurrentName();
+					token = parser.nextToken();
+					firstObject.put(key, parser.getText());
+				}
+			}
+		} catch (NullPointerException np) {
+			np.printStackTrace();
+			System.out.println("Invalid first object");
+		}
+		return firstObject;
+	}
 }

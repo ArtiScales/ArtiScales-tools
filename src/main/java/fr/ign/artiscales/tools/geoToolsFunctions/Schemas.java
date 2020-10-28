@@ -92,7 +92,7 @@ public class Schemas {
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
 		return new SimpleFeatureBuilder(featureType);
 	}
-
+	
 	public static SimpleFeatureBuilder getASCommunitySchema() {
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		sfTypeBuilder.setName("testType");

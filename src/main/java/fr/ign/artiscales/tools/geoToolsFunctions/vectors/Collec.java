@@ -156,6 +156,26 @@ public class Collec {
 	}
 
 	/**
+	 * get the corresponding Data Store looking the file's attribute
+	 * 
+	 * @param f
+	 * @return
+	 * @throws IOException
+	 */
+	public static DataStore getDataStore(File f) throws IOException {
+		switch (f.getName().split("\\.")[f.getName().split("\\.").length - 1].toLowerCase()) {
+		case "gpkg":
+			return Geopackages.getDataStore(f);
+		case "shp":
+			return new ShapefileDataStore(f.toURI().toURL());
+		case "geojson":
+		case "json":
+			return GeoJSON.getGeoJSONDataStore(f);
+		}
+		return null;
+	}
+
+	/**
 	 * Export a simple feature collection. Overwrite file if already exists
 	 * 
 	 * @param toExport
@@ -191,8 +211,10 @@ public class Collec {
 			return Shp.exportSFCtoSHP(toExport, fileOut, ft, overwrite);
 		else if (outputType.equals(".gpkg"))
 			return Geopackages.exportSFCtoGPKG(toExport, fileOut, ft, overwrite);
-		else
+		else if (defaultGISFileType != null && !defaultGISFileType.equals(""))
 			return exportSFC(toExport, fileOut, ft, defaultGISFileType, overwrite);
+		else
+			return null;
 	}
 
 	static File makeTransaction(DataStore newDataStore, SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft) throws IOException {
@@ -753,7 +775,7 @@ public class Collec {
 		String[] attributes = { attribute };
 		return getEachUniqueFieldFromSFC(sfcIn, attributes, dontCheckAttribute);
 	}
-	
+
 	/**
 	 * Return a SimpleFeature with the merged geometries and the schema of the input collection but no attribute
 	 * 
