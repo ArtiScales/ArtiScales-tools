@@ -118,7 +118,7 @@ public class Lines {
 		Vector2D aToO = Vector2D.create(a, o);
 		Vector2D aToB = Vector2D.create(a, b);
 		double denom = aToB.dot(ortho);
-		System.out.println("DENOM= " + denom);
+//		System.out.println("DENOM= " + denom);
 		// if (denom < 0) {
 		// ortho = Vector2D.create(d.y, -d.x);
 		// denom = aToB.dot(ortho);
@@ -129,7 +129,7 @@ public class Lines {
 		double length = aToB.getX() * aToO.getY() - aToO.getX() * aToB.getY();
 		double t1 = length / denom;
 		double t2 = aToO.dot(ortho) / denom;
-		System.out.println("t1= " + t1);
+//		System.out.println("t1= " + t1);
 		if (t2 >= 0 && t2 <= 1 && t1 >= 0)
 			return new Coordinate(a.getX() + t2 * aToB.getX(), a.getY() + t2 * aToB.getY());
 		return null;
