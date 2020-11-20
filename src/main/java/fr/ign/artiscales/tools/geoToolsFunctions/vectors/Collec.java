@@ -89,6 +89,7 @@ public class Collec {
 	// Collec.exportSFC(parcel2, new File("/tmp/shp2.gpkg"));
 	// ds.dispose();
 	// }
+
 	/**
 	 * Return the sum of area of every features of a simpleFeatureCollection
 	 * 

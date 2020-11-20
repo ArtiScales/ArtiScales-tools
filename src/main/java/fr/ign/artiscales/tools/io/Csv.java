@@ -31,18 +31,21 @@ import com.opencsv.CSVWriter;
  *
  */
 public class Csv {
-	
+
 	public static boolean needFLine = true;
 
-//	public static void main(String[] args) throws IOException {
-//		calculateColumnsBasicStat(
-//				new File("/home/ubuntu/workspace/ParcelManager/src/main/resources/DensificationStudy/out/densificationStudyResult.csv"), 2, true);
-//	}
-	
+	// public static void main(String[] args) throws IOException {
+	// calculateColumnsBasicStat(
+	// new File("/home/ubuntu/workspace/ParcelManager/src/main/resources/DensificationStudy/out/densificationStudyResult.csv"), 2, true);
+	// }
+
 	/**
-	 * Create a String out of a CSV line with only the indicated indexes. Separate the values with a "-"  
-	 * @param headers list of indexes to put 
-	 * @param line the csv line in a tab
+	 * Create a String out of a CSV line with only the indicated indexes. Separate the values with a "-"
+	 * 
+	 * @param headers
+	 *            list of indexes to put
+	 * @param line
+	 *            the csv line in a tab
 	 * @return the concatenated string
 	 */
 	public static String makeLine(List<Integer> headers, String[] line) {
@@ -85,7 +88,7 @@ public class Csv {
 
 		String[] line = new String[lines.get(0).length];
 		line[0] = "mean";
-		line[nbCol] =String.valueOf(ds.getMean());
+		line[nbCol] = String.valueOf(ds.getMean());
 		w.writeNext(line);
 
 		line[0] = "median";
@@ -109,7 +112,7 @@ public class Csv {
 		w.writeNext(line);
 		w.close();
 	}
-	
+
 	/**
 	 * Merge every .csv file contained into a folder and its subfolders with a recursive method. Must have the same header.
 	 * 
@@ -123,7 +126,7 @@ public class Csv {
 		List<File> listCSV = getCSVFiles(rootFolder);
 		return mergeCSVFiles(listCSV, outFile);
 	}
-	
+
 	public static List<File> getCSVFiles(File folder) {
 		List<File> result = new ArrayList<File>();
 		for (File f : folder.listFiles())
@@ -160,7 +163,7 @@ public class Csv {
 		output.close();
 		return outFile;
 	}
-	
+
 	/**
 	 * Put the raw values of a .tif raster file cells to a .csv format.
 	 * 
@@ -220,8 +223,8 @@ public class Csv {
 	 * @param name
 	 * @throws IOException
 	 */
-	public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double[]>> results, String name,
-			String firstLine, File folderOut) throws IOException {
+	public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double[]>> results, String name, String firstLine, File folderOut)
+			throws IOException {
 		File fileName = new File(folderOut + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, true);
 		for (String tab : results.keySet()) {
@@ -248,8 +251,7 @@ public class Csv {
 	 * @param name
 	 * @throws IOException
 	 */
-	public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double>> results, File folderOut,
-			String name) throws IOException {
+	public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double>> results, File folderOut, String name) throws IOException {
 		File fileName = new File(folderOut + "/" + name + ".csv");
 		FileWriter writer = new FileWriter(fileName, true);
 		for (String tab : results.keySet()) {
@@ -304,10 +306,10 @@ public class Csv {
 	 *            Header of the .csv file (can be null)
 	 * @throws IOException
 	 */
-	public static File generateCsvFile(HashMap<String, double[]> cellRepet, File folderOut, String name, String[] firstCol)	throws IOException {
+	public static File generateCsvFile(HashMap<String, double[]> cellRepet, File folderOut, String name, String[] firstCol) throws IOException {
 		return generateCsvFile(cellRepet, name, folderOut, firstCol, true);
 	}
-	
+
 	/**
 	 * generate a .csv file out of a hashtable. Each key is the first entry of a new line
 	 * 
@@ -381,6 +383,15 @@ public class Csv {
 		return generateCsvFile(cellRepet, folderOut, name, firstCol, true);
 	}
 
+	public static File generateCsvFile(String name, File folderOut, String[] firstCol, boolean append, HashMap<String, ? extends Object> cellRepet) throws IOException {
+		HashMap<String, Object[]> cellRepetArrayed = new HashMap<String, Object[]>();
+		for (String c : cellRepet.keySet()) {
+			Object[] a = { cellRepet.get(c) };
+			cellRepetArrayed.put(c, a);
+		}
+		return generateCsvFile(cellRepetArrayed, folderOut, name, firstCol, append);
+	}
+
 	/**
 	 * Generate a .csv file out of a hashtable. Each key is the first entry of a new line.
 	 * 
@@ -394,7 +405,7 @@ public class Csv {
 	 *            Header of the .csv file (can be null)
 	 * @param append
 	 *            In the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one.
-	 *            @return The exported File
+	 * @return The exported File
 	 * @throws IOException
 	 */
 	public static File generateCsvFile(HashMap<String, Object[]> cellRepet, File folderOut, String name, String[] firstCol, boolean append)
@@ -410,13 +421,13 @@ public class Csv {
 			String line = nom + ",";
 			for (Object val : cellRepet.get(nom))
 				line = line + val + ",";
-			if (line.endsWith(",")) 
-				line = line.substring(0, line.length()-1);
+			if (line.endsWith(","))
+				line = line.substring(0, line.length() - 1);
 			lines.add(line);
 		}
 		return simpleCSVWriter(lines, fLine, new File(folderOut, name + ".csv"), append);
 	}
-	
+
 	/**
 	 * Generate a .csv file out of a hashtable. Data are dispalyed in colomn and each key is placed in the header
 	 * 
@@ -469,7 +480,7 @@ public class Csv {
 					writer.append(cellRepet.get(nomm)[i] + ",");
 				} catch (ArrayIndexOutOfBoundsException a) {
 					writer.append(",");
-					// normal that it gets Arrays exceptions. 
+					// normal that it gets Arrays exceptions.
 				}
 			}
 			writer.append("\n");
@@ -479,7 +490,7 @@ public class Csv {
 	}
 
 	public static File simpleCSVWriter(List<String> lines, String firstLine, File fileOut, boolean append) throws IOException {
-		if (!fileOut.getName().endsWith(".csv")) 
+		if (!fileOut.getName().endsWith(".csv"))
 			fileOut = new File(fileOut + ".csv");
 		fileOut.getParentFile().mkdirs();
 		FileWriter writer = new FileWriter(fileOut, append);

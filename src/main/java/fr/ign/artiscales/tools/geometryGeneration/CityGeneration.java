@@ -31,67 +31,67 @@ import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
 public class CityGeneration {
 
 	public static void main(String[] args) throws NoSuchAuthorityCodeException, IOException, FactoryException {
-		createUrbanIslet(new File("/home/ubuntu/PMtest/SeineEtMarne/PARCELLE03.SHP"), new File("/home/ubuntu/PMtest/SeineEtMarne/"));
+		createUrbanBlock(new File("/home/ubuntu/PMtest/SeineEtMarne/PARCELLE03.SHP"), new File("/home/ubuntu/PMtest/SeineEtMarne/"));
 	}
 
 	/**
-	 * Generate urban islet shapefile out of a parcel plan. Urban islet can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
+	 * Generate urban block shapefile out of a parcel plan. Urban block can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
 	 * 
 	 * @param parcelFile
 	 *            input parcel
 	 * @param outFolder
-	 *            folder where goes the generated urban islet
-	 * @return a collection of urban islet
+	 *            folder where goes the generated urban block
+	 * @return a collection of urban block
 	 * @throws IOException
 	 * @throws NoSuchAuthorityCodeException
 	 * @throws FactoryException
 	 */
-	public static File createUrbanIsletShp(File parcelFile, File outFolder) throws IOException, NoSuchAuthorityCodeException, FactoryException {
-		File result = new File(outFolder, "islet.shp");
+	public static File createUrbanBlockShp(File parcelFile, File outFolder) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+		File result = new File(outFolder, "block.shp");
 		if (result.exists()) {
-			System.out.println("createUrbanIslet(): islet already exists");
+			System.out.println("createUrbanBlock(): block already exists");
 			return result;
 		}
 		ShapefileDataStore parcelSDS = new ShapefileDataStore(parcelFile.toURI().toURL());
-		SimpleFeatureCollection islet = createUrbanIslet(parcelSDS.getFeatureSource().getFeatures());
+		SimpleFeatureCollection block = createUrbanBlock(parcelSDS.getFeatureSource().getFeatures());
 		parcelSDS.dispose();
-		return Collec.exportSFC(islet, new File(outFolder, "islet.shp"));
+		return Collec.exportSFC(block, new File(outFolder, "block.shp"));
 	}
 
 	/**
-	 * Generate urban islet shapefile out of a parcel plan. Urban islet can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
+	 * Generate urban block shapefile out of a parcel plan. Urban block can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
 	 * 
 	 * @param parcelFile
 	 *            input parcel
 	 * @param outFolder
-	 *            folder where goes the generated urban islet
-	 * @return a collection of urban islet
+	 *            folder where goes the generated urban block
+	 * @return a collection of urban block
 	 * @throws IOException
 	 */
-	public static File createUrbanIslet(File parcelFile, File outFolder) throws IOException {
-		File result = new File(outFolder, "islet.gpkg");
+	public static File createUrbanBlock(File parcelFile, File outFolder) throws IOException {
+		File result = new File(outFolder, "block.gpkg");
 		if (result.exists()) {
-			System.out.println("createUrbanIslet(): islet already exists");
+			System.out.println("createUrbanblock(): block already exists");
 			return result;
 		}
 		DataStore parcelDS = Geopackages.getDataStore(parcelFile);
-		SimpleFeatureCollection islet = parcelDS.getFeatureSource(parcelDS.getTypeNames()[0]).getFeatures();
+		SimpleFeatureCollection block = parcelDS.getFeatureSource(parcelDS.getTypeNames()[0]).getFeatures();
 		parcelDS.dispose();
-		return Collec.exportSFC(islet, result);
+		return Collec.exportSFC(block, result);
 	}
 
 	/**
-	 * Generate urban islet out of a parcel plan. Urban islet can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
+	 * Generate urban block out of a parcel plan. Urban block can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
 	 * 
 	 * @param parcel
 	 *            input parcel
-	 * @return a {@link SimpleFeatureCollection} of urban islet
+	 * @return a {@link SimpleFeatureCollection} of urban block
 	 * @throws IOException
 	 */
-	public static SimpleFeatureCollection createUrbanIslet(SimpleFeatureCollection parcel) throws IOException {
+	public static SimpleFeatureCollection createUrbanBlock(SimpleFeatureCollection parcel) throws IOException {
 		Geometry bigGeom = Geom.unionSFC(parcel).buffer(1).buffer(-1);
 		DefaultFeatureCollection df = new DefaultFeatureCollection();
-		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaID("islet");
+		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaID("block");
 		int count = 0;
 		for (int i = 0; i < bigGeom.getNumGeometries(); i++) {
 			sfBuilder.add(bigGeom.getGeometryN(i));
