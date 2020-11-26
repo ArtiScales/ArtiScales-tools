@@ -4,7 +4,12 @@ import java.io.FileNotFoundException;
 import java.rmi.server.UID;
 
 public class Attribute {
-
+	
+	/**
+	 * Generate a very unique ID number
+	 * 
+	 * @return a very unique ID number
+	 */
 	public static String makeUniqueId() {
 		return String.valueOf(Math.random() * 100000) + new UID().toString().replace(':', '_');
 	}

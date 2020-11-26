@@ -10,6 +10,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.DefaultTransaction;
@@ -46,6 +47,7 @@ import org.opengis.filter.FilterVisitor;
 import org.opengis.referencing.FactoryException;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
+import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
 import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom.Lines;
 import si.uom.SI;
@@ -89,6 +91,38 @@ public class Collec {
 	// Collec.exportSFC(parcel2, new File("/tmp/shp2.gpkg"));
 	// ds.dispose();
 	// }
+
+	/**
+	 * Get statistics about a field of a collection
+	 * 
+	 * @param sfc
+	 * @param attribute
+	 * @return
+	 */
+	public static double getCollectionAttributeDescriptiveStat(SimpleFeatureCollection sfc, String attribute, StatisticOperation stat) {
+		try {
+			DescriptiveStatistics ds = new DescriptiveStatistics();
+			try (SimpleFeatureIterator polyIt = sfc.features()) {
+				while (polyIt.hasNext())
+					ds.addValue(Double.valueOf(String.valueOf(polyIt.next().getAttribute(attribute))));
+			} catch (ClassCastException e) {
+				System.out.println("Cannot calculate mean for " + attribute + ". Might be that the filed values are not numbers");
+				return 0;
+			}
+			if (stat == StatisticOperation.MEAN)
+				return ds.getMean();
+			if (stat == StatisticOperation.MEDIAN)
+				return ds.getPercentile(50);
+			if (stat == StatisticOperation.STANDEV)
+				return ds.getStandardDeviation();
+			if (stat == StatisticOperation.SUM)
+				return ds.getSum();
+			throw new NullPointerException();
+		} catch (ClassCastException e) {
+			System.out.println("Cannot calculate mean for " + attribute + ". Might be that the filed values are not numbers");
+			return 0;
+		}
+	}
 
 	/**
 	 * Return the sum of area of every features of a simpleFeatureCollection
