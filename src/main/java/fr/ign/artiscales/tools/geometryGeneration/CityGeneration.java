@@ -30,9 +30,8 @@ import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
  */
 public class CityGeneration {
 
-	public static void main(String[] args) throws NoSuchAuthorityCodeException, IOException, FactoryException {
-		createUrbanBlock(new File("/home/ubuntu/PMtest/SeineEtMarne/PARCELLE03.SHP"), new File("/home/ubuntu/PMtest/SeineEtMarne/"));
-	}
+//	public static void main(String[] args) throws NoSuchAuthorityCodeException, IOException, FactoryException {
+//	}
 
 	/**
 	 * Generate urban block shapefile out of a parcel plan. Urban block can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
@@ -75,9 +74,9 @@ public class CityGeneration {
 			return result;
 		}
 		DataStore parcelDS = Geopackages.getDataStore(parcelFile);
-		SimpleFeatureCollection block = parcelDS.getFeatureSource(parcelDS.getTypeNames()[0]).getFeatures();
+		Collec.exportSFC(createUrbanBlock(parcelDS.getFeatureSource(parcelDS.getTypeNames()[0]).getFeatures()), result);
 		parcelDS.dispose();
-		return Collec.exportSFC(block, result);
+		return result;
 	}
 
 	/**
