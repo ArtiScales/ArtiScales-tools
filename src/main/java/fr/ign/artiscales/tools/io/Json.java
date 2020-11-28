@@ -1,20 +1,19 @@
 package fr.ign.artiscales.tools.io;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-
 public class Json {
-	public static HashMap<String, String> getHeaderJson(File f) throws JsonParseException, IOException {
+	public static HashMap<String, String> getHeaderJson(File f) throws IOException {
 		JsonFactory factory = new JsonFactory();
 		JsonParser parser = factory.createParser(f);
 		JsonToken token = parser.nextToken();
-		HashMap<String, String> header = new HashMap<String, String>();
+		HashMap<String, String> header = new HashMap<>();
 		boolean write = false;
 		try {
 			while (!parser.isClosed()) {
@@ -40,7 +39,7 @@ public class Json {
 		JsonFactory factory = new JsonFactory();
 		JsonParser parser = factory.createParser(in);
 		JsonToken token = parser.nextToken();
-		HashMap<String, Object> firstObject = new HashMap<String, Object>();
+		HashMap<String, Object> firstObject = new HashMap<>();
 		boolean write = false;
 		String firstObjectName = "";
 		try {
@@ -50,7 +49,7 @@ public class Json {
 					firstObjectName = parser.getCurrentName();
 					write = true;
 				}
-				if (token == JsonToken.END_OBJECT && parser.getCurrentName() == firstObjectName)
+				if (token == JsonToken.END_OBJECT && parser.getCurrentName().equals(firstObjectName))
 					break;
 				if (token == JsonToken.FIELD_NAME && write) {
 					String key = parser.getCurrentName();

@@ -1,12 +1,10 @@
 package fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
@@ -21,10 +19,10 @@ import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
 
 public class Polygons {
-	public static DefaultFeatureCollection addSimplePolygonialGeometries(SimpleFeatureBuilder sfBuilder, DefaultFeatureCollection result,
-			String geometryOutputName, List<Geometry> geoms) {
+	public static DefaultFeatureCollection addSimplePolygonialGeometries(SimpleFeatureBuilder sfBuilder, String geometryOutputName, List<Geometry> geoms) {
+		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		for (Geometry g : geoms)
-			result = addSimplePolygonialGeometry(sfBuilder, result, geometryOutputName, g);
+			result.addAll((FeatureCollection<?, ?>) addSimplePolygonialGeometry(sfBuilder, result, geometryOutputName, g));
 		return result;
 	}
 
@@ -58,7 +56,7 @@ public class Polygons {
 	/**
 	 * Get {@link Geometry} as a Polygon. If it already is a Polygon, returns it. If a MultiPolygon, returns the biggest Polygon Geometry of the list.
 	 * 
-	 * @param geom
+	 * @param geom input {@link Geometry}
 	 * @return the {@link Geometry} as a {@link Polygon}
 	 */
 	public static Polygon getPolygon(Geometry geom) {
@@ -74,15 +72,15 @@ public class Polygons {
 	 */
 	public static List<Polygon> getPolygons(Geometry geom) {
 		if (geom instanceof Polygon)
-			return Arrays.asList((Polygon) geom);
+			return Collections.singletonList((Polygon) geom);
 		else if (geom instanceof MultiPolygon) {
-			List<Polygon> lG = new ArrayList<Polygon>();
-			for (int i = 0; i < ((MultiPolygon) geom).getNumGeometries(); i++)
+			List<Polygon> lG = new ArrayList<>();
+			for (int i = 0; i < geom.getNumGeometries(); i++)
 				lG.add((Polygon) geom.getGeometryN(i));
 			return lG;
 		} else if (geom instanceof GeometryCollection) {
-			List<Polygon> lG = new ArrayList<Polygon>();
-			for (int i = 0; i < ((GeometryCollection) geom).getNumGeometries(); i++)
+			List<Polygon> lG = new ArrayList<>();
+			for (int i = 0; i < geom.getNumGeometries(); i++)
 				lG.addAll(getPolygons(geom.getGeometryN(i)));
 			return lG;
 		} else {
@@ -96,7 +94,7 @@ public class Polygons {
 		List<Polygon> p = getPolygons(difference); // .stream().map(x -> (Polygon) x).collect(Collectors.toList());
 		if (p.size() != 1) {
 			System.out.println("polygonDifference():" + p.size() + " polygons");
-			p.forEach(pp -> System.out.println(pp));
+			p.forEach(System.out::println);
 			return null;
 		}
 		return p.get(0);
@@ -104,20 +102,20 @@ public class Polygons {
 
 	public static Polygon polygonUnionWithoutHoles(List<Polygon> list, GeometryPrecisionReducer reducer) {
 		Polygon union = polygonUnion(list, reducer);
-		return union.getFactory().createPolygon(union.getExteriorRing().getCoordinates());
+		return Objects.requireNonNull(union).getFactory().createPolygon(union.getExteriorRing().getCoordinates());
 	}
 
 	public static Polygon polygonUnion(List<Polygon> list, GeometryPrecisionReducer reducer) {
 		if (list.isEmpty())
 			return null;
-		List<Geometry> reducedList = list.stream().filter(g -> g != null).map(g -> reducer.reduce(g)).collect(Collectors.toList());
+		List<Geometry> reducedList = list.stream().filter(Objects::nonNull).map(reducer::reduce).collect(Collectors.toList());
 		return (Polygon) new CascadedPolygonUnion(reducedList).union();
 	}
 
 	/**
 	 * Get a polygon and return a multiplolygon
 	 * 
-	 * @param geom
+	 * @param geom input {@link Geometry}
 	 * @return The {@link Geometry} as a {@link MultiPolygon}
 	 */
 	public static MultiPolygon getMultiPolygonGeom(Geometry geom) {

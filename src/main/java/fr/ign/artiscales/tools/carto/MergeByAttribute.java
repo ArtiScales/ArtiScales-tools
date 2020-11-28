@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Objects;
 
 import org.geotools.data.DataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -17,7 +18,7 @@ public class MergeByAttribute {
 
 	public static void main(String[] args) throws IOException {
 		DataStore ds = Geopackages.getDataStore(new File("/home/ubuntu/Documents/DensificationStudy-out/parcel.gpkg"));
-		Collec.exportSFC(mergeByAttribute(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), "CODE_COM"), new File("/tmp/test"));
+		Collec.exportSFC(mergeByAttribute(Objects.requireNonNull(ds).getFeatureSource(ds.getTypeNames()[0]).getFeatures(), "CODE_COM"), new File("/tmp/test"));
 	}
 
 	public static SimpleFeatureCollection mergeByAttribute(SimpleFeatureCollection in, String attribute) {
@@ -26,7 +27,7 @@ public class MergeByAttribute {
 			System.out.println("mergeByAttribute:  no " + attribute + " found");
 			return null;
 		}
-		HashMap<String, SimpleFeatureCollection> merges = new HashMap<String, SimpleFeatureCollection>();
+		HashMap<String, SimpleFeatureCollection> merges = new HashMap<>();
 		for (String uniqueVal : Collec.getEachUniqueFieldFromSFC(in, attribute)) {
 			DefaultFeatureCollection list = new DefaultFeatureCollection();
 			Arrays.stream(in.toArray(new SimpleFeature[0])).forEach(sf -> {

@@ -1,46 +1,34 @@
 package fr.ign.artiscales.tools;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.geotools.data.DataUtilities;
-import org.geotools.data.FeatureReader;
-import org.geotools.data.FeatureWriter;
-import org.geotools.data.FileDataStore;
-import org.geotools.data.Transaction;
+import org.geotools.data.*;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.SchemaException;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.MultiLineString;
-import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.Polygon;
-import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.util.LinearComponentExtracter;
 import org.locationtech.jts.operation.polygonize.Polygonizer;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 public class FeaturePolygonizer {
-	private static GeometryFactory fact = new GeometryFactory();
+	private static final GeometryFactory fact = new GeometryFactory();
 	public static Boolean DEBUG = false;
 
 	private static List<Geometry> getLines(List<Geometry> inputFeatures) {
-		List<Geometry> linesList = new ArrayList<Geometry>();
+		List<Geometry> linesList = new ArrayList<>();
 		LinearComponentExtracter lineFilter = new LinearComponentExtracter(linesList);
 		for (Geometry feature : inputFeatures)
 			feature.apply(lineFilter);
@@ -71,7 +59,7 @@ public class FeaturePolygonizer {
 
 	private static List<Geometry> getFeatures(File aFile, Function<SimpleFeature, Boolean> filter) throws IOException {
 		ShapefileDataStore store = new ShapefileDataStore(aFile.toURI().toURL());
-		ArrayList<Geometry> array = new ArrayList<Geometry>();
+		ArrayList<Geometry> array = new ArrayList<>();
 		FeatureReader<SimpleFeatureType, SimpleFeature> reader = store.getFeatureReader();
 		while (reader.hasNext()) {
 			SimpleFeature feature = reader.next();
@@ -110,8 +98,7 @@ public class FeaturePolygonizer {
 		addFeatures(polygonizer, features);
 		if (DEBUG)
 			System.out.println(Calendar.getInstance().getTime() + " now with the real stuff");
-		List<Polygon> result = new ArrayList<>();
-		result.addAll(polygonizer.getPolygons());
+		List<Polygon> result = new ArrayList<>(polygonizer.getPolygons());
 		if (DEBUG)
 			System.out.println(Calendar.getInstance().getTime() + " all done now");
 		// for (Polygon p : result)
@@ -120,7 +107,7 @@ public class FeaturePolygonizer {
 		return result;
 	}
 
-	public static List<Polygon> getPolygons(File[] files) throws IOException, SchemaException {
+	public static List<Polygon> getPolygons(File[] files) throws IOException {
 		List<Geometry> features = new ArrayList<>();
 		for (File file : files) {
 			if (DEBUG)
@@ -132,17 +119,14 @@ public class FeaturePolygonizer {
 		return getPolygons(features);
 	}
 
-	public static List<Polygon> getPolygons(SimpleFeatureCollection sFC) throws IOException, SchemaException {
+	public static List<Polygon> getPolygons(SimpleFeatureCollection sFC) {
 		List<Geometry> features = new ArrayList<>();
-		SimpleFeatureIterator sFCit = sFC.features();
-		try {
+		try (SimpleFeatureIterator sFCit = sFC.features()) {
 			while (sFCit.hasNext()) {
 				features.add((Geometry) sFCit.next().getDefaultGeometry());
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
-		} finally {
-			sFCit.close();
 		}
 		if (DEBUG)
 			System.out.println(Calendar.getInstance().getTime() + " adding features");
@@ -150,7 +134,7 @@ public class FeaturePolygonizer {
 	}
 
 	public static void saveGeometries(List<? extends Geometry> geoms, File file, String geomType)
-			throws MalformedURLException, IOException, SchemaException {
+			throws IOException, SchemaException {
 		String specs = "geom:" + geomType + ":srid=2154";
 		ShapefileDataStoreFactory factory = new ShapefileDataStoreFactory();
 		FileDataStore dataStore = factory.createDataStore(file.toURI().toURL());
@@ -197,7 +181,7 @@ public class FeaturePolygonizer {
     List<Polygon> buffer = new ArrayList<>();
     for (Polygon p : polygons) {
       Point point = p.getInteriorPoint();
-      if (features.stream().anyMatch(g->g.intersects(point)) && featuresToRemove.stream().allMatch(g->!g.intersects(point))) {
+      if (features.stream().anyMatch(g->g.intersects(point)) && featuresToRemove.stream().noneMatch(g-> g.intersects(point))) {
         buffer.add(p);
       }
     }
@@ -229,10 +213,10 @@ public class FeaturePolygonizer {
     Geometry[] reducedDifference = differenceBuffer.stream().map(g->GeometryPrecisionReducer.reduce(g, new PrecisionModel(100))).toArray(Geometry[]::new);
     Geometry intersection = fact.createGeometryCollection(reducedIntersection).union();
     Geometry difference = fact.createGeometryCollection(reducedDifference).union();
-    return new ImmutablePair<Geometry, Geometry>(intersection, difference);
+    return new ImmutablePair<>(intersection, difference);
   }
 
-	public static void main(String[] args) throws MalformedURLException, IOException, SchemaException {
+	public static void main(String[] args) throws IOException, SchemaException {
 		// input folder for shapefiles
 		// File folderData = new File("./data/pau");
 		// take all shapefiles in the folder

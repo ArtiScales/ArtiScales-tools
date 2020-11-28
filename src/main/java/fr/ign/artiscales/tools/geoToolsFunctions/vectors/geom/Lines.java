@@ -1,8 +1,6 @@
 package fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -23,7 +21,7 @@ import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
 public class Lines {
 	public static MultiLineString generateLineStringFromPolygon(Geometry geom) {
 		Polygon poly = Polygons.getPolygon(geom);
-		List<Geometry> lines = new ArrayList<Geometry>();
+		List<Geometry> lines = new ArrayList<>();
 		lines.add(geom.getFactory().createMultiLineString(new LineString[] { poly.getExteriorRing() }));
 		for (int i = 0; i < poly.getNumInteriorRing(); i++) {
 			LineString interiorLines = poly.getInteriorRingN(i);
@@ -36,7 +34,8 @@ public class Lines {
 	
 	public static MultiLineString getMultiLineString(Geometry geom) {
 	    List<LineString> list = getLineStrings(geom);
-	    return geom.getFactory().createMultiLineString(list.toArray(new LineString[list.size()]));
+		if (list == null) throw new AssertionError();
+		return geom.getFactory().createMultiLineString(list.toArray(new LineString[list.size()]));
 	}
 
 	public static MultiLineString getListLineStringAsMultiLS(List<LineString> list, GeometryFactory fact) {
@@ -44,7 +43,7 @@ public class Lines {
 	}
 
 	public static List<LineString> fromMultiToLineString(MultiLineString ml) {
-		List<LineString> lL = new ArrayList<LineString>();
+		List<LineString> lL = new ArrayList<>();
 		for (int i = 0; i < ml.getNumGeometries(); i++)
 			lL.add((LineString) ml.getGeometryN(i));
 		return lL;
@@ -65,7 +64,7 @@ public class Lines {
 	 */
 	public static List<LineString> getLineStrings(Geometry geom) {
 		if (geom instanceof LineString)
-			return Arrays.asList((LineString) geom);
+			return Collections.singletonList((LineString) geom);
 		else if (geom instanceof MultiLineString)
 			return fromMultiToLineString((MultiLineString) geom);
 		else if (geom instanceof Polygon)
@@ -76,7 +75,7 @@ public class Lines {
 		else if (geom instanceof GeometryCollection) {
 			List<LineString> result = new ArrayList<>();
 			for (int i = 0; i < geom.getNumGeometries(); i++)
-				result.addAll(getLineStrings(geom.getGeometryN(i)));
+				result.addAll(Objects.requireNonNull(getLineStrings(geom.getGeometryN(i))));
 			return result;
 		} else
 			System.out.println("getLineString(): Geometry class unknown - " + geom.getGeometryType());
@@ -85,7 +84,7 @@ public class Lines {
 
 	public static Pair<LineString, LineString> splitLine(LineString line, double s) {
 		LengthIndexedLine lil = new LengthIndexedLine(line);
-		return new ImmutablePair<LineString, LineString>((LineString) lil.extractLine(0, s), (LineString) lil.extractLine(s, line.getLength()));
+		return new ImmutablePair<>((LineString) lil.extractLine(0, s), (LineString) lil.extractLine(s, line.getLength()));
 	}
 
 	public static Pair<LineString, LineString> splitLine(LineString line, Coordinate c) {
@@ -151,7 +150,7 @@ public class Lines {
 		if (list.isEmpty())
 			return null;
 		LineMerger merger = new LineMerger();
-		list.forEach(l -> merger.add(l));
+		list.forEach(merger::add);
 		return (LineString) merger.getMergedLineStrings().iterator().next();// FIXME we assume a lot here
 	}
 }

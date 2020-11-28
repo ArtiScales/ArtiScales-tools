@@ -66,7 +66,7 @@ public class Shp {
 		ShapefileDataStore dSref = new ShapefileDataStore(fRef.toURI().toURL());
 		SimpleFeatureType schemaRef = dSref.getFeatureSource().getFeatures().getSchema();
 		dSref.dispose();
-		List<SimpleFeatureCollection> sfcs = new ArrayList<SimpleFeatureCollection>();
+		List<SimpleFeatureCollection> sfcs = new ArrayList<>();
 		for (File f : file2MergeIn) {
 			ShapefileDataStore sds = new ShapefileDataStore(f.toURI().toURL());
 			sfcs.add(sds.getFeatureSource().getFeatures());
@@ -180,7 +180,7 @@ public class Shp {
 	public static void copyShp(String shpName, String newShpName, File fromFolder, File toFolder) throws IOException {
 		for (File f : fromFolder.listFiles()) {
 			if (f.getName().startsWith(shpName)) {
-				String ext = f.getName().substring(f.getName().length() - 4, f.getName().length());
+				String ext = f.getName().substring(f.getName().length() - 4);
 				FileOutputStream out = new FileOutputStream(new File(toFolder, newShpName+ext));
 				Files.copy(f.toPath(), out);
 				out.close();
@@ -196,7 +196,7 @@ public class Shp {
 		}
 		if (!fileOut.getName().endsWith(".shp"))
 			fileOut = new File(fileOut + ".shp");
-		List<File> file2MergeIn = new ArrayList<File>();
+		List<File> file2MergeIn = new ArrayList<>();
 		// copyShp(String shpName, String newShpName, File fromFolder, File toFolder)
 
 		if (fileOut.exists() && !overwrite) {

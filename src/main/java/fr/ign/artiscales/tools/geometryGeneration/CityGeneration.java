@@ -1,11 +1,10 @@
 package fr.ign.artiscales.tools.geometryGeneration;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import fr.ign.artiscales.tools.FeaturePolygonizer;
+import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
 import org.geotools.data.DataStore;
 import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
@@ -13,14 +12,13 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Geometry;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
 
-import fr.ign.artiscales.tools.FeaturePolygonizer;
-import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Class to generate shapefiles related to community shape.
@@ -42,10 +40,8 @@ public class CityGeneration {
 	 *            folder where goes the generated urban block
 	 * @return a collection of urban block
 	 * @throws IOException
-	 * @throws NoSuchAuthorityCodeException
-	 * @throws FactoryException
 	 */
-	public static File createUrbanBlockShp(File parcelFile, File outFolder) throws IOException, NoSuchAuthorityCodeException, FactoryException {
+	public static File createUrbanBlockShp(File parcelFile, File outFolder) throws IOException {
 		File result = new File(outFolder, "block.shp");
 		if (result.exists()) {
 			System.out.println("createUrbanBlock(): block already exists");
@@ -74,7 +70,7 @@ public class CityGeneration {
 			return result;
 		}
 		DataStore parcelDS = Geopackages.getDataStore(parcelFile);
-		Collec.exportSFC(createUrbanBlock(parcelDS.getFeatureSource(parcelDS.getTypeNames()[0]).getFeatures()), result);
+		Collec.exportSFC(createUrbanBlock(Objects.requireNonNull(parcelDS).getFeatureSource(parcelDS.getTypeNames()[0]).getFeatures()), result);
 		parcelDS.dispose();
 		return result;
 	}

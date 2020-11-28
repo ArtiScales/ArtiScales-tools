@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import org.geotools.data.DataStore;
 import org.geotools.data.shapefile.ShapefileDataStore;
@@ -46,7 +47,7 @@ public class JoinCSVToGeoFile {
 	public static File joinCSVToGeopackage(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile,
 			HashMap<String, String> statToAdd) throws IOException {
 		DataStore ds = Geopackages.getDataStore(geoFile);
-		File result = joinCSVToGeoFile(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile,
+		File result = joinCSVToGeoFile(Objects.requireNonNull(ds).getFeatureSource(ds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile,
 				statToAdd);
 		ds.dispose();
 		return result;
@@ -85,7 +86,7 @@ public class JoinCSVToGeoFile {
 			sfTypeBuilder.add(field, String.class);
 		}
 		SimpleFeatureBuilder build = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
-		try (SimpleFeatureIterator it = sfc.features();) {
+		try (SimpleFeatureIterator it = sfc.features()) {
 			while (it.hasNext()) {
 				CSVReader r = new CSVReader(new FileReader(csvFile));
 				r.readNext();

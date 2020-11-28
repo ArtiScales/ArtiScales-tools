@@ -1,31 +1,20 @@
 package fr.ign.artiscales.tools.geoToolsFunctions.vectors;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
+import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryCollection;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.PrecisionModel;
-import org.locationtech.jts.geom.TopologyException;
+import org.locationtech.jts.geom.*;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
 
-import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
-import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Geom {
 //	public static void main(String[] args) throws Exception {
@@ -49,8 +38,6 @@ public class Geom {
 	 * @param fileName
 	 * @return A ShapeFile containing the exported {@link Geometry}
 	 * @throws IOException
-	 * @throws NoSuchAuthorityCodeException
-	 * @throws FactoryException
 	 */
 	public static File exportGeom(Geometry geom, File fileName) throws IOException {
 		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaMultiPolygon("geom");
@@ -68,8 +55,6 @@ public class Geom {
 	 * @param fileName
 	 * @return A ShapeFile containing the exported {@link Geometry}
 	 * @throws IOException
-	 * @throws NoSuchAuthorityCodeException
-	 * @throws FactoryException
 	 */
 	public static File exportGeom(List<? extends Geometry> geoms, File fileName) throws IOException {
 		return Collec.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon(Collec.getDefaultGeomName())), fileName);
@@ -186,7 +171,7 @@ public class Geom {
 	}
 
 	public static List<Geometry> unionTouchingGeometries(List<Geometry> geomsIn){
-		List<Geometry> result = new ArrayList<Geometry>();
+		List<Geometry> result = new ArrayList<>();
 		for (Geometry gIn : geomsIn) {
 			List<Geometry> intersectingGeom = result.stream().filter(g -> g.intersects(gIn)).collect(Collectors.toList());
 			if (intersectingGeom.isEmpty()) {
@@ -282,9 +267,9 @@ public class Geom {
 	 * @return the largest {@link Geometry}
 	 */
 	public static Geometry getBiggestIntersectingGeometry(List<? extends Geometry> lG, Geometry geom) {
-		HashMap<Geometry, Double> result = new HashMap<Geometry, Double>();
+		HashMap<Geometry, Double> result = new HashMap<>();
 		for (Geometry g : lG) {
-			double area = (scaledGeometryReductionIntersection(Arrays.asList(g, geom)).getArea());
+			double area = (Objects.requireNonNull(scaledGeometryReductionIntersection(Arrays.asList(g, geom))).getArea());
 			if (area > 0)
 				result.put(g, area);
 		}

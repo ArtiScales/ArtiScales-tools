@@ -1,8 +1,8 @@
 package fr.ign.artiscales.tools.carto;
 
-import java.io.IOException;
-import java.util.List;
-
+import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
+import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.DefaultFeatureCollection;
@@ -14,19 +14,16 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 
-import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
-import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
+import java.util.List;
 
 public class CountPointInPolygon {
 
-	public static SimpleFeatureCollection countPointInPolygon(SimpleFeatureCollection pointsCollec, SimpleFeatureCollection polygonsCollec)
-			throws IOException {
+	public static SimpleFeatureCollection countPointInPolygon(SimpleFeatureCollection pointsCollec, SimpleFeatureCollection polygonsCollec) {
 		return countPointInPolygon(pointsCollec, polygonsCollec, false, null, null);
 	}
 
 	public static SimpleFeatureCollection countPointInPolygon(SimpleFeatureCollection pointsCollec, SimpleFeatureCollection polygonsCollec,
-			boolean keepAttributes, List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
+			boolean keepAttributes, List<String> attrsToStat, List<StatisticOperation> statsToDo) {
 		// enrich the output wanted schema with wanted stats about attributes
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		SimpleFeatureType schemaOut = polygonsCollec.getSchema();
@@ -53,7 +50,7 @@ public class CountPointInPolygon {
 			while (polyIt.hasNext()) {
 				SimpleFeature poly = polyIt.next();
 				// set already existing polygon attributes
-				sfb.set(geomName, (Geometry) poly.getDefaultGeometry());
+				sfb.set(geomName, poly.getDefaultGeometry());
 				if (keepAttributes)
 					for (AttributeDescriptor attr : schemaOut.getAttributeDescriptors()) {
 						if (attr.getLocalName().equals(geomName))

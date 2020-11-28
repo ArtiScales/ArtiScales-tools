@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.geotools.coverage.grid.GridCoordinates2D;
@@ -49,10 +50,10 @@ public class Csv {
 	 * @return the concatenated string
 	 */
 	public static String makeLine(List<Integer> headers, String[] line) {
-		String result = "";
+		StringBuilder result = new StringBuilder();
 		for (int i = 0; i < line.length; i++)
 			if (headers.contains(i))
-				result = result + "-" + line[i];
+				result.append("-").append(line[i]);
 		return result.substring(1, result.length());
 	}
 
@@ -76,8 +77,8 @@ public class Csv {
 		DescriptiveStatistics ds = new DescriptiveStatistics();
 		for (String[] line : lines) {
 			try {
-				ds.addValue(Double.valueOf(line[nbCol]));
-			} catch (NumberFormatException e) {
+				ds.addValue(Double.parseDouble(line[nbCol]));
+			} catch (NumberFormatException ignored) {
 			}
 		}
 		r.close();
@@ -128,8 +129,8 @@ public class Csv {
 	}
 
 	public static List<File> getCSVFiles(File folder) {
-		List<File> result = new ArrayList<File>();
-		for (File f : folder.listFiles())
+		List<File> result = new ArrayList<>();
+		for (File f : Objects.requireNonNull(folder.listFiles()))
 			if (f.isDirectory())
 				result.addAll(getCSVFiles(f));
 			else if (f.getName().endsWith(".csv"))
@@ -190,7 +191,7 @@ public class Csv {
 		// beginning of the all cells loop
 		int debI = 0;
 		int debJ = 0;
-		HashMap<String, Double> cells = new HashMap<String, Double>();
+		HashMap<String, Double> cells = new HashMap<>();
 		for (int i = debI; i < w; i++)
 			for (int j = debJ; j < h; j++) {
 				GridCoordinates2D coord = new GridCoordinates2D(i, j);
@@ -206,10 +207,8 @@ public class Csv {
 		writer.append("\n");
 		for (String nomm : cells.keySet()) {
 			double tableau = cells.get(nomm);
-			for (int i = 0; i < tableau; i++) {
-				String in = Double.toString(tableau);
-				writer.append(in + "\n");
-			}
+			for (int i = 0; i < tableau; i++)
+				writer.append(Double.toString(tableau)).append("\n");
 		}
 		writer.close();
 		return fileName;
@@ -230,11 +229,11 @@ public class Csv {
 		for (String tab : results.keySet()) {
 			HashMap<String, Double[]> intResult = results.get(tab);
 			if (needFLine) {
-				writer.append("scenario " + tab + "," + firstLine + "\n");
+				writer.append("scenario ").append(tab).append(",").append(firstLine).append("\n");
 				needFLine = false;
 			}
 			for (String nomScenar : intResult.keySet()) {
-				writer.append(nomScenar + "," + intResult.get(nomScenar)[0] + "," + intResult.get(nomScenar)[1]);
+				writer.append(nomScenar).append(",").append(String.valueOf(intResult.get(nomScenar)[0])).append(",").append(String.valueOf(intResult.get(nomScenar)[1]));
 				writer.append("\n");
 			}
 			writer.append("\n");
@@ -256,9 +255,9 @@ public class Csv {
 		FileWriter writer = new FileWriter(fileName, true);
 		for (String tab : results.keySet()) {
 			HashMap<String, Double> intResult = results.get(tab);
-			writer.append("scenario " + tab + "\n");
+			writer.append("scenario ").append(tab).append("\n");
 			for (String nomScenar : intResult.keySet()) {
-				writer.append(nomScenar + "," + intResult.get(nomScenar));
+				writer.append(nomScenar).append(",").append(String.valueOf(intResult.get(nomScenar)));
 				writer.append("\n");
 			}
 			writer.append("\n");
@@ -282,9 +281,9 @@ public class Csv {
 		FileWriter writer = new FileWriter(fileName, true);
 		for (String tab : results.keySet()) {
 			HashMap<String, Double> intResult = results.get(tab);
-			writer.append("scenario " + tab + "\n");
+			writer.append("scenario ").append(tab).append("\n");
 			for (String nomScenar : intResult.keySet()) {
-				writer.append(nomScenar + "&" + intResult.get(nomScenar));
+				writer.append(nomScenar).append("&").append(String.valueOf(intResult.get(nomScenar)));
 				writer.append("\n");
 			}
 			writer.append("\n");
@@ -327,7 +326,7 @@ public class Csv {
 	 */
 	public static File generateCsvFile(HashMap<String, double[]> data, String name, File folderOut, String[] firstCol, boolean append)
 			throws IOException {
-		HashMap<String, Object[]> result = new HashMap<String, Object[]>();
+		HashMap<String, Object[]> result = new HashMap<>();
 		for (String key : data.keySet()) {
 			double[] line = data.get(key);
 			Object[] toPut = new Object[line.length];
@@ -355,12 +354,11 @@ public class Csv {
 	 */
 	public static File generateCsvFile(HashMap<String, String[]> data, File folderOut, String name, boolean append, String[] firstCol)
 			throws IOException {
-		HashMap<String, Object[]> result = new HashMap<String, Object[]>();
+		HashMap<String, Object[]> result = new HashMap<>();
 		for (String key : data.keySet()) {
 			String[] line = data.get(key);
 			Object[] toPut = new Object[line.length];
-			for (int i = 0; i < line.length; i++)
-				toPut[i] = line[i];
+			System.arraycopy(line, 0, toPut, 0, line.length);
 			result.put(key, toPut);
 		}
 		return generateCsvFile(result, folderOut, name, firstCol, append);
@@ -383,8 +381,8 @@ public class Csv {
 		return generateCsvFile(cellRepet, folderOut, name, firstCol, true);
 	}
 
-	public static File generateCsvFile(String name, File folderOut, String[] firstCol, boolean append, HashMap<String, ? extends Object> cellRepet) throws IOException {
-		HashMap<String, Object[]> cellRepetArrayed = new HashMap<String, Object[]>();
+	public static File generateCsvFile(String name, File folderOut, String[] firstCol, boolean append, HashMap<String, ?> cellRepet) throws IOException {
+		HashMap<String, Object[]> cellRepetArrayed = new HashMap<>();
 		for (String c : cellRepet.keySet()) {
 			Object[] a = { cellRepet.get(c) };
 			cellRepetArrayed.put(c, a);
@@ -410,22 +408,22 @@ public class Csv {
 	 */
 	public static File generateCsvFile(HashMap<String, Object[]> cellRepet, File folderOut, String name, String[] firstCol, boolean append)
 			throws IOException {
-		String fLine = "";
+		StringBuilder fLine = new StringBuilder();
 		if (firstCol != null) {
-			fLine = firstCol[0];
+			fLine = new StringBuilder(firstCol[0]);
 			for (int i = 1; i < firstCol.length; i++)
-				fLine = (fLine + "," + firstCol[i]);
+				fLine.append(",").append(firstCol[i]);
 		}
-		List<String> lines = new ArrayList<String>();
+		List<String> lines = new ArrayList<>();
 		for (String nom : cellRepet.keySet()) {
-			String line = nom + ",";
+			StringBuilder line = new StringBuilder(nom + ",");
 			for (Object val : cellRepet.get(nom))
-				line = line + val + ",";
-			if (line.endsWith(","))
-				line = line.substring(0, line.length() - 1);
-			lines.add(line);
+				line.append(val).append(",");
+			if (line.toString().endsWith(","))
+				line = new StringBuilder(line.substring(0, line.length() - 1));
+			lines.add(line.toString());
 		}
-		return simpleCSVWriter(lines, fLine, new File(folderOut, name + ".csv"), append);
+		return simpleCSVWriter(lines, fLine.toString(), new File(folderOut, name + ".csv"), append);
 	}
 
 	/**
@@ -440,11 +438,11 @@ public class Csv {
 	 * @throws IOException
 	 */
 	public static File generateCsvFileCol(HashMap<String, double[]> cellRepet, String name, File folderOut) throws IOException {
-		HashMap<String, Object[]> result = new HashMap<String, Object[]>();
+		HashMap<String, Object[]> result = new HashMap<>();
 		for (double[] ligne : cellRepet.values()) {
 			Object[] aMettre = new Object[ligne.length - 1];
 			for (int i = 1; i < ligne.length; i = i + 1)
-				aMettre[i - 1] = (double) ligne[i];
+				aMettre[i - 1] = ligne[i];
 			result.put(String.valueOf(ligne[0]), aMettre);
 		}
 		return generateCsvFileCol(result, folderOut, name);
@@ -472,12 +470,12 @@ public class Csv {
 		}
 		// put the main names
 		for (String nomm : cellRepet.keySet())
-			writer.append(nomm + ",");
+			writer.append(nomm).append(",");
 		writer.append("\n");
 		for (int i = 0; i <= longestTab - 1; i++) {
 			for (String nomm : cellRepet.keySet()) {
 				try {
-					writer.append(cellRepet.get(nomm)[i] + ",");
+					writer.append(String.valueOf(cellRepet.get(nomm)[i])).append(",");
 				} catch (ArrayIndexOutOfBoundsException a) {
 					writer.append(",");
 					// normal that it gets Arrays exceptions.
@@ -494,11 +492,9 @@ public class Csv {
 			fileOut = new File(fileOut + ".csv");
 		fileOut.getParentFile().mkdirs();
 		FileWriter writer = new FileWriter(fileOut, append);
-		boolean fL = needFLine;
-		if (fL) {
-			writer.append(firstLine);
-			writer.append("\n");
-			fL = false;
+		if (needFLine) {
+			writer.append(firstLine).append("\n");
+			needFLine = false;
 		}
 		for (String l : lines) {
 			writer.append(l);

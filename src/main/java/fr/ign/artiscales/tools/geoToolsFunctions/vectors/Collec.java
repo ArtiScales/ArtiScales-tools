@@ -1,15 +1,9 @@
 package fr.ign.artiscales.tools.geoToolsFunctions.vectors;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-
+import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
+import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
+import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom.Lines;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataUtilities;
@@ -29,15 +23,7 @@ import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.grid.Grids;
 import org.geotools.referencing.CRS;
 import org.geotools.util.factory.GeoTools;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.CoordinateXY;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.MultiLineString;
-import org.locationtech.jts.geom.MultiPolygon;
-import org.locationtech.jts.geom.Polygon;
-import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.*;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -45,12 +31,12 @@ import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.FilterVisitor;
 import org.opengis.referencing.FactoryException;
-
-import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
-import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
-import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom.Lines;
 import si.uom.SI;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class Collec {
 
@@ -83,7 +69,7 @@ public class Collec {
 	// SimpleFeatureCollection parcel = shpDSParcel.getFeatureSource().getFeatures();
 	// File tmp = new File("/tmp/shp.shp");
 	// Collec.exportSFC(parcel, tmp);
-	// Collec.exportSFC(parcel, new File("/tmp/djadja.gpkg"));
+	// Collec.exportSFC(parcel, new File("/tmp/ex.gpkg"));
 	// shpDSParcel.dispose();
 	//
 	// DataStore ds = Geopackages.getDataStore(new File("/tmp/djadja.gpkg"));
@@ -95,8 +81,8 @@ public class Collec {
 	/**
 	 * Get statistics about a field of a collection
 	 * 
-	 * @param sfc
-	 * @param attribute
+	 * @param sfc input {@link SimpleFeatureCollection}
+	 * * @param attribute
 	 * @return
 	 */
 	public static double getCollectionAttributeDescriptiveStat(SimpleFeatureCollection sfc, String attribute, StatisticOperation stat) {
@@ -104,7 +90,7 @@ public class Collec {
 			DescriptiveStatistics ds = new DescriptiveStatistics();
 			try (SimpleFeatureIterator polyIt = sfc.features()) {
 				while (polyIt.hasNext())
-					ds.addValue(Double.valueOf(String.valueOf(polyIt.next().getAttribute(attribute))));
+					ds.addValue(Double.parseDouble(String.valueOf(polyIt.next().getAttribute(attribute))));
 			} catch (ClassCastException e) {
 				System.out.println("Cannot calculate mean for " + attribute + ". Might be that the filed values are not numbers");
 				return 0;
@@ -130,9 +116,8 @@ public class Collec {
 	 * @param parcels
 	 *            input {@link SimpleFeatureCollection}
 	 * @return The sum of area of every features
-	 * @throws IOException
 	 */
-	public static double area(SimpleFeatureCollection parcels) throws IOException {
+	public static double area(SimpleFeatureCollection parcels) {
 		double totArea = 0.0;
 		try (SimpleFeatureIterator parcelIt = parcels.features()) {
 			while (parcelIt.hasNext())
@@ -171,7 +156,7 @@ public class Collec {
 	}
 
 	private static void coord2D(Coordinate c) {
-		if (!CoordinateXY.class.isInstance(c))
+		if (!(c instanceof CoordinateXY))
 			c.setZ(Double.NaN);
 	}
 
@@ -181,8 +166,7 @@ public class Collec {
 
 	public static File exportSFC(List<SimpleFeature> listFeature, File fileOut, boolean overwrite) throws IOException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
-		for (SimpleFeature feat : listFeature)
-			result.add(feat);
+		result.addAll(listFeature);
 		return exportSFC(result.collection(), fileOut, overwrite);
 	}
 
@@ -282,7 +266,7 @@ public class Collec {
 						SimpleFeature feature = iterator.next();
 						SimpleFeature newFeature = SimpleFeatureBuilder.build(ft, feature.getAttributes(), null);
 						Geometry g = f.createGeometry((Geometry) feature.getDefaultGeometry());
-						g.apply((Coordinate c) -> coord2D(c));
+						g.apply(Collec::coord2D);
 						g.geometryChanged();
 						newFeature.setDefaultGeometry(g);
 						featureCollection.add(newFeature);
@@ -371,7 +355,7 @@ public class Collec {
 		Arrays.stream(sFCToDivide.toArray(new SimpleFeature[0])).forEach(feat -> {
 			boolean add = true;
 			for (int i = 0; i < shortestIndice; i++)
-				if (!((String) feat.getAttribute(fieldNames[i])).equals(attributes[i])) {
+				if (!feat.getAttribute(fieldNames[i]).equals(attributes[i])) {
 					add = false;
 					break;
 				}
@@ -387,14 +371,12 @@ public class Collec {
 	 * @param sFCToSort
 	 *            SimpleFeature
 	 * @return The sorted {@link SimpleFeatureCollection}
-	 * @throws IOException
+	 * @throws IOException from {@link DefaultFeatureCollection}
 	 */
 	public static SimpleFeatureCollection sortSFCWithArea(SimpleFeatureCollection sFCToSort) throws IOException {
 		DefaultFeatureCollection result = new DefaultFeatureCollection();
 		SortedMap<Double, SimpleFeature> parcelMap = new TreeMap<>();
-		Arrays.stream(sFCToSort.toArray(new SimpleFeature[0])).forEach(parcel -> {
-			parcelMap.put(((Geometry) parcel.getDefaultGeometry()).getArea(), parcel);
-		});
+		Arrays.stream(sFCToSort.toArray(new SimpleFeature[0])).forEach(parcel -> parcelMap.put(((Geometry) parcel.getDefaultGeometry()).getArea(), parcel));
 		for (Entry<Double, SimpleFeature> entry : parcelMap.entrySet())
 			result.add(entry.getValue());
 		return result.collection();
@@ -458,18 +440,14 @@ public class Collec {
 	 * @return true if the collec contains the field name, false otherwise
 	 */
 	public static boolean isSchemaContainsAttribute(SimpleFeatureType schema, String attributeFiledName) {
-		if (schema.getAttributeDescriptors().stream().filter(s -> s.getName().toString().equals(attributeFiledName)).collect(Collectors.toList())
-				.size() == 0)
-			return false;
-		else
-			return true;
+		return schema.getAttributeDescriptors().stream().anyMatch(s -> s.getName().toString().equals(attributeFiledName));
 	}
 
 	/**
 	 * Convert a collection of simple feature (which geometries are either {@link Polygon} or {@link MultiPolygon}) to a list of {@link LineString}. It takes into account the
 	 * exterior and the interior lines.
 	 * 
-	 * @param inputSFC
+	 * @param inputSFC input {@link SimpleFeatureCollection}
 	 * @return A list of {@link LineString}
 	 */
 	public static List<LineString> fromPolygonSFCtoListRingLines(SimpleFeatureCollection inputSFC) {
@@ -478,13 +456,13 @@ public class Collec {
 			while (iterator.hasNext()) {
 				Geometry geom = (Geometry) iterator.next().getDefaultGeometry();
 				if (geom instanceof MultiPolygon) {
-					for (int i = 0; i < ((MultiPolygon) geom).getNumGeometries(); i++) {
-						MultiLineString mls = Lines.getMultiLineString(((Polygon) ((MultiPolygon) geom).getGeometryN(i)));
+					for (int i = 0; i < geom.getNumGeometries(); i++) {
+						MultiLineString mls = Lines.getMultiLineString(geom.getGeometryN(i));
 						for (int j = 0; j < mls.getNumGeometries(); j++)
 							lines.add((LineString) mls.getGeometryN(j));
 					}
 				} else {
-					MultiLineString mls = Lines.getMultiLineString((Polygon) geom);
+					MultiLineString mls = Lines.getMultiLineString(geom);
 					for (int j = 0; j < mls.getNumGeometries(); j++)
 						lines.add((LineString) mls.getGeometryN(j));
 				}
@@ -496,8 +474,8 @@ public class Collec {
 	/**
 	 * convert a collection of simple feature (which geometries are either {@link org.locationtech.jts.geom.Polygon} or {@link org.locationtech.jts.geom.MultiPolygon}) to a
 	 * {@link MultiLineString}. It takes into account the exterior and the interior lines.
-	 * 
-	 * @param inputSFC
+	 *
+	 * @param inputSFC input {@link SimpleFeatureCollection}
 	 * @return A list of {@link LineString}
 	 */
 	public static MultiLineString fromPolygonSFCtoRingMultiLines(SimpleFeatureCollection inputSFC) {
@@ -612,7 +590,7 @@ public class Collec {
 				// if the parcel is in between two features, we put the feature in a sorted
 				// collection
 				else if (theFeatureGeom.intersects(givenFeatureGeom))
-					index.put(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, givenFeatureGeom)).getArea(), theFeature);
+					index.put(Objects.requireNonNull(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, givenFeatureGeom))).getArea(), theFeature);
 			}
 		} catch (Exception problem) {
 			problem.printStackTrace();
@@ -643,7 +621,7 @@ public class Collec {
 				Geometry gridGeometry = (Geometry) featureGrid.getDefaultGeometry();
 				SimpleFeatureIterator chosenFeatIterator = sifc.subCollection(ff.bbox(ff.property(geomName), featureGrid.getBounds())).features();
 				List<Geometry> list = new ArrayList<>();
-				List<Object> attr = new ArrayList<Object>();
+				List<Object> attr = new ArrayList<>();
 				while (chosenFeatIterator.hasNext()) {
 					SimpleFeature f = chosenFeatIterator.next();
 					Geometry g = (Geometry) f.getDefaultGeometry();
@@ -729,7 +707,7 @@ public class Collec {
 					Object[] attr = new Object[feat.getAttributeCount() - 1];
 					for (int h = 1; h < feat.getAttributeCount(); h++)
 						attr[h - 1] = feat.getAttribute(h);
-					defaultSFBuilder.add((Geometry) feat.getDefaultGeometry());
+					defaultSFBuilder.add(feat.getDefaultGeometry());
 					newParcelCollection.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId(), attr));
 				});
 			} else {
@@ -767,18 +745,18 @@ public class Collec {
 					System.out.println("getEachUniqueFieldFromSFC:  no " + attribute + " found");
 					return null;
 				}
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		Arrays.stream(sfcIn.toArray(new SimpleFeature[0])).forEach(sf -> {
-			String val = "";
-			for (int i = 0; i < attributes.length; i++)
+			StringBuilder val = new StringBuilder();
+			for (String attribute : attributes)
 				try {
-					val = val + "-" + ((String) sf.getAttribute(attributes[i])).replace(",", "-");
-				} catch (Exception e) {
+					val.append("-").append(((String) sf.getAttribute(attribute)).replace(",", "-"));
+				} catch (Exception ignored) {
 				}
-			if (val.startsWith("-"))
-				val = val.substring(1, val.length());
-			if (!result.contains(val))
-				result.add(val);
+			if (val.toString().startsWith("-"))
+				val = new StringBuilder(val.substring(1, val.length()));
+			if (!result.contains(val.toString()))
+				result.add(val.toString());
 		});
 		return result;
 	}

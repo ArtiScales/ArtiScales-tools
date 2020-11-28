@@ -11,7 +11,7 @@ public class Attribute {
 	 * @return a very unique ID number
 	 */
 	public static String makeUniqueId() {
-		return String.valueOf(Math.random() * 100000) + new UID().toString().replace(':', '_');
+		return Math.random() * 100000 + new UID().toString().replace(':', '_');
 	}
 
 	/**
@@ -40,7 +40,7 @@ public class Attribute {
 	 */
 	public static int getLongIndice(String[] head) throws FileNotFoundException {
 		for (int i = 0; i < head.length; i = i + 1) {
-			if (head[i].toLowerCase().contains("longitude") || head[i].toLowerCase().contains("longitude") || head[i].toLowerCase().equals("long")
+			if (head[i].toLowerCase().contains("longitude") || head[i].toLowerCase().equals("long")
 					|| head[i].toLowerCase().equals("y") || head[i].toLowerCase().equals("lambert_y")
 					|| (head[i].toLowerCase().contains("y") && head[i].toLowerCase().contains("coord")))
 				return i;

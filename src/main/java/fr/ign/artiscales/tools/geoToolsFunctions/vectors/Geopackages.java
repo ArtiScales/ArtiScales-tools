@@ -101,7 +101,7 @@ public class Geopackages {
 		DataStore dSref = getDataStore(fRef);
 		SimpleFeatureType schemaRef = dSref.getFeatureSource(dSref.getTypeNames()[0]).getFeatures().getSchema();
 		dSref.dispose();
-		List<SimpleFeatureCollection> sfcs = new ArrayList<SimpleFeatureCollection>();
+		List<SimpleFeatureCollection> sfcs = new ArrayList<>();
 		for (File f : file2MergeIn) {
 			DataStore sds = getDataStore(f);
 			sfcs.add(DataUtilities.collection(sds.getFeatureSource(sds.getTypeNames()[0]).getFeatures()));

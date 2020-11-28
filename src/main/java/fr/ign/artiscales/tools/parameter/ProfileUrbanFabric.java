@@ -1,14 +1,12 @@
 package fr.ign.artiscales.tools.parameter;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Parameters describing an urban fabric. One different objects for each of the simulated urban scene. Must be set in a .json file and then parse into either constructor or static
@@ -66,8 +64,8 @@ public class ProfileUrbanFabric {
 		int iMaximalArea = 999, iDecompositionLevelWithoutStreet = 999, iLargeStreetLevel = 999, iStreetWidth = 999,
 				iHarmonyCoeff = 999, iLargeStreetWidth = 999, iMinimalWidthContactRoad = 999;
 		for (int i = 0; i < firstLine.length; i++) {
-			String indice = firstLine[i];
-			switch (indice) {
+			String index = firstLine[i];
+			switch (index) {
 			case "maximalArea":
 				iMaximalArea = i;
 				break;
@@ -91,13 +89,13 @@ public class ProfileUrbanFabric {
 				break;
 			}
 		}
-		this.maximalArea = Double.valueOf(line[iMaximalArea]);
-		this.minimalWidthContactRoad = Double.valueOf(line[iMinimalWidthContactRoad]);
-		this.streetWidth = Double.valueOf(line[iStreetWidth]);
-		this.largeStreetWidth = Double.valueOf(line[iLargeStreetWidth]);
-		this.largeStreetLevel = Integer.valueOf(line[iLargeStreetLevel]);
-		this.decompositionLevelWithoutStreet = Integer.valueOf(line[iDecompositionLevelWithoutStreet]);
-		this.harmonyCoeff = Double.valueOf(line[iHarmonyCoeff]);
+		this.maximalArea = Double.parseDouble(line[iMaximalArea]);
+		this.minimalWidthContactRoad = Double.parseDouble(line[iMinimalWidthContactRoad]);
+		this.streetWidth = Double.parseDouble(line[iStreetWidth]);
+		this.largeStreetWidth = Double.parseDouble(line[iLargeStreetWidth]);
+		this.largeStreetLevel = Integer.parseInt(line[iLargeStreetLevel]);
+		this.decompositionLevelWithoutStreet = Integer.parseInt(line[iDecompositionLevelWithoutStreet]);
+		this.harmonyCoeff = Double.parseDouble(line[iHarmonyCoeff]);
 	}
 
 	public String getNameBuildingType() {
@@ -155,7 +153,7 @@ public class ProfileUrbanFabric {
 				+ largeStreetLevel + ", decompositionLevelWithoutStreet=" + decompositionLevelWithoutStreet + ", lenDriveway=" + lenDriveway + "]";
 	}
 
-	public static ProfileUrbanFabric convertJSONtoProfile(File jsonFile) throws JsonParseException, JsonMappingException, IOException {
+	public static ProfileUrbanFabric convertJSONtoProfile(File jsonFile) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		InputStream fileInputStream = new FileInputStream(jsonFile);

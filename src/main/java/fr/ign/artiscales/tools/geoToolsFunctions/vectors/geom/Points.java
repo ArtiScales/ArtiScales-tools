@@ -1,6 +1,7 @@
 package fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -17,6 +18,6 @@ public class Points {
 			Coordinate proj = segment.closestPoint(p);
 			list.add(new ImmutablePair<>(proj, proj.distance(p)));
 		}
-		return list.stream().min((a, b) -> a.getRight().compareTo(b.getRight())).get().getLeft();
+		return list.stream().min(Comparator.comparing(Pair::getRight)).get().getLeft();
 	}
 }
