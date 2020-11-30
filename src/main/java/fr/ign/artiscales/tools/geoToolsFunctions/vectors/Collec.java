@@ -110,6 +110,10 @@ public class Collec {
 		}
 	}
 
+	public static Long getCollectionAttributeCount(SimpleFeatureCollection sfc, String attributeName, String attribute) {
+		return Arrays.stream(sfc.toArray(new SimpleFeature[0])).filter(feat -> String.valueOf(feat.getAttribute(attributeName)).equals(attribute)).count();
+	}
+
 	/**
 	 * Return the sum of area of every features of a simpleFeatureCollection
 	 * 
@@ -750,7 +754,7 @@ public class Collec {
 			StringBuilder val = new StringBuilder();
 			for (String attribute : attributes)
 				try {
-					val.append("-").append(((String) sf.getAttribute(attribute)).replace(",", "-"));
+					val.append("-").append((String.valueOf(sf.getAttribute(attribute))).replace(",", "-"));
 				} catch (Exception ignored) {
 				}
 			if (val.toString().startsWith("-"))

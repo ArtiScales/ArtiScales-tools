@@ -18,15 +18,30 @@ import org.opengis.feature.type.GeometryDescriptor;
 import java.util.List;
 
 public class CountPointInPolygon {
-
+	/**
+	 * Count points that are included in every polygons of a collection. Doesn't keep the polygon attributes.
+	 * @param pointsCollec Point collection
+	 * @param polygonsCollec Polygon collection
+	 * @return the Polygon collection with a new field <i>count</i>.
+	 */
 	public static SimpleFeatureCollection countPointInPolygon(SimpleFeatureCollection pointsCollec, SimpleFeatureCollection polygonsCollec) {
-		return countPointInPolygon(pointsCollec, polygonsCollec, false, null, null);
+		return countPointInPolygon(pointsCollec, polygonsCollec, false, null, null,null);
 	}
 
+	/**
+	 * Count points that are included in every polygons of a collection
+	 * @param pointsCollec Point collection
+	 * @param polygonsCollec Polygon collection
+	 * @param keepAttributes If true, keep every attributes of the input polygon collection
+	 * @param attrsToDescriptiveStat List of attributes for which descriptive statistics will be calculated
+	 * @param attrsToCensusStat List of attributes for which every occurrence will be counted
+	 * @param statsToDo Which descriptive statistics are calculated
+	 * @return the Polygon collection with a new field <i>count</i> and new fields depending on the attributes calculations
+	 */
 	public static SimpleFeatureCollection countPointInPolygon(SimpleFeatureCollection pointsCollec, SimpleFeatureCollection polygonsCollec,
-			boolean keepAttributes, List<String> attrsToStat, List<StatisticOperation> statsToDo) {
-		// enrich the output wanted schema with wanted stats about attributes
+			boolean keepAttributes, List<String> attrsToDescriptiveStat,List<String> attrsToCensusStat, List<StatisticOperation> statsToDo) {
 
+		// enrich the output wanted schema with wanted stats about attributes
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		SimpleFeatureType schemaOut = polygonsCollec.getSchema();
 		sfTypeBuilder.setName(schemaOut.getName()+"-counted-"+pointsCollec.getSchema().getName());
@@ -50,8 +65,14 @@ public class CountPointInPolygon {
 					continue;
 				sfTypeBuilder.add(attr);
 			}
-		if (attrsToStat != null && !attrsToStat.isEmpty())
-			for (String attrToStat : attrsToStat)
+		// Count/census stats
+		if (attrsToCensusStat != null && !attrsToCensusStat.isEmpty())
+			for (String attrToCensusStat : attrsToCensusStat)
+				for (String attr : Collec.getEachUniqueFieldFromSFC(pointsCollec, attrToCensusStat))
+					sfTypeBuilder.add(attrToCensusStat + "-" + attr, Integer.class);
+		// Descriptive stats
+		if (attrsToDescriptiveStat != null && !attrsToDescriptiveStat.isEmpty())
+			for (String attrToStat : attrsToDescriptiveStat)
 				for (StatisticOperation statToDo : statsToDo)
 					sfTypeBuilder.add(attrToStat + "-" + statToDo, Double.class);
 		SimpleFeatureBuilder sfb = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
@@ -70,8 +91,15 @@ public class CountPointInPolygon {
 				// select intersecting points
 				SimpleFeatureCollection pts = Collec.selectIntersection(pointsCollec, (Geometry) poly.getDefaultGeometry());
 				sfb.set("count", pts.size());
-				if (attrsToStat != null && !attrsToStat.isEmpty())
-					for (String attrToStat : attrsToStat) {
+
+				//Counts values
+				if (attrsToCensusStat != null && !attrsToCensusStat.isEmpty())
+					for (String attrToCensusStat : attrsToCensusStat)
+						for (String attr : Collec.getEachUniqueFieldFromSFC(pts, attrToCensusStat))
+							sfb.set(attrToCensusStat + "-" + attr, Collec.getCollectionAttributeCount(pts, attrToCensusStat, attr));
+				//Create statistics
+				if (attrsToDescriptiveStat != null && !attrsToDescriptiveStat.isEmpty())
+					for (String attrToStat : attrsToDescriptiveStat) {
 						if (statsToDo.contains(StatisticOperation.MEAN))
 							sfb.set(attrToStat + "-" + StatisticOperation.MEAN,
 									Collec.getCollectionAttributeDescriptiveStat(pts, attrToStat, StatisticOperation.MEAN));
