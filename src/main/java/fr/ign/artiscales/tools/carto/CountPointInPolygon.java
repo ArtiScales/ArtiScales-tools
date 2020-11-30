@@ -5,14 +5,15 @@ import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.feature.AttributeTypeBuilder;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.MultiPolygon;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
+import org.opengis.feature.type.GeometryDescriptor;
 
 import java.util.List;
 
@@ -25,13 +26,22 @@ public class CountPointInPolygon {
 	public static SimpleFeatureCollection countPointInPolygon(SimpleFeatureCollection pointsCollec, SimpleFeatureCollection polygonsCollec,
 			boolean keepAttributes, List<String> attrsToStat, List<StatisticOperation> statsToDo) {
 		// enrich the output wanted schema with wanted stats about attributes
+
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
 		SimpleFeatureType schemaOut = polygonsCollec.getSchema();
+		sfTypeBuilder.setName(schemaOut.getName()+"-counted-"+pointsCollec.getSchema().getName());
 		String geomName = schemaOut.getGeometryDescriptor().getLocalName();
-		sfTypeBuilder.add(geomName, MultiPolygon.class);
-		sfTypeBuilder.setName(schemaOut.getName());
+//		sfTypeBuilder.add(geomName, MultiPolygon.class);
+//		sfTypeBuilder.setDefaultGeometry(geomName);
 		sfTypeBuilder.setCRS(schemaOut.getCoordinateReferenceSystem());
-		sfTypeBuilder.setDefaultGeometry(geomName);
+		GeometryDescriptor gd = schemaOut.getGeometryDescriptor();
+		AttributeTypeBuilder attributeBuilder = new AttributeTypeBuilder();
+		attributeBuilder.init(gd);
+		attributeBuilder.setCRS(schemaOut.getCoordinateReferenceSystem());
+		GeometryDescriptor att = (GeometryDescriptor) attributeBuilder.buildDescriptor(gd.getLocalName());
+		sfTypeBuilder.add(att);
+		sfTypeBuilder.setDefaultGeometry(att.getLocalName());
+
 		sfTypeBuilder.add("count", Integer.class);
 		// set optional attributes
 		if (keepAttributes)

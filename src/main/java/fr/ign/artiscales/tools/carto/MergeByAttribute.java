@@ -28,14 +28,14 @@ public class MergeByAttribute {
 			return null;
 		}
 		HashMap<String, SimpleFeatureCollection> merges = new HashMap<>();
-		for (String uniqueVal : Collec.getEachUniqueFieldFromSFC(in, attribute)) {
+		Collec.getEachUniqueFieldFromSFC(in, attribute).forEach(uniqueVal -> {
 			DefaultFeatureCollection list = new DefaultFeatureCollection();
 			Arrays.stream(in.toArray(new SimpleFeature[0])).forEach(sf -> {
 				if (sf.getAttribute(attribute).equals(uniqueVal))
 					list.add(sf);
-			}) ;
+			});
 			merges.put(uniqueVal, list);
-		}
+		});
 		for (String val : merges.keySet()) 
 			result.add(Collec.unionSFC(merges.get(val), attribute, val));
 		return result;
