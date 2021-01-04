@@ -3,10 +3,7 @@ package fr.ign.artiscales.tools.parameter;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 /**
  * Parameters describing an urban fabric. One different objects for each of the simulated urban scene. Must be set in a .json file and then parse into either constructor or static
@@ -23,6 +20,19 @@ public class ProfileUrbanFabric {
 	double lenDriveway, noise, harmonyCoeff = 0.5 ;
 
 	static String profileFolder;
+
+	public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
+							  double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet) {
+		super();
+		this.nameBuildingType = nameBuildingType;
+		this.maximalArea = maximalArea;
+		this.minimalArea = minimalArea;
+		this.minimalWidthContactRoad = minimalWidthContactRoad;
+		this.streetWidth = smallStreetWidth;
+		this.largeStreetWidth = largeStreetWidth;
+		this.largeStreetLevel = largeStreetLevel;
+		this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
+	}
 
 	public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
 			double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet, double lenDriveway,
@@ -43,8 +53,42 @@ public class ProfileUrbanFabric {
 		this.maxWidth = maxWidth;
 	}
 
-	public ProfileUrbanFabric(String nameBuildingType, int maximalArea, int minimalArea, int maximalWidth, int streetWidth,
-			int decompositionLevelWithoutStreet, int lenDriveway) {
+	/**
+	 * For Straight Skeleton
+	 * @param nameBuildingType
+	 * @param maximalArea
+	 * @param minimalArea
+	 * @param maxDepth
+	 * @param maxDistanceForNearestRoad
+	 * @param minWidth
+	 * @param maxWidth
+	 * @param streetWidth
+	 */
+	public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea,
+							  double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth, double streetWidth) {
+		super();
+		this.nameBuildingType = nameBuildingType;
+		this.maximalArea = maximalArea;
+		this.minimalArea = minimalArea;
+		this.streetWidth = streetWidth;
+		this.maxDepth = maxDepth;
+		this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
+		this.minWidth = minWidth;
+		this.maxWidth = maxWidth;
+	}
+
+	/**
+	 * Builder for Oriented Bounding Box
+	 * @param nameBuildingType
+	 * @param maximalArea
+	 * @param minimalArea
+	 * @param maximalWidth
+	 * @param streetWidth
+	 * @param decompositionLevelWithoutStreet
+	 * @param largeStreetLevel
+	 */
+	public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double streetWidth,
+			int largeStreetLevel, int decompositionLevelWithoutStreet) {
 		super();
 		this.nameBuildingType = nameBuildingType;
 		this.maximalArea = maximalArea;
@@ -52,8 +96,24 @@ public class ProfileUrbanFabric {
 		this.minimalWidthContactRoad = maximalWidth;
 		this.largeStreetWidth = streetWidth;
 		this.streetWidth = streetWidth;
-		this.largeStreetLevel = 999;
+		this.largeStreetLevel = largeStreetLevel;
 		this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
+	}
+
+	/**
+	 * Builder for flag cut
+	 * @param nameBuildingType
+	 * @param maximalArea
+	 * @param minimalArea
+	 * @param maximalWidth
+	 * @param lenDriveway
+	 */
+	public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double lenDriveway) {
+		super();
+		this.nameBuildingType = nameBuildingType;
+		this.maximalArea = maximalArea;
+		this.minimalArea = minimalArea;
+		this.minimalWidthContactRoad = maximalWidth;
 		this.lenDriveway = lenDriveway;
 	}
 
@@ -160,6 +220,14 @@ public class ProfileUrbanFabric {
 		ProfileUrbanFabric profile = mapper.readValue(fileInputStream, ProfileUrbanFabric.class);
 		fileInputStream.close();
 		return profile;
+	}
+
+	public File exportToJSON(File f) throws IOException {
+		String json = new ObjectMapper().writeValueAsString(this);
+		FileWriter w = new FileWriter(f);
+		w.append(json);
+		w.close();
+		return f;
 	}
 
 	public double getNoise() {

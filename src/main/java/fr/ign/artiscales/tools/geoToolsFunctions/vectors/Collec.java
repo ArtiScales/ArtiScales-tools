@@ -80,7 +80,7 @@ public class Collec {
 
 	/**
 	 * Get statistics about a field of a collection
-	 * 
+	 *
 	 * @param sfc input {@link SimpleFeatureCollection}
 	 * * @param attribute
 	 * @return
@@ -89,9 +89,11 @@ public class Collec {
 		try {
 			DescriptiveStatistics ds = new DescriptiveStatistics();
 			try (SimpleFeatureIterator polyIt = sfc.features()) {
-				while (polyIt.hasNext())
-					ds.addValue(Double.parseDouble(String.valueOf(polyIt.next().getAttribute(attribute))));
-			} catch (ClassCastException e) {
+				while (polyIt.hasNext()) {
+                    String s = String.valueOf(polyIt.next().getAttribute(attribute));
+                    ds.addValue(Double.parseDouble((s == null || s.equals("null")) ? "0" : s));
+                }
+            } catch (ClassCastException e) {
 				System.out.println("Cannot calculate mean for " + attribute + ". Might be that the filed values are not numbers");
 				return 0;
 			}
@@ -110,13 +112,19 @@ public class Collec {
 		}
 	}
 
-	public static Long getCollectionAttributeCount(SimpleFeatureCollection sfc, String attributeName, String attribute) {
-		return Arrays.stream(sfc.toArray(new SimpleFeature[0])).filter(feat -> String.valueOf(feat.getAttribute(attributeName)).equals(attribute)).count();
+	public static int getCollectionAttributeCount(SimpleFeatureCollection sfc, String attributeName, String attribute) {
+//		return Arrays.stream(sfc.toArray(new SimpleFeature[0])).filter(feat -> String.valueOf(feat.getAttribute(attributeName)).equals(attribute)).count();
+		return getCollectionAttributeCount( sfc,  attributeName,  attribute, CommonFactoryFinder.getFilterFactory2());
+	}
+
+	public static int getCollectionAttributeCount(SimpleFeatureCollection sfc, String attributeName, String attribute, FilterFactory2 ff) {
+//		return Arrays.stream(sfc.toArray(new SimpleFeature[0])).filter(feat -> String.valueOf(feat.getAttribute(attributeName)).equals(attribute)).count();
+		return sfc.subCollection(ff.like(ff.property(attributeName),attribute)).size();
 	}
 
 	/**
 	 * Return the sum of area of every features of a simpleFeatureCollection
-	 * 
+	 *
 	 * @param parcels
 	 *            input {@link SimpleFeatureCollection}
 	 * @return The sum of area of every features
@@ -134,7 +142,7 @@ public class Collec {
 
 	/**
 	 * clean the {@link SimpleFeatureCollection} of feature which area is inferior to areaMin
-	 * 
+	 *
 	 * @param collecIn
 	 *            Input {@link SimpleFeatureCollection}
 	 * @param areaMin
@@ -180,7 +188,7 @@ public class Collec {
 
 	/**
 	 * get the corresponding Data Store looking the file's attribute
-	 * 
+	 *
 	 * @param f
 	 * @return
 	 * @throws IOException
@@ -200,7 +208,7 @@ public class Collec {
 
 	/**
 	 * Export a simple feature collection. Overwrite file if already exists
-	 * 
+	 *
 	 * @param toExport
 	 * @param fileOut
 	 * @return the ShapeFile
@@ -222,7 +230,7 @@ public class Collec {
 
 	/**
 	 * Export a simple feature collection. If the shapefile already exists, either overwrite it or merge it with the existing shapefile.
-	 * 
+	 *
 	 * @param toExport
 	 * @param fileOut
 	 * @return the ShapeFile
@@ -298,10 +306,10 @@ public class Collec {
 	}
 
 	public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws IOException {
-		ShapefileDataStore shpDSZone = new ShapefileDataStore(boxFile.toURI().toURL());
-		Geometry bBox = Geom.unionSFC(DataUtilities.collection(shpDSZone.getFeatureSource().getFeatures()));
+		DataStore dsZone = getDataStore(boxFile);
+		Geometry bBox = Geom.unionSFC(DataUtilities.collection(dsZone.getFeatureSource(dsZone.getTypeNames()[0]).getFeatures()));
 		SimpleFeatureCollection result = selectIntersection(SFCIn, bBox, distance);
-		shpDSZone.dispose();
+		dsZone.dispose();
 		return result;
 	}
 
@@ -322,7 +330,7 @@ public class Collec {
 
 	/**
 	 * Create a {@link SimpleFeatureCollection} with features which designed attribute field matches a precise attribute value.
-	 * 
+	 *
 	 * @param sFCToDivide
 	 *            SimpleFeatureCollection to sort
 	 * @param fieldName
@@ -340,7 +348,7 @@ public class Collec {
 
 	/**
 	 * Create a {@link SimpleFeatureCollection} with features which a list of attribute field matches a list of strings. The index of the couple fieldName/attribute must match.
-	 * 
+	 *
 	 * @param sFCToDivide
 	 *            SimpleFeatureCollection to sort
 	 * @param fieldNames
@@ -371,7 +379,7 @@ public class Collec {
 
 	/**
 	 * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.
-	 * 
+	 *
 	 * @param sFCToSort
 	 *            SimpleFeature
 	 * @return The sorted {@link SimpleFeatureCollection}
@@ -388,7 +396,7 @@ public class Collec {
 
 	/**
 	 * Check if a given {@link SimpleFeature} intersects the input {@link SimpleFeatureCollection}.
-	 * 
+	 *
 	 * @param inputFeat
 	 *            input {@link SimpleFeature}
 	 * @param inputSFC
@@ -410,7 +418,7 @@ public class Collec {
 
 	/**
 	 * Check if the given Simple Feature contains the given field name. Uses the {@link #isSchemaContainsAttribute(SimpleFeatureType, String)} method.
-	 * 
+	 *
 	 * @param feat
 	 *            input feature
 	 * @param attributeFiledName
@@ -423,7 +431,7 @@ public class Collec {
 
 	/**
 	 * Check if the given collection contains the given field name.
-	 * 
+	 *
 	 * @param collec
 	 *            Input SimpleFeatureCollecton
 	 * @param attributeFiledName
@@ -436,7 +444,7 @@ public class Collec {
 
 	/**
 	 * Check if the given schema contains the given field name.
-	 * 
+	 *
 	 * @param schema
 	 *            SimpleFeatureType schema
 	 * @param attributeFiledName
@@ -450,7 +458,7 @@ public class Collec {
 	/**
 	 * Convert a collection of simple feature (which geometries are either {@link Polygon} or {@link MultiPolygon}) to a list of {@link LineString}. It takes into account the
 	 * exterior and the interior lines.
-	 * 
+	 *
 	 * @param inputSFC input {@link SimpleFeatureCollection}
 	 * @return A list of {@link LineString}
 	 */
@@ -487,7 +495,7 @@ public class Collec {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param sfcToSort
 	 * @param sfcIntersection
 	 * @return
@@ -512,7 +520,7 @@ public class Collec {
 	/**
 	 * Get the value of a feature's field from a SimpleFeatureCollection that intersects a given Simplefeature (that is most of the time, a parcel or building). If the given
 	 * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
-	 * 
+	 *
 	 * @param geometry
 	 *            input {@link Geometry}
 	 * @param sfc
@@ -529,7 +537,7 @@ public class Collec {
 	/**
 	 * Get the {@link SimpleFeature} out of a {@link SimpleFeatureCollection} that intersects a given Geometry (that is most of the time, a parcel or building). If the given
 	 * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
-	 * 
+	 *
 	 * @param geometry
 	 *            input {@link Geometry}
 	 * @param inputSFC
@@ -567,7 +575,7 @@ public class Collec {
 	/**
 	 * Get the {@link SimpleFeature} out of a {@link SimpleFeatureCollection} that intersects a given Geometry (that is most of the time, a parcel or building). If the given
 	 * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection. Reduce the precision of the {@link Geometry}s
-	 * 
+	 *
 	 * @param geometry
 	 *            input {@link Geometry}
 	 * @param inputSFC
@@ -604,7 +612,7 @@ public class Collec {
 
 	/**
 	 * Discretize the input {@link SimpleFeatureCollection} by generating a grid and cuting features by it. Should preserve attributes (untested).
-	 * 
+	 *
 	 * @param in
 	 *            Input {@link SimpleFeatureCollection}
 	 * @param gridResolution
@@ -735,7 +743,7 @@ public class Collec {
 
 	/**
 	 * Get the unique values of a SimpleFeatureCollection from a combination of fields. Each fields are separated with a "-" character.
-	 * 
+	 *
 	 * @param sfcIn
 	 *            input {@link SimpleFeatureCollection}
 	 * @param attributes
@@ -767,7 +775,7 @@ public class Collec {
 
 	/**
 	 * Get the unique values of a SimpleFeatureCollection from a single field.
-	 * 
+	 *
 	 * @param sfcIn
 	 *            input {@link SimpleFeatureCollection}
 	 * @param attribute
@@ -781,7 +789,7 @@ public class Collec {
 
 	/**
 	 * Get the unique values of a SimpleFeatureCollection from a single field.
-	 * 
+	 *
 	 * @param sfcIn
 	 *            input {@link SimpleFeatureCollection}
 	 * @param attribute
@@ -795,7 +803,7 @@ public class Collec {
 
 	/**
 	 * Return a SimpleFeature with the merged geometries and the schema of the input collection but no attribute
-	 * 
+	 *
 	 * @param collec
 	 *            input {@link SimpleFeatureCollection}
 	 * @return a {@link SimpleFeature} with no values
@@ -808,7 +816,7 @@ public class Collec {
 
 	/**
 	 * Return a SimpleFeature with the merged geometries and the schema of the input collection but no attribute
-	 * 
+	 *
 	 * @param collec
 	 *            input {@link SimpleFeatureCollection}
 	 * @return a {@link SimpleFeature} with no values
@@ -821,7 +829,7 @@ public class Collec {
 
 	/**
 	 * Return a SimpleFeature with the schema of the collection with an attribute on the corresponding field.
-	 * 
+	 *
 	 * @param collec
 	 *            input {@link SimpleFeatureCollection}
 	 * @param field
