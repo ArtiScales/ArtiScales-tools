@@ -1,5 +1,7 @@
 package fr.ign.artiscales.tools.geoToolsFunctions;
 
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
+import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.referencing.CRS;
@@ -11,8 +13,6 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.referencing.FactoryException;
-
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 
 public class Schemas {
 
@@ -132,6 +132,24 @@ public class Schemas {
 		for (AttributeDescriptor attr : feat.getFeatureType().getAttributeDescriptors())
 			builder.set(attr.getName(), feat.getAttribute(attr.getName()));
 		return builder;
+	}
+
+	/**
+	 * Return a {@link SimpleFeatureBuilder} out of an existing {@link org.geotools.data.simple.SimpleFeatureCollection} and add a {@link Float} type attribute.
+	 * @param sfcIn
+	 * @param attributeName name of the attribute
+	 * @return the SFC with a float column
+	 */
+	public static SimpleFeatureBuilder addFloatColToSFB(SimpleFeatureCollection sfcIn, String attributeName) {
+		SimpleFeatureType schema = sfcIn.getSchema();
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		for (AttributeDescriptor attr : schema.getAttributeDescriptors())
+			sfTypeBuilder.add(attr);
+		sfTypeBuilder.add(attributeName, Float.class);
+		sfTypeBuilder.setName(schema.getName());
+		sfTypeBuilder.setCRS(schema.getCoordinateReferenceSystem());
+		sfTypeBuilder.setDefaultGeometry(schema.getGeometryDescriptor().getLocalName());
+		return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
 	}
 
 	public static String getEpsg() {

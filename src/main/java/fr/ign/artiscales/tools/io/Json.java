@@ -39,7 +39,7 @@ public class Json {
 		JsonFactory factory = new JsonFactory();
 		JsonParser parser = factory.createParser(in);
 		JsonToken token = parser.nextToken();
-		HashMap<String, Object> firstObject = new HashMap<>();
+		HashMap<String, Object> firstObject = new HashMap<String, Object>();
 		boolean write = false;
 		String firstObjectName = "";
 		try {
@@ -49,7 +49,8 @@ public class Json {
 					firstObjectName = parser.getCurrentName();
 					write = true;
 				}
-				if (token == JsonToken.END_OBJECT && parser.getCurrentName().equals(firstObjectName))
+				if (token == JsonToken.END_OBJECT && parser.getCurrentName() == firstObjectName)
+					// IntelliJ tells == should be replaced by equals() and I tend to agree with that, but then it does't work... todo resolve that mystery someday
 					break;
 				if (token == JsonToken.FIELD_NAME && write) {
 					String key = parser.getCurrentName();

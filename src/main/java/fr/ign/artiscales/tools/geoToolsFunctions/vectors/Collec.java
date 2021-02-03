@@ -27,6 +27,7 @@ import org.locationtech.jts.geom.*;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.FilterVisitor;
@@ -42,7 +43,12 @@ public class Collec {
 
 	private static String defaultGISFileType = ".gpkg";
 
-	// public static void main(String[] args) throws Exception {
+//	 public static void main(String[] args) throws Exception {
+//		 DataStore ds = Collec.getDataStore(new File("/home/mc/Documents/inria/donnees/IGN/batVeme.gpkg"));
+// 			List<String> attrs = Arrays.asList("HAUTEUR", "NB_LOGTS");
+//		 SimpleFeatureCollection conv = convertAttributeToFloat(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(),attrs );
+//		 exportSFC(conv, new File("/tmp/conv.gpkg"));
+//	 }
 	// String[] vals = { "DEPCOM", "LIBELLE" };
 	// DataStore ds = Geopackages.getDataStore(new File("/home/thema/Documents/MC/workspace/ParcelManager/src/main/resources/ParcelComparison/zoning.gpkg"));
 	// SimpleFeatureCollection sfc = ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures();
@@ -77,6 +83,66 @@ public class Collec {
 	// Collec.exportSFC(parcel2, new File("/tmp/shp2.gpkg"));
 	// ds.dispose();
 	// }
+
+	public static SimpleFeatureCollection convertAttributeToFloat(SimpleFeatureCollection sfcIn, String attributesToConvertName) throws IOException {
+	 	return convertAttributeToFloat(sfcIn, Arrays.asList(attributesToConvertName));
+	}
+
+	/**
+	 * Convert a list of attributes to float (needed for rasterization - really?)
+	 * @param sfcIn
+	 * @param attributesToConvertName
+	 * @return
+	 * @throws IOException
+	 */
+	public static SimpleFeatureCollection convertAttributeToFloat(SimpleFeatureCollection sfcIn, List<String> attributesToConvertName) throws IOException {
+		DefaultFeatureCollection df = new DefaultFeatureCollection();
+
+		SimpleFeatureType schema = sfcIn.getSchema();
+		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+		for (AttributeDescriptor attr : schema.getAttributeDescriptors())
+			if (!attributesToConvertName.contains(attr.getLocalName()))
+				sfTypeBuilder.add(attr);
+		for (String attributeToConvertName : attributesToConvertName)
+			sfTypeBuilder.add(attributeToConvertName, Float.class);
+
+		sfTypeBuilder.setName(schema.getName());
+		sfTypeBuilder.setCRS(schema.getCoordinateReferenceSystem());
+		String geomName = schema.getGeometryDescriptor().getLocalName();
+		sfTypeBuilder.setDefaultGeometry(geomName);
+		SimpleFeatureBuilder newSchema = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+		try (SimpleFeatureIterator it = sfcIn.features()) {
+			while (it.hasNext()) {
+				SimpleFeature feat = it.next();
+				newSchema.set(geomName, feat.getDefaultGeometry());
+				for (AttributeDescriptor attribute : feat.getFeatureType().getAttributeDescriptors()) {
+					if (!attributesToConvertName.contains(attribute.getLocalName()))
+						newSchema.set(attribute.getLocalName(), feat.getAttribute(attribute.getName()));
+					else {
+						Object at = feat.getAttribute(attribute.getName());
+						Float val;
+						if (at instanceof Double)
+							val = ((Double) at).floatValue();
+						else if (at instanceof Float)
+							val = (Float) at;
+						else if (at instanceof Integer)
+							val = ((Integer) feat.getAttribute(attribute.getName())).floatValue();
+						else if(at == null)
+							val = null;
+						else
+							val = Float.valueOf((String) at);
+						newSchema.set(attribute.getLocalName(), val == null ? null : val.floatValue());
+					}
+				}
+				df.add(newSchema.buildFeature(Attribute.makeUniqueId()));
+			}
+		} catch (Error e) {
+			e.printStackTrace();
+			System.out.println("Collec.convertAttributeToFloat: Impossible to cast " + attributesToConvertName + " to float. Input SFC returned");
+			return sfcIn;
+		}
+		return df.collection();
+	}
 
 	/**
 	 * Get statistics about a field of a collection
@@ -321,6 +387,10 @@ public class Collec {
 
 	public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox) {
 		return selectIntersection(SFCIn, Geom.unionSFC(bBox));
+	}
+
+	public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, SimpleFeature feat) {
+		return selectIntersection(SFCIn, (Geometry) feat.getDefaultGeometry());
 	}
 
 	public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, Geometry bBox) {
