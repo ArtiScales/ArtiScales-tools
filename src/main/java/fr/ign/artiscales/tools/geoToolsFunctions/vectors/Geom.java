@@ -2,6 +2,7 @@ package fr.ign.artiscales.tools.geoToolsFunctions.vectors;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
@@ -45,7 +46,7 @@ public class Geom {
 		SimpleFeature feature = sfBuilder.buildFeature(Attribute.makeUniqueId());
 		DefaultFeatureCollection dFC = new DefaultFeatureCollection();
 		dFC.add(feature);
-		return Collec.exportSFC(dFC.collection(), fileName);
+		return CollecMgmt.exportSFC(dFC.collection(), fileName);
 	}
 	
 	/**
@@ -57,7 +58,7 @@ public class Geom {
 	 * @throws IOException
 	 */
 	public static File exportGeom(List<? extends Geometry> geoms, File fileName) throws IOException {
-		return Collec.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon(Collec.getDefaultGeomName())), fileName);
+		return CollecMgmt.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon(CollecMgmt.getDefaultGeomName())), fileName);
 	}
 	
 	/**

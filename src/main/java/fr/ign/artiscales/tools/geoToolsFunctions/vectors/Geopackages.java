@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
 import org.geotools.data.DataUtilities;
@@ -61,7 +62,7 @@ public class Geopackages {
 		params.put("create spatial index", Boolean.TRUE);
 		DataStore newDataStore = DataStoreFinder.getDataStore(params);
 		newDataStore.createSchema(ft);
-		return Collec.makeTransaction(newDataStore, toExport,  fileOut, ft);
+		return CollecMgmt.makeTransaction(newDataStore, toExport,  fileOut, ft);
 	}
 	
 	public static File mergeGpkg(SimpleFeatureCollection toAdd, File existingGpkg) throws IOException {
@@ -69,7 +70,7 @@ public class Geopackages {
 		Files.copy(existingGpkg.toPath(), new FileOutputStream(tmpFile));
 		Files.delete(existingGpkg.toPath());
 		DataStore ds = getDataStore(tmpFile);
-		Collec.exportSFC(Collec.mergeSFC(Arrays.asList(toAdd, ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures()),
+		CollecMgmt.exportSFC(CollecMgmt.mergeSFC(Arrays.asList(toAdd, ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures()),
 				true, null), existingGpkg);
 		ds.dispose();
 		Files.delete(tmpFile.toPath());
@@ -107,6 +108,6 @@ public class Geopackages {
 			sfcs.add(DataUtilities.collection(sds.getFeatureSource(sds.getTypeNames()[0]).getFeatures()));
 			sds.dispose();
 		}
-		return Collec.exportSFC(Collec.mergeSFC(sfcs, schemaRef, keepAttributes, boundFile), fileOut, ".gpkg", true);
+		return CollecMgmt.exportSFC(CollecMgmt.mergeSFC(sfcs, schemaRef, keepAttributes, boundFile), fileOut, ".gpkg", true);
 	}
 }

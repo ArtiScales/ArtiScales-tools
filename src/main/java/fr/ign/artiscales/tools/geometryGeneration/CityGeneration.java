@@ -3,9 +3,9 @@ package fr.ign.artiscales.tools.geometryGeneration;
 import fr.ign.artiscales.tools.FeaturePolygonizer;
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
 import org.geotools.data.DataStore;
 import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
@@ -50,7 +50,7 @@ public class CityGeneration {
         ShapefileDataStore parcelSDS = new ShapefileDataStore(parcelFile.toURI().toURL());
         SimpleFeatureCollection block = createUrbanBlock(parcelSDS.getFeatureSource().getFeatures());
         parcelSDS.dispose();
-        return Collec.exportSFC(block, new File(outFolder, "block.shp"));
+        return CollecMgmt.exportSFC(block, new File(outFolder, "block.shp"));
     }
 
     /**
@@ -68,7 +68,7 @@ public class CityGeneration {
             return result;
         }
         DataStore parcelDS = Geopackages.getDataStore(parcelFile);
-        Collec.exportSFC(createUrbanBlock(Objects.requireNonNull(parcelDS).getFeatureSource(parcelDS.getTypeNames()[0]).getFeatures()), result);
+        CollecMgmt.exportSFC(createUrbanBlock(Objects.requireNonNull(parcelDS).getFeatureSource(parcelDS.getTypeNames()[0]).getFeatures()), result);
         parcelDS.dispose();
         return result;
     }

@@ -1,7 +1,7 @@
 package fr.ign.artiscales.tools.geoToolsFunctions.rasters;
 
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
 import it.geosolutions.jaiext.JAIExt;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
@@ -128,11 +128,11 @@ public class Rasters {
             System.out.println("rasterize: lenght of arrays of attributes and the covNames must be equals. Return null");
             return null;
         }
-        GridCoverage2D ini = VectorToRasterProcess.process(Collec.convertAttributeToFloat(features, (String) attributes[0]), attributes[0], gridDim, bounds, covNames[0], null);
+        GridCoverage2D ini = VectorToRasterProcess.process(CollecMgmt.convertAttributeToFloat(features, (String) attributes[0]), attributes[0], gridDim, bounds, covNames[0], null);
 
         for (int i = 1; i < attributes.length; i++) {
             BandMergeProcess bm = new BandMergeProcess();
-            ini = bm.execute(Arrays.asList(ini, VectorToRasterProcess.process(Collec.convertAttributeToFloat(features, (String) attributes[i]), attributes[i], gridDim, bounds, covNames[i], null)), null, null, null);
+            ini = bm.execute(Arrays.asList(ini, VectorToRasterProcess.process(CollecMgmt.convertAttributeToFloat(features, (String) attributes[i]), attributes[i], gridDim, bounds, covNames[i], null)), null, null, null);
         }
         return ini;
     }
@@ -185,7 +185,7 @@ public class Rasters {
      * @throws IOException writer
      */
     public static void crop(File fileToCut, File envelope, File fileOut) throws IOException {
-        DataStore envDS = Collec.getDataStore(envelope);
+        DataStore envDS = CollecMgmt.getDataStore(envelope);
         writeGeotiff(Rasters.importRaster(fileToCut, Geom.unionSFC(envDS.getFeatureSource(envDS.getTypeNames()[0]).getFeatures())), fileOut);
         envDS.dispose();
     }

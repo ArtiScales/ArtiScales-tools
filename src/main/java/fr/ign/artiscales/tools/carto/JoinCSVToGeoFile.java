@@ -3,8 +3,8 @@ package fr.ign.artiscales.tools.carto;
 import com.opencsv.CSVReader;
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
 import org.geotools.data.DataStore;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -146,6 +146,6 @@ public class JoinCSVToGeoFile {
             problem.printStackTrace();
         }
         reader.close();
-        return Collec.exportSFC(result, outFile);
+        return CollecMgmt.exportSFC(result, outFile);
     }
 }

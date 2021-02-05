@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecTransform;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -72,7 +74,7 @@ public class Shp {
 			sfcs.add(sds.getFeatureSource().getFeatures());
 			sds.dispose();
 		}
-		return Collec.exportSFC(Collec.mergeSFC(sfcs, schemaRef, keepAttributes, boundFile), fileOut, ".shp", true);
+		return CollecMgmt.exportSFC(CollecMgmt.mergeSFC(sfcs, schemaRef, keepAttributes, boundFile), fileOut, ".shp", true);
 	}
 	
 	/**
@@ -85,7 +87,7 @@ public class Shp {
 	 */
 	public static File delTinyParcels(File fileIn, File fileOut, double areaMin) throws IOException {
 		ShapefileDataStore SDSParcel = new ShapefileDataStore(fileIn.toURI().toURL());
-		File result = Collec.exportSFC(Collec.delTinyParcels(SDSParcel.getFeatureSource().getFeatures(), areaMin), fileOut);
+		File result = CollecMgmt.exportSFC(CollecTransform.delTinyParcels(SDSParcel.getFeatureSource().getFeatures(), areaMin), fileOut);
 		SDSParcel.dispose();
 		return result;
 	}
@@ -106,7 +108,7 @@ public class Shp {
 	public static File gridDiscretizeShp(File inFile, File outFile, int gridResolution) throws IOException {
 		ShapefileDataStore sds = new ShapefileDataStore(inFile.toURI().toURL());
 		SimpleFeatureCollection input = sds.getFeatureSource().getFeatures();
-		File result = Collec.exportSFC(Collec.gridDiscretize(input, gridResolution), outFile);
+		File result = CollecMgmt.exportSFC(CollecTransform.gridDiscretize(input, gridResolution), outFile);
 		sds.dispose();
 		return result;
 	}
@@ -114,7 +116,7 @@ public class Shp {
 	public static File snapDatas(File fileIn, File fileOut, SimpleFeatureCollection box) throws IOException {
 		// load the input from the general folder
 		ShapefileDataStore shpDSIn = new ShapefileDataStore(fileIn.toURI().toURL());
-		File result = Collec.exportSFC(Collec.selectIntersection(shpDSIn.getFeatureSource().getFeatures(), Geom.unionSFC(box)), fileOut);
+		File result = CollecMgmt.exportSFC(CollecTransform.selectIntersection(shpDSIn.getFeatureSource().getFeatures(), Geom.unionSFC(box)), fileOut);
 		shpDSIn.dispose();
 		return result;
 	}
@@ -124,8 +126,8 @@ public class Shp {
 		ShapefileDataStore shpDSIn = new ShapefileDataStore(fileIn.toURI().toURL());
 		// load the file to make the bbox and selectin with
 		ShapefileDataStore shpDSZone = new ShapefileDataStore(bBoxFile.toURI().toURL());
-		File result = Collec.exportSFC(
-				Collec.selectIntersection(shpDSIn.getFeatureSource().getFeatures(), Geom.unionSFC(shpDSZone.getFeatureSource().getFeatures())), fileOut);
+		File result = CollecMgmt.exportSFC(
+				CollecTransform.selectIntersection(shpDSIn.getFeatureSource().getFeatures(), Geom.unionSFC(shpDSZone.getFeatureSource().getFeatures())), fileOut);
 		shpDSZone.dispose();
 		shpDSIn.dispose();
 		return result;
@@ -212,7 +214,7 @@ public class Shp {
 		params.put("create spatial index", Boolean.TRUE);
 		ShapefileDataStore newDataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
 		newDataStore.createSchema(ft);
-		File datFile = Collec.makeTransaction(newDataStore, toExport, fileOut, ft);
+		File datFile = CollecMgmt.makeTransaction(newDataStore, toExport, fileOut, ft);
 		file2MergeIn.add(datFile);
 		File result = Shp.mergeVectFiles(file2MergeIn, fileOut);
 		Shp.deleteShp(fileOut.getName().substring(0, fileOut.getName().length() - 4) + "tmp", fileOut.getParentFile());

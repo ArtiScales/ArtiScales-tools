@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
@@ -15,7 +16,6 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.FactoryException;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 
 public class TopologicalGraph {
   List<Node> nodes = new ArrayList<>();
@@ -83,8 +83,8 @@ public class TopologicalGraph {
 			e.printStackTrace();
 		}
 		sfTypeBuilder.setName(fileOut.getName());
-		sfTypeBuilder.add(Collec.getDefaultGeomName(), geomType);
-		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
+		sfTypeBuilder.add(CollecMgmt.getDefaultGeomName(), geomType);
+		sfTypeBuilder.setDefaultGeometry(CollecMgmt.getDefaultGeomName());
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
 		List<String> attributes = feats.get(0).getAttributes();
 		for (String attribute : attributes)
@@ -92,7 +92,7 @@ public class TopologicalGraph {
 		SimpleFeatureBuilder builder = new SimpleFeatureBuilder(featureType);
 		DefaultFeatureCollection dfc = new DefaultFeatureCollection();
 		for (E element : feats) {
-			builder.set(Collec.getDefaultGeomName(), element.getGeometry());
+			builder.set(CollecMgmt.getDefaultGeomName(), element.getGeometry());
 //			for (int i = 0; i < attributes.size(); i++) {
 //			System.out.println("elttt : "+element.getAttribute(attributes.get(i)));
 //				builder.set(i, element.getAttribute(attributes.get(i)));
@@ -100,7 +100,7 @@ public class TopologicalGraph {
 			dfc.add(builder.buildFeature(Attribute.makeUniqueId()));
 		}
 		try {
-			Collec.exportSFC(dfc, fileOut);
+            CollecMgmt.exportSFC(dfc, fileOut);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

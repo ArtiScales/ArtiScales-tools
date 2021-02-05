@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.geotools.feature.DefaultFeatureCollection;
@@ -25,7 +26,6 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.FactoryException;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 
 public class TopologicalGraph {
   Map<Coordinate, Node> nodes = new HashMap<>();
@@ -178,8 +178,8 @@ public class TopologicalGraph {
 			e.printStackTrace();
 		}
 		sfTypeBuilder.setName(fileOut.getName());
-		sfTypeBuilder.add(Collec.getDefaultGeomName(), geomType);
-		sfTypeBuilder.setDefaultGeometry(Collec.getDefaultGeomName());
+		sfTypeBuilder.add(CollecMgmt.getDefaultGeomName(), geomType);
+		sfTypeBuilder.setDefaultGeometry(CollecMgmt.getDefaultGeomName());
 		SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
 		List<String> attributes = feats.iterator().next().getAttributes();
 		for (String attribute : attributes)
@@ -189,7 +189,7 @@ public class TopologicalGraph {
 			System.out.println(Calendar.getInstance().getTime() + " write geopackage");
 		DefaultFeatureCollection dfc = new DefaultFeatureCollection();
 		for (E element : feats) {
-			builder.set(Collec.getDefaultGeomName(), element.getGeometry());
+			builder.set(CollecMgmt.getDefaultGeomName(), element.getGeometry());
 //			for (int i = 0; i < attributes.size(); i++) {
 //			System.out.println("elttt : "+element.getAttribute(attributes.get(i)));
 //				builder.set(i, element.getAttribute(attributes.get(i)));
@@ -197,7 +197,7 @@ public class TopologicalGraph {
 			dfc.add(builder.buildFeature(Attribute.makeUniqueId()));
 		}
 		try {
-			Collec.exportSFC(dfc, fileOut);
+            CollecMgmt.exportSFC(dfc, fileOut);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

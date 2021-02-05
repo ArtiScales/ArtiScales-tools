@@ -2,7 +2,9 @@ package fr.ign.artiscales.tools.carto;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecTransform;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.OpOnCollec;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -91,7 +93,7 @@ public class CountPointInPolygon {
         HashMap<String, List<String>> uniqueFields = new HashMap<>();
         if (attrsToCensusStat != null && !attrsToCensusStat.isEmpty())
             for (String attrToCensusStat : attrsToCensusStat)
-                for (String attr : Collec.getEachUniqueFieldFromSFC(pointsCollec, attrToCensusStat)) {
+                for (String attr : CollecMgmt.getEachUniqueFieldFromSFC(pointsCollec, attrToCensusStat)) {
                     sfTypeBuilder.add(attrToCensusStat + "-" + attr, Integer.class);
                     List<String> l;
                     if (uniqueFields.get(attrToCensusStat) == null || uniqueFields.get(attrToCensusStat).isEmpty())
@@ -122,7 +124,7 @@ public class CountPointInPolygon {
                         sfb.set(attr.getLocalName(), poly.getAttribute(attr.getLocalName()));
                     }
                 // select intersecting points
-                SimpleFeatureCollection pts = Collec.selectIntersection(pointsCollec, (Geometry) poly.getDefaultGeometry());
+                SimpleFeatureCollection pts = CollecTransform.selectIntersection(pointsCollec, (Geometry) poly.getDefaultGeometry());
                 if (pts.size() == 0) {
                     sfb.set("count" + namePoint, 0);
                     result.add(sfb.buildFeature(Attribute.makeUniqueId()));
@@ -133,25 +135,25 @@ public class CountPointInPolygon {
                 if (attrsToCensusStat != null && !attrsToCensusStat.isEmpty())
                     for (String attrToCensusStat : uniqueFields.keySet())
                         for (String attr : uniqueFields.get(attrToCensusStat))
-                            sfb.set(attrToCensusStat + "-" + attr, Collec.getCollectionAttributeCount(DataUtilities.collection(pts), attrToCensusStat, attr, ff));
+                            sfb.set(attrToCensusStat + "-" + attr, OpOnCollec.getCollectionAttributeCount(DataUtilities.collection(pts), attrToCensusStat, attr, ff));
 
                 //Create statistics
                 if (attrsToDescriptiveStat != null && !attrsToDescriptiveStat.isEmpty())
                     for (String attrToStat : attrsToDescriptiveStat) {
                         if (statsToDo.contains(StatisticOperation.MEAN))
                             sfb.set(attrToStat + "-" + StatisticOperation.MEAN,
-                                    Collec.getCollectionAttributeDescriptiveStat(pts, attrToStat, StatisticOperation.MEAN));
+                                    OpOnCollec.getCollectionAttributeDescriptiveStat(pts, attrToStat, StatisticOperation.MEAN));
                         if (statsToDo.contains(StatisticOperation.MEDIAN))
                             sfb.set(attrToStat + "-" + StatisticOperation.MEDIAN,
-                                    Collec.getCollectionAttributeDescriptiveStat(pts, attrToStat, StatisticOperation.MEDIAN));
+                                    OpOnCollec.getCollectionAttributeDescriptiveStat(pts, attrToStat, StatisticOperation.MEDIAN));
                         if (statsToDo.contains(StatisticOperation.STANDEV))
                             sfb.set(attrToStat + "-" + StatisticOperation.STANDEV,
-                                    Collec.getCollectionAttributeDescriptiveStat(pts, attrToStat, StatisticOperation.STANDEV));
+                                    OpOnCollec.getCollectionAttributeDescriptiveStat(pts, attrToStat, StatisticOperation.STANDEV));
                         if (statsToDo.contains(StatisticOperation.SUM))
                             sfb.set(attrToStat + "-" + StatisticOperation.SUM,
-                                    Collec.getCollectionAttributeDescriptiveStat(pts, attrToStat, StatisticOperation.SUM));
+                                    OpOnCollec.getCollectionAttributeDescriptiveStat(pts, attrToStat, StatisticOperation.SUM));
                         if (statsToDo.contains(StatisticOperation.CENSUS))
-                            sfb.set(attrToStat + "-" + StatisticOperation.CENSUS, Collec.getEachUniqueFieldFromSFC(pts, attrToStat));
+                            sfb.set(attrToStat + "-" + StatisticOperation.CENSUS, CollecMgmt.getEachUniqueFieldFromSFC(pts, attrToStat));
                     }
                 result.add(sfb.buildFeature(Attribute.makeUniqueId()));
             }

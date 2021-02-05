@@ -2,6 +2,7 @@ package fr.ign.artiscales.tools.graph.analysis;
 
 import java.util.Optional;
 
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecTransform;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -20,7 +21,6 @@ import org.locationtech.jts.math.Vector2D;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Collec;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom.Lines;
 
 /**
@@ -82,7 +82,7 @@ public class FindObjectInDirection {
 		}
 		double distance = Double.POSITIVE_INFINITY;
 		SimpleFeature bestcandidateParcel = null;
-		SimpleFeatureIterator iterator = Collec.selectIntersection(collectionToSelect, ls).features();
+		SimpleFeatureIterator iterator = CollecTransform.selectIntersection(collectionToSelect, ls).features();
 //		SimpleFeatureIterator iterator = Collec.getIntersectingSimpleFeatureFromSFC(geometry, inputSFC)ngSimpleFeatureFromSFC(ls, collectionToSelect).;
 		while (iterator.hasNext()) {
 		  SimpleFeature boundaryTemp = iterator.next();
