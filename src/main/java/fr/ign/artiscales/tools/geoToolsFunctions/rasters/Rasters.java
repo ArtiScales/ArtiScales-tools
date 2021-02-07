@@ -26,7 +26,7 @@ import org.opengis.parameter.GeneralParameterValue;
 import org.opengis.parameter.ParameterValue;
 import org.opengis.parameter.ParameterValueGroup;
 
-import java.awt.*;
+import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -34,16 +34,19 @@ import java.util.Arrays;
 public class Rasters {
 
 /*    public static void main(String[] args) throws IOException {
-        DataStore ds = Collec.getDataStore(new File("/home/mc/Documents/inria/donnees/IGN/batVeme.gpkg"));
-        rasterize(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), new Dimension(10000, 10000), ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures().getBounds());
+        DataStore ds = CollecMgmt.getDataStore(new File("/home/mc/Nextcloud/boulot/inria/ICIproject/donnees/IGN/batVeme.gpkg"));
+        GridCoverage2D r = rasterize(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(),"PREC_PLANI", getDimentionValuesForSquaredRasters(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), 1), ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures().getBounds(),
+                "PREC_PLANI");
 
-        DataStore ds = Collec.getDataStore(new File("/home/mc/Documents/inria/donnees/POI/SIRENE-WorkingPlace.gpkg"));
+*//*
+        DataStore ds = CollecMgmt.getDataStore(new File("/home/mc/Documents/inria/donnees/POI/SIRENE-WorkingPlace.gpkg"));
         String[]       argIn = { "workforceNormalized","amenityCodeNormalized"};
-        SimpleFeatureCollection sfc = Collec.convertAttributeToFloat(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), Arrays.asList(argIn));
+        SimpleFeatureCollection sfc = CollecMgmt.convertAttributeToFloat(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), Arrays.asList(argIn));
         String[]       argOut = { "workforceCode","amenityCode"};
 
         GridCoverage2D r = Rasters.rasterize(sfc,argIn , new Dimension(10000, 10000), sfc.getBounds(), argOut);
         System.out.println(r);
+*//*
 
         writeGeotiff(r, new File("/tmp/rast2"));
 
@@ -188,6 +191,28 @@ public class Rasters {
         DataStore envDS = CollecMgmt.getDataStore(envelope);
         writeGeotiff(Rasters.importRaster(fileToCut, Geom.unionSFC(envDS.getFeatureSource(envDS.getTypeNames()[0]).getFeatures())), fileOut);
         envDS.dispose();
+    }
+
+    /**
+     * Get the dimention for a grid of a given resolution
+     * @param bbox
+     * @param sideSize
+     * @return
+     */
+    public static Dimension getDimentionValuesForSquaredRasters(SimpleFeatureCollection bbox, float sideSize){
+        return getDimentionValuesForSquaredRasters(bbox.getBounds(), sideSize);
+    }
+
+    /**
+     * Get the dimention for a grid of a given resolution 
+     * @param env Input BoundingBox
+     * @param sideSize
+     * @return
+     */
+    public static Dimension getDimentionValuesForSquaredRasters(ReferencedEnvelope env, float sideSize){
+        int nbWidth = Math.round((float) env.getWidth() / sideSize);
+        int nbHeight = Math.round((float) env.getHeight() / sideSize);
+        return new Dimension(nbWidth,nbHeight);
     }
 
 //	public static void main(String[] args) throws InvalidParameterValueException, ParameterNotFoundException, IOException, TransformException {

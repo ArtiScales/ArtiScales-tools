@@ -2,6 +2,7 @@ package fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec;
 
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
+import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom.Lines;
 import org.geotools.data.DataStore;
@@ -19,6 +20,7 @@ import org.geotools.util.factory.GeoTools;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.referencing.FactoryException;
 import si.uom.SI;
@@ -76,6 +78,30 @@ public class CollecTransform {
         SimpleFeatureBuilder builder = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
         builder.set(geomName, unionSFC(collec));
         builder.set(field, attribute);
+        return builder.buildFeature(Attribute.makeUniqueId());
+    }
+
+    /**
+     * Return a SimpleFeature with a single point as a geometry and the sum of every of the numeric fields of the input collection. SimpleFeature geometries must be the same (we get the first one so if not, no errors will be thrown)
+     *
+     * @param collec input {@link SimpleFeatureCollection} of same geometry points
+     * @return The {@link SimpleFeature} with same schemas and summed numeric values
+     */
+    public static SimpleFeature unionAttributesOfAPoint(SimpleFeatureCollection collec, StatisticOperation stat) {
+        if (collec.size() == 1)
+            return collec.features().next();
+        SimpleFeatureBuilder builder = new SimpleFeatureBuilder(collec.getSchema());
+        builder.set(collec.getSchema().getGeometryDescriptor().getLocalName(), collec.features().next().getDefaultGeometry());
+        for (AttributeDescriptor attDesc : collec.getSchema().getAttributeDescriptors()) {
+//            if (attDesc.getClass().getClass().equals(Double.class) || attDesc.getClass().getClass().equals(Integer.class) ||
+//                    attDesc.getClass().getClass().equals(Float.class) || attDesc.getClass().getClass().equals(Long.class)) { // attribute is a numeric type, we sum it
+            // todo dirty. Find a solution with what's before
+            try {
+                builder.set(attDesc.getLocalName(), OpOnCollec.getCollectionAttributeDescriptiveStat(collec, attDesc.getLocalName(), stat));
+            } catch (NumberFormatException n) {
+                builder.set(attDesc.getLocalName(), collec.features().next().getAttribute(attDesc.getLocalName()));
+            }
+        }
         return builder.buildFeature(Attribute.makeUniqueId());
     }
 
