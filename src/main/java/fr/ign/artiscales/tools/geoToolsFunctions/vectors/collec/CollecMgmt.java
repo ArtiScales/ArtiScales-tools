@@ -315,9 +315,9 @@ public class CollecMgmt {
     /**
      * Export a simple feature collection. Overwrite file if already exists
      *
-     * @param toExport
-     * @param fileOut
-     * @return the ShapeFile
+     * @param toExport collection to export
+     * @param fileOut file to export
+     * @return the wrote file
      * @throws IOException
      */
     public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, boolean overwrite) throws IOException {

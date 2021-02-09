@@ -4,16 +4,6 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.geotools.coverage.grid.GridCoordinates2D;
-import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.grid.io.AbstractGridFormat;
-import org.geotools.coverage.grid.io.GridCoverage2DReader;
-import org.geotools.coverage.grid.io.OverviewPolicy;
-import org.geotools.gce.geotiff.GeoTiffReader;
-import org.opengis.coverage.grid.GridCoordinates;
-import org.opengis.coverage.grid.GridEnvelope;
-import org.opengis.parameter.GeneralParameterValue;
-import org.opengis.parameter.ParameterValue;
 
 import java.io.File;
 import java.io.FileReader;
@@ -34,10 +24,9 @@ public class Csv {
 
     public static boolean needFLine = true;
 
-    // public static void main(String[] args) throws IOException {
-    // calculateColumnsBasicStat(
-    // new File("/home/ubuntu/workspace/ParcelManager/src/main/resources/DensificationStudy/out/densificationStudyResult.csv"), 2, true);
-    // }
+//    public static void main(String[] args) throws IOException {
+//        mergeCsvFilesCol(Arrays.asList(new File("/tmp/age-80 - P.tif-tocsv.csv"), new File("/tmp/sex-Homme.tif-tocsv.csv"), new File("/tmp/resto.tif-tocsv.csv")), new File("/tmp/"), "merged.csv", true);
+//    }
 
     /**
      * Get the indice number on the position of the header of a .csv file
@@ -217,55 +206,6 @@ public class Csv {
         }
         output.close();
         return outFile;
-    }
-
-    /**
-     * Put the raw values of a .tif raster file cells to a .csv format.
-     *
-     * @param fileToConvert
-     * @throws IOException
-     */
-    public static File convertRasterToCsv(File fileToConvert) throws IOException {
-        ParameterValue<OverviewPolicy> policy = AbstractGridFormat.OVERVIEW_POLICY.createValue();
-        policy.setValue(OverviewPolicy.IGNORE);
-        ParameterValue<String> gridsize = AbstractGridFormat.SUGGESTED_TILE_SIZE.createValue();
-        ParameterValue<Boolean> useJaiRead = AbstractGridFormat.USE_JAI_IMAGEREAD.createValue();
-        useJaiRead.setValue(false);
-        GeneralParameterValue[] params = new GeneralParameterValue[]{policy, gridsize, useJaiRead};
-
-        GridCoverage2DReader reader = new GeoTiffReader(fileToConvert);
-        GridCoverage2D coverage = reader.read(params);
-        GridEnvelope dimensions = reader.getOriginalGridRange();
-        GridCoordinates maxDimensions = dimensions.getHigh();
-
-        int w = maxDimensions.getCoordinateValue(0) + 1;
-        int h = maxDimensions.getCoordinateValue(1) + 1;
-        int numBands = reader.getGridCoverageCount();
-        double[] vals = new double[numBands];
-        // beginning of the all cells loop
-        int debI = 0;
-        int debJ = 0;
-        HashMap<String, Double> cells = new HashMap<>();
-        for (int i = debI; i < w; i++)
-            for (int j = debJ; j < h; j++) {
-                GridCoordinates2D coord = new GridCoordinates2D(i, j);
-                double[] temp = coverage.evaluate(coord, vals);
-                if (temp[0] > 0.001)
-                    cells.put(coord.toString(), temp[0]);
-            }
-
-        // RasterAnalyse.generateCsvFileCol(cells,new File (rastFile.getParent()),);
-        File fileName = new File(fileToConvert + "-tocsv.csv");
-        FileWriter writer = new FileWriter(fileName, false);
-        writer.append("eval");
-        writer.append("\n");
-        for (String nomm : cells.keySet()) {
-            double tableau = cells.get(nomm);
-            for (int i = 0; i < tableau; i++)
-                writer.append(Double.toString(tableau)).append("\n");
-        }
-        writer.close();
-        return fileName;
     }
 
     /**
@@ -472,6 +412,58 @@ public class Csv {
             result.put(String.valueOf(ligne[0]), aMettre);
         }
         return generateCsvFileCol(result, folderOut, name);
+    }
+
+    /**
+     * Merge every columns of multiple .csv files by their first column reference.
+     *
+     * @param listFiles list of files to merge
+     * @param folderOut where to finally write the merged .csv
+     * @param name      name of the merged file
+     * @return merged .csv
+     * @throws IOException
+     */
+    public static File mergeCsvFilesCol(List<File> listFiles, File folderOut, String name, boolean ordered) throws IOException {
+        // test
+        for (File f : listFiles)
+            if (!f.getName().endsWith(".csv")) {
+                System.out.println(f + " is not a .csv. Rename it if your sure it is. Return null");
+                return null;
+            }
+        if (ordered) {
+            // check that every files has the same line amount
+            int length = (new CSVReader(new FileReader(listFiles.get(0)))).readAll().size();
+            for (File f : listFiles)
+                if ((new CSVReader(new FileReader(f))).readAll().size() != length)
+                    System.out.println("mergeCsvFilesCol doesn't have the same size column. You may have a problem, tabs are unlikely to have the same order, and would prefer use the ordered=false argument");
+            boolean coordinates = true;
+            HashMap<String, Object[]> mergedCSV = new HashMap<>();
+            for (File f : listFiles) {
+                CSVReader csvr = new CSVReader(new FileReader(f));
+                String[] attrNames = csvr.readNext();
+                if (coordinates) {
+                    Object[] obj = new Object[length];
+                    int i = 0;
+                    for (String[] l : csvr.readAll())
+                        obj[i++] = l[0];
+                    mergedCSV.put(String.valueOf(attrNames[0]), obj);
+                    csvr = new CSVReader(new FileReader(f));
+                    csvr.readNext();
+                    coordinates = false;
+                }
+                for (int j = 1; j < attrNames.length; j++) {
+                    Object[] obj = new Object[length];
+                    int i = 0;
+                    for (String[] l : csvr.readAll())
+                        obj[i++] = l[j];
+                    mergedCSV.put(String.valueOf(attrNames[j]), obj);
+                }
+            }
+            return generateCsvFileCol(mergedCSV, folderOut, name);
+        } else {
+            System.out.println("Not ordered data's not implemented yet");
+            return null;
+        }
     }
 
     /**
