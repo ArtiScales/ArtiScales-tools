@@ -70,8 +70,7 @@ public class CountPointInPolygon {
         SimpleFeatureType schemaOut = polygonsCollec.getSchema();
         sfTypeBuilder.setName(schemaOut.getName() + "-counted-" + pointsCollec.getSchema().getName());
         String geomName = schemaOut.getGeometryDescriptor().getLocalName();
-//		sfTypeBuilder.add(geomName, MultiPolygon.class);
-//		sfTypeBuilder.setDefaultGeometry(geomName);
+
         sfTypeBuilder.setCRS(schemaOut.getCoordinateReferenceSystem());
         GeometryDescriptor gd = schemaOut.getGeometryDescriptor();
         AttributeTypeBuilder attributeBuilder = new AttributeTypeBuilder();

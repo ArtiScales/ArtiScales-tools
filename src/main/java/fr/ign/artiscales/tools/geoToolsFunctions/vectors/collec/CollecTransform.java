@@ -12,8 +12,10 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.collection.SortedSimpleFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.filter.SortByImpl;
 import org.geotools.grid.Grids;
 import org.geotools.referencing.CRS;
 import org.geotools.util.factory.GeoTools;
@@ -22,6 +24,7 @@ import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.filter.sort.SortOrder;
 import org.opengis.referencing.FactoryException;
 import si.uom.SI;
 
@@ -30,6 +33,13 @@ import java.io.IOException;
 import java.util.*;
 
 public class CollecTransform {
+
+//    public static void main(String[] args) throws IOException, ParseException {
+//        DataStore ds = CollecMgmt.getDataStore(new File("/home/mc/Nextcloud/boulot/inria/ICIproject/donnees/IGN/batVeme.gpkg"));
+//        WKTReader w = new WKTReader();
+//        CollecMgmt.exportSFC(selectIntersectMost(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(),  w.read("MultiPolygon (((652775.20000001532025635 6860152.6000018734484911, 652890.40000001527369022 6860182.5000018747523427, 653153.70000001508742571 6860223.5000018747523427, 653160.69000001507811248 6860223.73000187519937754, 653143.20000001508742571 6860189.10000187437981367, 653128.00000001513399184 6860164.30000187642872334, 653058.23000001511536539 6860131.28000187687575817, 652967.84000001521781087 6860088.50000187568366528, 652877.45000001508742571 6860045.72000187635421753, 652787.06000001542270184 6860002.94000187795609236, 652806.50000001536682248 6860012.90000187605619431, 652813.20000001532025635 6860019.60000187624245882, 652801.30000001541338861 6860055.70000187680125237, 652775.20000001532025635 6860152.6000018734484911)))")),new File("/tmp/interMost.gpkg"));
+//        ds.dispose();
+//    }
 
     /**
      * Return a SimpleFeature with the merged geometries and the schema of the input collection but no attribute
@@ -206,19 +216,69 @@ public class CollecTransform {
     }
 
     /**
+     * Make the intersection but for overlapping object, check if they are mostly included in the geometry (more than 50% of their footprint are inside geometry) or not
+     * @param SFCIn input collection
+     * @param bBox Geometry to check relation with collection
+     * @return The selected collection
+     */
+    public static SimpleFeatureCollection selectIntersectMost(SimpleFeatureCollection SFCIn, Geometry bBox) {
+        FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+        DefaultFeatureCollection df = new DefaultFeatureCollection();
+        df.addAll(SFCIn.subCollection(ff.within(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox))));
+        try (SimpleFeatureIterator it = SFCIn.subCollection(ff.overlaps(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox))).features()) {
+            while (it.hasNext()) {
+                SimpleFeature sf = it.next();
+                if (((Geometry) sf.getDefaultGeometry()).intersection(bBox).getArea() / ((Geometry) sf.getDefaultGeometry()).getArea() > 0.5)
+                    df.add(sf);
+            }
+        }
+        return df;
+    }
+
+    /**
      * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.
+     * That code may erase values if exactly the same area. Tried to find a better solution but it would have to be implemented (<a href="https://stackoverflow.com/questions/60338900/java-geotools-sort-a-featureiterator-by-features-area">see here</a>).
      *
      * @param sFCToSort SimpleFeature
      * @return The sorted {@link SimpleFeatureCollection}
      * @throws IOException from {@link DefaultFeatureCollection}
      */
     public static SimpleFeatureCollection sortSFCWithArea(SimpleFeatureCollection sFCToSort) throws IOException {
+        return sortSFCWithArea(sFCToSort, false);
+    }
+
+    /**
+     * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.
+     * That code may erase values if exactly the same area. Tried to find a better solution but it would have to be implemented (<a href="https://stackoverflow.com/questions/60338900/java-geotools-sort-a-featureiterator-by-features-area">see here</a>).
+     *
+     * @param sFCToSort SimpleFeature
+     * @return The sorted {@link SimpleFeatureCollection}
+     * @throws IOException from {@link DefaultFeatureCollection}
+     */
+    public static SimpleFeatureCollection sortSFCWithArea(SimpleFeatureCollection sFCToSort, boolean maxToMin) throws IOException {
         DefaultFeatureCollection result = new DefaultFeatureCollection();
-        SortedMap<Double, SimpleFeature> parcelMap = new TreeMap<>();
-        Arrays.stream(sFCToSort.toArray(new SimpleFeature[0])).forEach(parcel -> parcelMap.put(((Geometry) parcel.getDefaultGeometry()).getArea(), parcel));
-        for (Map.Entry<Double, SimpleFeature> entry : parcelMap.entrySet())
+        SortedMap<Double, SimpleFeature> sortedMap = new TreeMap<>(maxToMin ? Collections.reverseOrder() : null);
+        Arrays.stream(sFCToSort.toArray(new SimpleFeature[0])).forEach(feat -> sortedMap.put(((Geometry) feat.getDefaultGeometry()).getArea() + Math.random() / 1000, feat)); //decimals have been added to avoid overwritting
+        for (Map.Entry<Double, SimpleFeature> entry : sortedMap.entrySet())
             result.add(entry.getValue());
+        if (sFCToSort.size() != result.size())        // check if features have been lost or not
+            System.out.println("Warning : sortSFCWithArea() has overwrote features");
         return result.collection();
+    }
+
+    /**
+     * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.
+     *
+     * @param sFCToSort SimpleFeature
+     * @return The sorted {@link SimpleFeatureCollection}
+     * @throws IOException from {@link DefaultFeatureCollection}
+     */
+    public static SimpleFeatureCollection sortSFCWithField(SimpleFeatureCollection sFCToSort, String field, boolean maxToMin) throws IOException {
+        if (sFCToSort.isEmpty() || !CollecMgmt.isCollecContainsAttribute(sFCToSort, field)) //todo add the check if is numeric
+            return null;
+        FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+        SortByImpl[] sortOrder = {new SortByImpl(ff.property(field), maxToMin ? SortOrder.DESCENDING : SortOrder.ASCENDING)};
+        return new SortedSimpleFeatureCollection(sFCToSort, sortOrder);
     }
 
     /**

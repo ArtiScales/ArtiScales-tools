@@ -36,6 +36,18 @@ import java.util.List;
 public class CollecMgmt {
     private static String defaultGISFileType = ".gpkg";
 
+//    public static void main(String[] args) throws IOException {
+//        DataStore ds = getDataStore(new File("/home/mc/workspace/ici_pedestrian/input/voirie-pieton/plan-de-voirie-emprises-espaces-verts2.gpkg"));
+////        DataStore ds = getDataStore(new File("/home/mc/workspace/ici_pedestrian/input/voirie-pieton/plan-de-voirie-emprises-espaces-verts.geojson"));
+//        SimpleFeatureCollection dd = ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures();
+//
+//        try ( SimpleFeatureIterator it = dd.features()){
+//            while (it.hasNext())
+//                System.out.println(it.next());
+//        }
+//        System.out.println(dd.size());
+//    }
+    
     public static SimpleFeatureCollection transformGeomToMultiPolygon(SimpleFeatureCollection parcel) {
         DefaultFeatureCollection result = new DefaultFeatureCollection();
         try (SimpleFeatureIterator it = parcel.features()) {
