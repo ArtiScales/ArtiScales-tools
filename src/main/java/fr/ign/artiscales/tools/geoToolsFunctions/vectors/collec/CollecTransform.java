@@ -31,6 +31,7 @@ import si.uom.SI;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CollecTransform {
 
@@ -92,12 +93,29 @@ public class CollecTransform {
     }
 
     /**
-     * Return a SimpleFeature with a single point as a geometry and the sum of every of the numeric fields of the input collection. SimpleFeature geometries must be the same (we get the first one so if not, no errors will be thrown)
+     * Return a SimpleFeature with a single point as a geometry and the sum of every of the numeric fields of the input collection.
+     * String fields are copied taking the field from the first value.
+     * SimpleFeature geometries must be the same (we get the first one so if not, no errors will be thrown).
      *
      * @param collec input {@link SimpleFeatureCollection} of same geometry points
+     * @param stat   statistical operation to proceed on numeric fields
      * @return The {@link SimpleFeature} with same schemas and summed numeric values
      */
     public static SimpleFeature unionAttributesOfAPoint(SimpleFeatureCollection collec, StatisticOperation stat) {
+        return unionAttributesOfAPoint(collec, stat, null);
+    }
+
+    /**
+     * Return a SimpleFeature with a single point as a geometry and the sum of every of the numeric fields of the input collection.
+     * String fields are copied taking the field from the first value, except if they are indicated for concatenation (under the textAttributesToConcat array).
+     * SimpleFeature geometries must be the same (we get the first one so if not, no errors will be thrown).
+     *
+     * @param collec                 input {@link SimpleFeatureCollection} of same geometry points
+     * @param stat                   statistical operation to proceed on numeric fields
+     * @param textAttributesToConcat attributes to concatenate (can be null)
+     * @return The {@link SimpleFeature} with same schemas and summed numeric values
+     */
+    public static SimpleFeature unionAttributesOfAPoint(SimpleFeatureCollection collec, StatisticOperation stat, List<String> textAttributesToConcat) {
         if (collec.size() == 1)
             return collec.features().next();
         SimpleFeatureBuilder builder = new SimpleFeatureBuilder(collec.getSchema());
@@ -106,10 +124,14 @@ public class CollecTransform {
 //            if (attDesc.getClass().getClass().equals(Double.class) || attDesc.getClass().getClass().equals(Integer.class) ||
 //                    attDesc.getClass().getClass().equals(Float.class) || attDesc.getClass().getClass().equals(Long.class)) { // attribute is a numeric type, we sum it
             // todo dirty. Find a solution with what's before
-            try {
-                builder.set(attDesc.getLocalName(), OpOnCollec.getCollectionAttributeDescriptiveStat(collec, attDesc.getLocalName(), stat));
-            } catch (NumberFormatException n) {
-                builder.set(attDesc.getLocalName(), collec.features().next().getAttribute(attDesc.getLocalName()));
+            if (textAttributesToConcat != null && textAttributesToConcat.contains(attDesc.getLocalName()))
+                builder.set(attDesc.getLocalName(), Arrays.stream(collec.toArray(new SimpleFeature[0])).map(x -> (String) x.getAttribute(attDesc.getLocalName())).collect(Collectors.joining(",")));
+            else {
+                try {
+                    builder.set(attDesc.getLocalName(), OpOnCollec.getCollectionAttributeDescriptiveStat(collec, attDesc.getLocalName(), stat));
+                } catch (NumberFormatException n) {
+                    builder.set(attDesc.getLocalName(), collec.features().next().getAttribute(attDesc.getLocalName()));
+                }
             }
         }
         return builder.buildFeature(Attribute.makeUniqueId());
@@ -217,8 +239,9 @@ public class CollecTransform {
 
     /**
      * Make the intersection but for overlapping object, check if they are mostly included in the geometry (more than 50% of their footprint are inside geometry) or not
+     *
      * @param SFCIn input collection
-     * @param bBox Geometry to check relation with collection
+     * @param bBox  Geometry to check relation with collection
      * @return The selected collection
      */
     public static SimpleFeatureCollection selectIntersectMost(SimpleFeatureCollection SFCIn, Geometry bBox) {

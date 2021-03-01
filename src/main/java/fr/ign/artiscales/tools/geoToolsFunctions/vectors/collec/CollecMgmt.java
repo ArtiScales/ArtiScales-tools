@@ -310,14 +310,23 @@ public class CollecMgmt {
         return df.collection();
     }
 
+    /**
+     * Convert a list of {@link SimpleFeature} to a SimpleFeatureCollection.
+     * @param list list of SimpleFeature
+     * @return A DefaultFeatureCollection wrote in memory (with the .collection() method)
+     */
+    public static SimpleFeatureCollection listToCollection(List<SimpleFeature> list) throws IOException {
+        DefaultFeatureCollection result = new DefaultFeatureCollection();
+        result.addAll(list);
+        return result.collection();
+    }
+
     public static File exportSFC(List<SimpleFeature> listFeature, File fileOut) throws IOException {
         return exportSFC(listFeature, fileOut, true);
     }
 
     public static File exportSFC(List<SimpleFeature> listFeature, File fileOut, boolean overwrite) throws IOException {
-        DefaultFeatureCollection result = new DefaultFeatureCollection();
-        result.addAll(listFeature);
-        return exportSFC(result.collection(), fileOut, overwrite);
+        return exportSFC(listToCollection(listFeature), fileOut, overwrite);
     }
 
     public static File exportSFC(SimpleFeatureCollection toExport, File fileOut) throws IOException {
