@@ -6,14 +6,23 @@ import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.TopologyException;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,172 +38,168 @@ public class Geom {
 //		ShapefileDataStore sd = new ShapefileDataStore(((new File("/tmp/tmp.shp")).toURI().toURL()));
 //		System.out.println(createBufferBorder(sd.getFeatureSource().getFeatures()));
 //	}
-	
 
-	
-	/**
-	 * Export a simple geometry in a shapeFile
-	 * 
-	 * @param geom
-	 * @param fileName
-	 * @return A ShapeFile containing the exported {@link Geometry}
-	 * @throws IOException
-	 */
-	public static File exportGeom(Geometry geom, File fileName) throws IOException {
-		SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaMultiPolygon("geom");
-		sfBuilder.add(geom);
-		SimpleFeature feature = sfBuilder.buildFeature(Attribute.makeUniqueId());
-		DefaultFeatureCollection dFC = new DefaultFeatureCollection();
-		dFC.add(feature);
-		return CollecMgmt.exportSFC(dFC.collection(), fileName);
-	}
-	
-	/**
-	 * Export a list of geometries in a shapeFile.
-	 * 
-	 * @param geoms {@link List} of objects extending {@link Geometry} type
-	 * @param fileName
-	 * @return A ShapeFile containing the exported {@link Geometry}
-	 * @throws IOException
-	 */
-	public static File exportGeom(List<? extends Geometry> geoms, File fileName) throws IOException {
-		return CollecMgmt.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon(CollecMgmt.getDefaultGeomName())), fileName);
-	}
-	
-	/**
-	 * Export a list of {@link Geometry}s in a {@link DefaultFeatureCollection}.
-	 * 
-	 * @param geoms
-	 *            List of objects extending {@link Geometry} type
-	 * @param sfBuilder
-	 *            Builder for simple features
-	 * @return the collection of {@link Geometry}s 
-	 * @throws IOException
-	 */
-	public static SimpleFeatureCollection geomsToCollec(List<? extends Geometry > geoms, SimpleFeatureBuilder sfBuilder) throws IOException {
-		DefaultFeatureCollection dFC = new DefaultFeatureCollection();
-		for (Geometry geom : geoms) {
-			sfBuilder.add(geom);
-			dFC.add(sfBuilder.buildFeature(Attribute.makeUniqueId()));
-		}
-		return dFC.collection();
-	}
-	
-	/**
-	 * Make an intersection of a list of {@link Geometry} and catch {@link TopologyException} to redo the intersection with a reduced precision. Precision reduction comes from 2 to
-	 * 1000.
-	 * 
-	 * @param geoms
-	 *            {@link List} of {@link Geometry}
-	 * @return the intersected {@link Geometry}
-	 */
-	public static Geometry scaledGeometryReductionIntersection(List<Geometry> geoms) {
-		try {
-			Geometry geomResult = geoms.get(0);
-			for (int i = 1; i < geoms.size(); i++)
-				geomResult = geomResult.intersection(geoms.get(i));
-			return geomResult;
-		} catch (TopologyException e) {
-			try {
-				Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(2));
-				for (int i = 1; i < geoms.size(); i++)
-					geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(2)));
-				return geomResult;
-			} catch (TopologyException ex) {
-				try {
-					Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(10));
-					for (int i = 1; i < geoms.size(); i++)
-						geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(10)));
-					return geomResult;
-				} catch (TopologyException ee) {
-					try {
-						Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(100));
-						for (int i = 1; i < geoms.size(); i++)
-							geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(100)));
-						return geomResult;
-					} catch (TopologyException eee) {
-						try {
-							System.out.println("last hope for precision reduction");
-							Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(1000));
-							for (int i = 1; i < geoms.size(); i++)
-								geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(1000)));
-							return geomResult;
-						} catch (TopologyException eeee) {
-							return null;
-						}
-					}
-				}
-			}
-		}
-	}
 
-	public static Geometry unionPrecisionReduce(List<Geometry> collection, int scale) {
-		if (collection.size() == 1)
-			return GeometryPrecisionReducer.reduce(collection.get(0), new PrecisionModel(scale));
-		GeometryFactory factory = new GeometryFactory();
-		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(
-				collection.stream().map(g -> GeometryPrecisionReducer.reduce(g, new PrecisionModel(scale))).collect(Collectors.toList()));
-		return geometryCollection.union();
-	}
-	
-	public static Geometry unionPrecisionReduce(SimpleFeatureCollection collection, double scale) {
-		GeometryFactory factory = new GeometryFactory();
-		Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[collection.size()])).map(
-				sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(scale)));
-		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-		return geometryCollection.union();
-	}
+    /**
+     * Export a simple geometry in a shapeFile
+     *
+     * @param geom
+     * @param fileName
+     * @return A ShapeFile containing the exported {@link Geometry}
+     * @throws IOException
+     */
+    public static File exportGeom(Geometry geom, File fileName) throws IOException {
+        SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaMultiPolygon("geom");
+        sfBuilder.add(geom);
+        SimpleFeature feature = sfBuilder.buildFeature(Attribute.makeUniqueId());
+        DefaultFeatureCollection dFC = new DefaultFeatureCollection();
+        dFC.add(feature);
+        return CollecMgmt.exportSFC(dFC.collection(), fileName);
+    }
 
-	public static Geometry unionSFC(SimpleFeatureCollection collection) {
-		if (collection.size() == 1)
-			return (Geometry) collection.features().next().getDefaultGeometry();
-		try {
-			return unionPrecisionReduce(collection, 1000);
-		} catch (TopologyException e) {
-			try {
-				return unionPrecisionReduce(collection, 100);
-			} catch (TopologyException ee) {
-				try {
-					return unionPrecisionReduce(collection, 10);
-				} catch (TopologyException eee) {
-					try {
-						return unionPrecisionReduce(collection, 2);
-					} catch (TopologyException eeee) {
-						try {
-							return unionPrecisionReduce(collection, 0.1);
-						} catch (TopologyException eeeee) {
-							return unionPrecisionReduce(collection, 0.001);
-						}
-					}
-				}
-			}
-		}
-	}
+    /**
+     * Export a list of geometries in a shapeFile.
+     *
+     * @param geoms    {@link List} of objects extending {@link Geometry} type
+     * @param fileName
+     * @return A ShapeFile containing the exported {@link Geometry}
+     * @throws IOException
+     */
+    public static File exportGeom(List<? extends Geometry> geoms, File fileName) throws IOException {
+        return CollecMgmt.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon(CollecMgmt.getDefaultGeomName())), fileName);
+    }
 
-	public static List<Geometry> unionTouchingGeometries(List<Geometry> geomsIn){
-		List<Geometry> result = new ArrayList<>();
-		for (Geometry gIn : geomsIn) {
-			List<Geometry> intersectingGeom = result.stream().filter(g -> g.intersects(gIn)).collect(Collectors.toList());
-			if (intersectingGeom.isEmpty()) {
-				result.add(gIn);
-			} else {
-				result.removeAll(intersectingGeom);
-				intersectingGeom.add(gIn);
-				result.add(unionGeom(intersectingGeom));
-			}
-		}
-		return result; 
-	}
-	
-	public static Geometry unionGeom(List<? extends Geometry> lG) {
-		if (lG.size() == 1)
-			return lG.get(0);
-		GeometryFactory factory = new GeometryFactory();
-		Stream<? extends Geometry> s = lG.stream();
-		GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-		return geometryCollection.union();
-	}
-	
+    /**
+     * Export a list of {@link Geometry}s in a {@link DefaultFeatureCollection}.
+     *
+     * @param geoms     List of objects extending {@link Geometry} type
+     * @param sfBuilder Builder for simple features
+     * @return the collection of {@link Geometry}s
+     * @throws IOException
+     */
+    public static SimpleFeatureCollection geomsToCollec(List<? extends Geometry> geoms, SimpleFeatureBuilder sfBuilder) throws IOException {
+        DefaultFeatureCollection dFC = new DefaultFeatureCollection();
+        for (Geometry geom : geoms) {
+            sfBuilder.add(geom);
+            dFC.add(sfBuilder.buildFeature(Attribute.makeUniqueId()));
+        }
+        return dFC.collection();
+    }
+
+    /**
+     * Make an intersection of a list of {@link Geometry} and catch {@link TopologyException} to redo the intersection with a reduced precision. Precision reduction comes from 2 to
+     * 1000.
+     *
+     * @param geoms {@link List} of {@link Geometry}
+     * @return the intersected {@link Geometry}
+     */
+    public static Geometry scaledGeometryReductionIntersection(List<Geometry> geoms) {
+        try {
+            Geometry geomResult = geoms.get(0);
+            for (int i = 1; i < geoms.size(); i++)
+                geomResult = geomResult.intersection(geoms.get(i));
+            return geomResult;
+        } catch (TopologyException e) {
+            try {
+                Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(2));
+                for (int i = 1; i < geoms.size(); i++)
+                    geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(2)));
+                return geomResult;
+            } catch (TopologyException ex) {
+                try {
+                    Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(10));
+                    for (int i = 1; i < geoms.size(); i++)
+                        geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(10)));
+                    return geomResult;
+                } catch (TopologyException ee) {
+                    try {
+                        Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(100));
+                        for (int i = 1; i < geoms.size(); i++)
+                            geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(100)));
+                        return geomResult;
+                    } catch (TopologyException eee) {
+                        try {
+                            System.out.println("last hope for precision reduction");
+                            Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(1000));
+                            for (int i = 1; i < geoms.size(); i++)
+                                geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(1000)));
+                            return geomResult;
+                        } catch (TopologyException eeee) {
+                            return null;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static Geometry unionPrecisionReduce(List<Geometry> collection, int scale) {
+        if (collection.size() == 1)
+            return GeometryPrecisionReducer.reduce(collection.get(0), new PrecisionModel(scale));
+        GeometryFactory factory = new GeometryFactory();
+        GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(
+                collection.stream().map(g -> GeometryPrecisionReducer.reduce(g, new PrecisionModel(scale))).collect(Collectors.toList()));
+        return geometryCollection.union();
+    }
+
+    public static Geometry unionPrecisionReduce(SimpleFeatureCollection collection, double scale) {
+        GeometryFactory factory = new GeometryFactory();
+        Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[collection.size()])).map(
+                sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(scale)));
+        GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
+        return geometryCollection.union();
+    }
+
+    public static Geometry unionSFC(SimpleFeatureCollection collection) {
+        if (collection.size() == 1)
+            return (Geometry) collection.features().next().getDefaultGeometry();
+        try {
+            return unionPrecisionReduce(collection, 1000);
+        } catch (TopologyException e) {
+            try {
+                return unionPrecisionReduce(collection, 100);
+            } catch (TopologyException ee) {
+                try {
+                    return unionPrecisionReduce(collection, 10);
+                } catch (TopologyException eee) {
+                    try {
+                        return unionPrecisionReduce(collection, 2);
+                    } catch (TopologyException eeee) {
+                        try {
+                            return unionPrecisionReduce(collection, 0.1);
+                        } catch (TopologyException eeeee) {
+                            return unionPrecisionReduce(collection, 0.001);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static List<Geometry> unionTouchingGeometries(List<Geometry> geomsIn) {
+        List<Geometry> result = new ArrayList<>();
+        for (Geometry gIn : geomsIn) {
+            List<Geometry> intersectingGeom = result.stream().filter(g -> g.intersects(gIn)).collect(Collectors.toList());
+            if (intersectingGeom.isEmpty()) {
+                result.add(gIn);
+            } else {
+                result.removeAll(intersectingGeom);
+                intersectingGeom.add(gIn);
+                result.add(unionGeom(intersectingGeom));
+            }
+        }
+        return result;
+    }
+
+    public static Geometry unionGeom(List<? extends Geometry> lG) {
+        if (lG.size() == 1)
+            return lG.get(0);
+        GeometryFactory factory = new GeometryFactory();
+        Stream<? extends Geometry> s = lG.stream();
+        GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
+        return geometryCollection.union();
+    }
+
 //	public static Geometry unionGeom(Geometry g1, Geometry g2) {
 //		if (g1 instanceof GeometryCollection) {
 //			if (g2 instanceof GeometryCollection)
@@ -257,27 +262,25 @@ public class Geom {
 //				collector.add(g);
 //		}
 //	}
-	
-	/**
-	 * Return the intersecting geometry with the highest area of intersection.
-	 * 
-	 * @param lG
-	 *            Input list of geometries
-	 * @param geom
-	 *            Intersection polygon
-	 * @return the largest {@link Geometry}
-	 */
-	public static Geometry getBiggestIntersectingGeometry(List<? extends Geometry> lG, Geometry geom) {
-		HashMap<Geometry, Double> result = new HashMap<>();
-		for (Geometry g : lG) {
-			double area = (Objects.requireNonNull(scaledGeometryReductionIntersection(Arrays.asList(g, geom))).getArea());
-			if (area > 0)
-				result.put(g, area);
-		}
-		List<Entry<Geometry, Double>> sorted = result.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toList());
-		// if list is empty, we return null
-		if (sorted.isEmpty())
-			return null;
-		return sorted.get(sorted.size() - 1).getKey();
-	}
+
+    /**
+     * Return the intersecting geometry with the highest area of intersection.
+     *
+     * @param lG   Input list of geometries
+     * @param geom Intersection polygon
+     * @return the largest {@link Geometry}
+     */
+    public static Geometry getBiggestIntersectingGeometry(List<? extends Geometry> lG, Geometry geom) {
+        HashMap<Geometry, Double> result = new HashMap<>();
+        for (Geometry g : lG) {
+            double area = (Objects.requireNonNull(scaledGeometryReductionIntersection(Arrays.asList(g, geom))).getArea());
+            if (area > 0)
+                result.put(g, area);
+        }
+        List<Entry<Geometry, Double>> sorted = result.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toList());
+        // if list is empty, we return null
+        if (sorted.isEmpty())
+            return null;
+        return sorted.get(sorted.size() - 1).getKey();
+    }
 }

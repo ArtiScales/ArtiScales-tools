@@ -174,7 +174,7 @@ public class Schemas {
     /**
      * Return a {@link SimpleFeatureBuilder} out of an existing {@link org.geotools.data.simple.SimpleFeatureCollection} and add multiple attributes. All the attributes must have the same type.
      *
-     * @param sfcIn collection with schema to copy
+     * @param sfcIn           collection with schema to copy
      * @param attributesNames name of the attributes (must be the same type)
      * @param c               Java class
      * @return the SFC with a float column

@@ -93,7 +93,7 @@ public class Shp {
 	}
 	
 	/**
-	 * Algorithm to spit a shapefile with a squared grid.
+	 * Algorithm to spit a shapefile with a grid, cuting features by it and merge them all together. Erase every attributes.
 	 * 
 	 * @param inFile
 	 *            Input shapeFile

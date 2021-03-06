@@ -35,19 +35,19 @@ import java.util.List;
 
 public class CollecMgmt {
     private static String defaultGISFileType = ".gpkg";
+    private static String forcedGeomName;
+/*    public static void main(String[] args) throws IOException {
+        DataStore ds = getDataStore(new File("/home/mc/workspace/ici_pedestrian/input/voirie-pieton/plan-de-voirie-emprises-espaces-verts2.gpkg"));
+//        DataStore ds = getDataStore(new File("/home/mc/workspace/ici_pedestrian/input/voirie-pieton/plan-de-voirie-emprises-espaces-verts.geojson"));
+        SimpleFeatureCollection dd = ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures();
 
-//    public static void main(String[] args) throws IOException {
-//        DataStore ds = getDataStore(new File("/home/mc/workspace/ici_pedestrian/input/voirie-pieton/plan-de-voirie-emprises-espaces-verts2.gpkg"));
-////        DataStore ds = getDataStore(new File("/home/mc/workspace/ici_pedestrian/input/voirie-pieton/plan-de-voirie-emprises-espaces-verts.geojson"));
-//        SimpleFeatureCollection dd = ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures();
-//
-//        try ( SimpleFeatureIterator it = dd.features()){
-//            while (it.hasNext())
-//                System.out.println(it.next());
-//        }
-//        System.out.println(dd.size());
-//    }
-    
+        try ( SimpleFeatureIterator it = dd.features()){
+            while (it.hasNext())
+                System.out.println(it.next());
+        }
+        System.out.println(dd.size());
+    }*/
+
     public static SimpleFeatureCollection transformGeomToMultiPolygon(SimpleFeatureCollection parcel) {
         DefaultFeatureCollection result = new DefaultFeatureCollection();
         try (SimpleFeatureIterator it = parcel.features()) {
@@ -61,14 +61,17 @@ public class CollecMgmt {
 
     /**
      * Get the default format of geographic files used (can either be <i>.shp</i>, <i>.gpkg</i> or <i>.geojson</i>).
+     *
      * @return the format used (default, .gpkg)
      */
     public static String getDefaultGISFileType() {
         return defaultGISFileType;
     }
+
     /**
      * Set the default format of geographic files used.
-     * @param  newDefaultGISFileType Can either be <i>.shp</i>, <i>.gpkg</i> or <i>.geojson</i>.
+     *
+     * @param newDefaultGISFileType Can either be <i>.shp</i>, <i>.gpkg</i> or <i>.geojson</i>.
      */
     public static void setDefaultGISFileType(String newDefaultGISFileType) {
         defaultGISFileType = newDefaultGISFileType;
@@ -128,10 +131,13 @@ public class CollecMgmt {
 
     /**
      * Get the default geometric name associated with the type of geographic files used in the {@link #defaultGISFileType} argument.
+     *
      * @return the format used (default, .gpkg)
      */
     public static String getDefaultGeomName() {
-        if (defaultGISFileType.equals(".shp") || defaultGISFileType.equals(".geojson"))
+        if (forcedGeomName != null)
+            return forcedGeomName;
+        else if (defaultGISFileType.equals(".shp") || defaultGISFileType.equals(".geojson"))
             return "the_geom";
         else if (defaultGISFileType.equals(".gpkg"))
             return "geom";
@@ -139,6 +145,9 @@ public class CollecMgmt {
             return "";
     }
 
+    public static void setDefaultGeomName(String geomName){
+        forcedGeomName = geomName;
+    }
 
     public static List<String> getEachUniqueFieldFromSFC(SimpleFeatureCollection sfcIn, String[] attributes) {
         return getEachUniqueFieldFromSFC(sfcIn, attributes, false);
@@ -224,9 +233,9 @@ public class CollecMgmt {
     /**
      * get the corresponding Data Store looking the file's attribute
      *
-     * @param f
-     * @return
-     * @throws IOException
+     * @param f input geographic file. Must either be a geopackage (.gpkg), a shapefile (.shp), or a geojson (.json or .geojson)
+     * @return The corresponding DataStore
+     * @throws IOException If the file's not found or contains a wrong extension
      */
     public static DataStore getDataStore(File f) throws IOException {
         switch (f.getName().split("\\.")[f.getName().split("\\.").length - 1].toLowerCase()) {
@@ -238,7 +247,7 @@ public class CollecMgmt {
             case "json":
                 return GeoJSON.getGeoJSONDataStore(f);
         }
-        return null;
+        throw new IOException("getDataStore: extension unknown");
     }
 
     /**
@@ -312,6 +321,7 @@ public class CollecMgmt {
 
     /**
      * Convert a list of {@link SimpleFeature} to a SimpleFeatureCollection.
+     *
      * @param list list of SimpleFeature
      * @return A DefaultFeatureCollection wrote in memory (with the .collection() method)
      */
@@ -337,7 +347,7 @@ public class CollecMgmt {
      * Export a simple feature collection. Overwrite file if already exists
      *
      * @param toExport collection to export
-     * @param fileOut file to export
+     * @param fileOut  file to export
      * @return the wrote file
      * @throws IOException
      */

@@ -30,61 +30,61 @@ public class JoinCSVToGeoFile {
     // File outFile = new File("/tmp/joined");
     // joinCSVToGeopackage(geoFile, "DEPCOM", csvFile, "DEPCOM", outFile, null);
     // }
-	/**
-	 * @deprecated not tested and unfinished method
-	 * @param geoFile
-	 * @param joinGeoField
-	 * @param csvFile
-	 * @param joinCsvField
-	 * @param outFile
-	 * @param attrsToStat
-	 * @param statsToDo
-	 * @return
-	 * @throws IOException
-	 */
 
-    public static File joinCSVToShapeFile(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile,
-										  List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
+    /**
+     * @param geoFile
+     * @param joinGeoField
+     * @param csvFile
+     * @param joinCsvField
+     * @param outFile
+     * @param attrsToStat
+     * @param statsToDo
+     * @return
+     * @throws IOException
+     * @deprecated not tested and unfinished method
+     */
+
+    public static File joinCSVToShapeFile(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile, List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
         ShapefileDataStore sds = new ShapefileDataStore(geoFile.toURI().toURL());
-        File result = joinCSVToGeoFile(sds.getFeatureSource(sds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile,
-				attrsToStat,statsToDo);
+        File result = joinCSVToGeoFile(sds.getFeatureSource(sds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile, attrsToStat, statsToDo);
         sds.dispose();
         return result;
     }
-	/**
-	 * @deprecated not tested and unfinished method
-	 * @param geoFile
-	 * @param joinGeoField
-	 * @param csvFile
-	 * @param joinCsvField
-	 * @param outFile
-	 * @param attrsToStat
-	 * @param statsToDo
-	 * @return
-	 * @throws IOException
-	 */
+
+    /**
+     * @param geoFile
+     * @param joinGeoField
+     * @param csvFile
+     * @param joinCsvField
+     * @param outFile
+     * @param attrsToStat
+     * @param statsToDo
+     * @return
+     * @throws IOException
+     * @deprecated not tested and unfinished method
+     */
 
     public static File joinCSVToGeopackage(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile,
-										   List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
+                                           List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
         DataStore ds = Geopackages.getDataStore(geoFile);
         File result = joinCSVToGeoFile(Objects.requireNonNull(ds).getFeatureSource(ds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile,
-				attrsToStat,statsToDo);
+                attrsToStat, statsToDo);
         ds.dispose();
         return result;
     }
 
-	/**
-	 * @deprecated not tested and unfinished method
-	 * @param sfc
-	 * @param joinGeoField
-	 * @param csvFile
-	 * @param joinCsvField
-	 * @param outFile
-	 * @param attrsToStat
-	 * @param statsToDo
-	 * @return
-	 * @throws IOException
-	 */
+    /**
+     * @param sfc
+     * @param joinGeoField
+     * @param csvFile
+     * @param joinCsvField
+     * @param outFile
+     * @param attrsToStat
+     * @param statsToDo
+     * @return
+     * @throws IOException
+     * @deprecated not tested and unfinished method
+     */
     public static File joinCSVToGeoFile(SimpleFeatureCollection sfc, String joinGeoField, File csvFile, String joinCsvField, File outFile,
                                         List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
         // TODO finish to develop that
@@ -120,10 +120,10 @@ public class JoinCSVToGeoFile {
                 r.readNext();
                 List<String[]> read = r.readAll();
                 SimpleFeature com = it.next();
-				for (AttributeDescriptor field : schema.getAttributeDescriptors())
-					build.set(field.getLocalName(), com.getAttribute(field.getLocalName()));
+                for (AttributeDescriptor field : schema.getAttributeDescriptors())
+                    build.set(field.getLocalName(), com.getAttribute(field.getLocalName()));
 
-				String valu = String.valueOf(com.getAttribute(joinGeoField));
+                String valu = String.valueOf(com.getAttribute(joinGeoField));
                 int count = 0;
                 String[] lastLine = new String[read.get(0).length];
                 for (String[] line : read)

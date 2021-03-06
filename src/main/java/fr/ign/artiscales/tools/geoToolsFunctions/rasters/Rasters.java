@@ -126,13 +126,13 @@ public class Rasters {
     /**
      * Rasterize a multiple fields of the given simple feature collection
      *
-     * @param features   collection of {@link org.opengis.feature.simple.SimpleFeature}
-     * @param attributes multiple attribute names to put their value in the raster
-     * @param gridDim    resolution of the grid
-     * @param bounds     bounds of the grid
-     * @param covNames   name of the converted fields. Must be the same length than attributes
+     * @param features        collection of {@link org.opengis.feature.simple.SimpleFeature}
+     * @param attributes      multiple attribute names to put their value in the raster
+     * @param gridDim         resolution of the grid
+     * @param bounds          bounds of the grid
+     * @param covNames        name of the converted fields. Must be the same length than attributes
      * @param separateRasters if true, export each band of a raster in a separate file. If false, merge every attribute in a band
-     * @param folderOut Folder to export (can be <b>null</b> if separateRasters is <b>true</b>
+     * @param folderOut       Folder to export (can be <b>null</b> if separateRasters is <b>true</b>
      * @return the rasterized collection of {@link org.opengis.feature.simple.SimpleFeature}
      */
     public static GridCoverage2D rasterize(SimpleFeatureCollection features, Object[] attributes, Dimension gridDim, Envelope bounds, String[] covNames, boolean separateRasters, File folderOut) throws IOException {
@@ -148,9 +148,9 @@ public class Rasters {
                 ini = bm.execute(Arrays.asList(ini, VectorToRasterProcess.process(CollecMgmt.convertAttributeToFloat(features, (String) attributes[i]), attributes[i], gridDim, bounds, covNames[i], null)), null, null, null);
             }
         else {
-            writeGeotiff(ini, new File(folderOut, attributes[0]+".tif"));
+            writeGeotiff(ini, new File(folderOut, attributes[0] + ".tif"));
             for (int i = 1; i < attributes.length; i++)
-                writeGeotiff(VectorToRasterProcess.process(CollecMgmt.convertAttributeToFloat(features, (String) attributes[i]), attributes[i], gridDim, bounds, covNames[i], null), new File(folderOut, attributes[i]+".tif"));
+                writeGeotiff(VectorToRasterProcess.process(CollecMgmt.convertAttributeToFloat(features, (String) attributes[i]), attributes[i], gridDim, bounds, covNames[i], null), new File(folderOut, attributes[i] + ".tif"));
         }
         return ini;
     }
@@ -300,11 +300,10 @@ public class Rasters {
     }
 
     /**
-     *
-     * @param dim bound of the wanted raster
+     * @param dim            bound of the wanted raster
      * @param cellResolution resolution of the wanted raster
-     * @param rasterExample similar raster todo get rid of that somehow
-     * @param outFolder output folder
+     * @param rasterExample  similar raster todo get rid of that somehow
+     * @param outFolder      output folder
      * @return the file on which the raster has been written
      * @throws IOException
      */
@@ -316,6 +315,7 @@ public class Rasters {
                 tab.put(new DirectPosition2D(i, j), val++);
         return Rasters.writeGeotiff(tab, cellResolution, new File(outFolder, "rasterID.tif"), rasterExample);
     }
+
     /**
      * Put the not nulls values of a .tif raster file cells to a .csv format.
      *
@@ -368,14 +368,16 @@ public class Rasters {
     public static File convertRasterAndPositionValuesToCsv(File fileToConvert, File rasterId, String posValueName) throws IOException {
         return convertRasterAndPositionValuesToCsv(fileToConvert, rasterId, posValueName, 0);
     }
-            /**
-             * Put the values of a .tif raster file cells to a .csv format corresponding to a raster with id.
-             * todo make it work for multiple bands and attribute columns
-             * @param fileToConvert raster file containing the field to convert
-             * @param rasterId raster file containing the coordinates
-             * @param posValueName attribute name which will in the .csv header
-             * @throws IOException
-             */
+
+    /**
+     * Put the values of a .tif raster file cells to a .csv format corresponding to a raster with id.
+     * todo make it work for multiple bands and attribute columns
+     *
+     * @param fileToConvert raster file containing the field to convert
+     * @param rasterId      raster file containing the coordinates
+     * @param posValueName  attribute name which will in the .csv header
+     * @throws IOException
+     */
     public static File convertRasterAndPositionValuesToCsv(File fileToConvert, File rasterId, String posValueName, int bandNumber) throws IOException {
         ParameterValue<OverviewPolicy> policy = AbstractGridFormat.OVERVIEW_POLICY.createValue();
         policy.setValue(OverviewPolicy.IGNORE);
@@ -411,7 +413,7 @@ public class Rasters {
         for (int i = 0; i < w; i++)
             for (int j = 0; j < h; j++) {
                 GridCoordinates2D coord = new GridCoordinates2D(i, j);
-                cells.put(coordCoverage.evaluate(coord,vals)[0], file2ConvCoverage.evaluate(coord, vals)[bandNumber]);
+                cells.put(coordCoverage.evaluate(coord, vals)[0], file2ConvCoverage.evaluate(coord, vals)[bandNumber]);
 //                cells.put(Math.round((float)coordCoverage.evaluate(coord,vals)[0]), file2ConvCoverage.evaluate(coord, vals));
             }
 

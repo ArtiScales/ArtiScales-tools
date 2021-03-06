@@ -7,7 +7,6 @@ import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom.Lines;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataUtilities;
-import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
@@ -19,7 +18,13 @@ import org.geotools.filter.SortByImpl;
 import org.geotools.grid.Grids;
 import org.geotools.referencing.CRS;
 import org.geotools.util.factory.GeoTools;
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.AttributeDescriptor;
@@ -30,7 +35,14 @@ import si.uom.SI;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class CollecTransform {
@@ -82,7 +94,7 @@ public class CollecTransform {
         } catch (FactoryException e) {
             e.printStackTrace();
         }
-        sfTypeBuilder.setName("union");
+        sfTypeBuilder.setName("union" + "-" + collec.getSchema().getName());
         sfTypeBuilder.add(geomName, MultiPolygon.class);
         sfTypeBuilder.add(field, String.class);
         sfTypeBuilder.setDefaultGeometry(geomName);
@@ -366,39 +378,41 @@ public class CollecTransform {
     }
 
     /**
-     * Discretize the input {@link SimpleFeatureCollection} by generating a grid and cuting features by it. Should preserve attributes (untested).
+     * Discretize the input {@link SimpleFeatureCollection} by generating a grid, cuting features by it and merge them all together. Erase every attributes.
      *
      * @param in             Input {@link SimpleFeatureCollection}
      * @param gridResolution Resolution of the grid's mesh
      * @return the discretized {@link SimpleFeatureCollection}
      * @throws IOException
      */
-    public static SimpleFeatureCollection gridDiscretize(SimpleFeatureCollection in, int gridResolution) throws IOException {
+    public static SimpleFeatureCollection gridDiscretize(SimpleFeatureCollection in, double gridResolution) throws IOException {
+        return gridDiscretize(in, gridResolution, false);
+    }
+
+    /**
+     * Discretize the input {@link SimpleFeatureCollection} by generating a grid, cuting features by it and merge them all together. Erase every attributes.
+     *
+     * @param in             Input {@link SimpleFeatureCollection}
+     * @param gridResolution Resolution of the grid's mesh
+     * @param hexagonal      create an hexagonal grid
+     * @return the discretized {@link SimpleFeatureCollection}
+     * @throws IOException if grid data cannot be accessed of output cannot be written into memory.
+     */
+    public static SimpleFeatureCollection gridDiscretize(SimpleFeatureCollection in, double gridResolution, boolean hexagonal) throws IOException {
         DefaultFeatureCollection dfCuted = new DefaultFeatureCollection();
-        SimpleFeatureBuilder finalFeatureBuilder = Schemas.getSFBSchemaWithMultiPolygon(in.getSchema());
-        SpatialIndexFeatureCollection sifc = new SpatialIndexFeatureCollection(in);
-        SimpleFeatureCollection gridFeatures = Grids.createSquareGrid(in.getBounds(), gridResolution).getFeatures();
+        SimpleFeatureBuilder finalFeatureBuilder = Schemas.getBasicSchemaMultiPolygon("discretized-" + in.getSchema().getName());
+        SimpleFeatureCollection gridFeatures ;
+        if (hexagonal)
+            gridFeatures = Grids.createHexagonalGrid(in.getBounds(), gridResolution).getFeatures();
+        else
+            gridFeatures = Grids.createSquareGrid(in.getBounds(), gridResolution).getFeatures();
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
         String geomName = in.getSchema().getGeometryDescriptor().getLocalName();
         try (SimpleFeatureIterator iterator = gridFeatures.features()) {
             while (iterator.hasNext()) {
                 SimpleFeature featureGrid = iterator.next();
-                Geometry gridGeometry = (Geometry) featureGrid.getDefaultGeometry();
-                SimpleFeatureIterator chosenFeatIterator = sifc.subCollection(ff.bbox(ff.property(geomName), featureGrid.getBounds())).features();
-                List<Geometry> list = new ArrayList<>();
-                List<Object> attr = new ArrayList<>();
-                while (chosenFeatIterator.hasNext()) {
-                    SimpleFeature f = chosenFeatIterator.next();
-                    Geometry g = (Geometry) f.getDefaultGeometry();
-                    if (g.intersects(gridGeometry)) {
-                        attr = f.getAttributes();
-                        list.add(g);
-                    }
-                }
-                Geometry diffGeom = Geom.scaledGeometryReductionIntersection(Arrays.asList(Geom.unionGeom(list), gridGeometry));
+                Geometry diffGeom = Geom.scaledGeometryReductionIntersection(Arrays.asList(Geom.unionGeom(Arrays.stream(in.subCollection(ff.bbox(ff.property(geomName), featureGrid.getBounds())).toArray(new SimpleFeature[0])).map(g -> (Geometry) g.getDefaultGeometry()).collect(Collectors.toList())), (Geometry) featureGrid.getDefaultGeometry()));
                 if (diffGeom != null && !diffGeom.isEmpty()) {
-                    for (Object a : attr)
-                        finalFeatureBuilder.add(a);
                     finalFeatureBuilder.set(geomName, diffGeom);
                     dfCuted.add(finalFeatureBuilder.buildFeature(Attribute.makeUniqueId()));
                 }
