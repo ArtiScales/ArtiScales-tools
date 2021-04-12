@@ -14,9 +14,10 @@ public class OpOnCollec {
     /**
      * Get statistics about a field of a collection
      *
-     * @param sfc input {@link SimpleFeatureCollection}
-     *            * @param attribute
-     * @return
+     * @param sfc input collection
+     * @param attribute the field's name on which doing the statistical study
+     * @param stat given type of statistic
+     * @return the statistic
      */
     public static double getCollectionAttributeDescriptiveStat(SimpleFeatureCollection sfc, String attribute, StatisticOperation stat) {
         try {
@@ -45,10 +46,26 @@ public class OpOnCollec {
         }
     }
 
+    /**
+     * Get the number of feature for which a given attribute is equal to a fixed value
+     * @param sfc input collection
+     * @param attributeName field's name
+     * @param attribute attribute's value
+     * @return the number of feature which attribute matches the given value
+     */
     public static int getCollectionAttributeCount(SimpleFeatureCollection sfc, String attributeName, String attribute) {
 //		return Arrays.stream(sfc.toArray(new SimpleFeature[0])).filter(feat -> String.valueOf(feat.getAttribute(attributeName)).equals(attribute)).count();
         return getCollectionAttributeCount(sfc, attributeName, attribute, CommonFactoryFinder.getFilterFactory2());
     }
+
+    /**
+     * Get the number of feature for which a given attribute is equal to a fixed value
+     * @param sfc input collection
+     * @param attributeName field's name
+     * @param attribute attribute's value
+     * @param ff if a filter factory already exists (that may fast the process if count is made numerous times)
+     * @return the number of feature which attribute matches the given value
+     */
 
     public static int getCollectionAttributeCount(SimpleFeatureCollection sfc, String attributeName, String attribute, FilterFactory2 ff) {
 //		return Arrays.stream(sfc.toArray(new SimpleFeature[0])).filter(feat -> String.valueOf(feat.getAttribute(attributeName)).equals(attribute)).count();

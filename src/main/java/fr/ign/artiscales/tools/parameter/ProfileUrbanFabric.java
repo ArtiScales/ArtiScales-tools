@@ -19,7 +19,7 @@ public class ProfileUrbanFabric {
     static String profileFolder;
     String nameBuildingType;
     double maximalArea, minimalArea, minimalWidthContactRoad, streetWidth, largeStreetWidth, maxDepth, maxDistanceForNearestRoad,
-            minWidth, maxWidth;
+            maxWidth;
     int largeStreetLevel, decompositionLevelWithoutStreet;
     double lenDriveway, noise, harmonyCoeff = 0.5;
 
@@ -51,7 +51,6 @@ public class ProfileUrbanFabric {
         this.lenDriveway = lenDriveway;
         this.maxDepth = maxDepth;
         this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
-        this.minWidth = minWidth;
         this.maxWidth = maxWidth;
     }
 
@@ -76,7 +75,6 @@ public class ProfileUrbanFabric {
         this.streetWidth = streetWidth;
         this.maxDepth = maxDepth;
         this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
-        this.minWidth = minWidth;
         this.maxWidth = maxWidth;
     }
 
@@ -265,10 +263,6 @@ public class ProfileUrbanFabric {
 
     public double getMaxDistanceForNearestRoad() {
         return maxDistanceForNearestRoad;
-    }
-
-    public double getMinWidth() {
-        return minWidth;
     }
 
     public double getMaxWidth() {

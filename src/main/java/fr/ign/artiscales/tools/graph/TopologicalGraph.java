@@ -18,6 +18,7 @@ import org.opengis.referencing.FactoryException;
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 
 public class TopologicalGraph {
+  private static final boolean DEBUG = false;
   List<Node> nodes = new ArrayList<>();
   List<Edge> edges = new ArrayList<>();
   List<Face> faces = new ArrayList<>();
@@ -72,7 +73,8 @@ public class TopologicalGraph {
   }
   
   public static <G extends Geometry, E extends GraphElement<G>> void export(List<E> feats, File fileOut,	Class<? extends Geometry> geomType) {
-		System.out.println("save " + feats.size() + " to " + fileOut);
+	    if (DEBUG)
+            System.out.println("save " + feats.size() + " to " + fileOut);
 		if (feats.isEmpty())
 			return;
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();

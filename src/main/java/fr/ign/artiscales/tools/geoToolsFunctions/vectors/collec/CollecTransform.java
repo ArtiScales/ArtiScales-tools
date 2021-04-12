@@ -156,7 +156,7 @@ public class CollecTransform {
      * @param fieldName   field name to select features from
      * @param attribute   wanted field
      * @return a collection with matching features
-     * @throws IOException
+     * @throws IOException unable to copy result in memory
      */
     public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String fieldName, String attribute) throws IOException {
         String[] attributes = {attribute};
@@ -171,10 +171,9 @@ public class CollecTransform {
      * @param fieldNames  array of field names
      * @param attributes  array of values
      * @return a collection with matching features
-     * @throws IOException
+     * @throws IOException unable to copy result in memory
      */
-    public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String[] fieldNames, String[] attributes)
-            throws IOException {
+    public static SimpleFeatureCollection getSFCPart(SimpleFeatureCollection sFCToDivide, String[] fieldNames, String[] attributes) throws IOException {
         int shortestIndice = Math.min(fieldNames.length, attributes.length);
         if (fieldNames.length != attributes.length)
             System.out.println("not same number of indices between fieldNames and attributes. Took the shortest one");
@@ -196,9 +195,9 @@ public class CollecTransform {
      * clean the {@link SimpleFeatureCollection} of feature which area is inferior to areaMin
      *
      * @param collecIn Input {@link SimpleFeatureCollection}
-     * @param areaMin
+     * @param areaMin area threshold under which feature will be ignored
      * @return the cleaned {@link SimpleFeatureCollection}
-     * @throws IOException
+     * @throws IOException unable to copy result in memory
      */
     public static SimpleFeatureCollection delTinyParcels(SimpleFeatureCollection collecIn, double areaMin) throws IOException {
         DefaultFeatureCollection newParcel = new DefaultFeatureCollection();
@@ -247,6 +246,21 @@ public class CollecTransform {
     public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, Geometry bBox) {
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
         return SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox)));
+    }
+
+    /**
+     * Make the intersection but for overlapping object, check if they are mostly included in the geometry (more than 50% of their footprint are inside geometry) or not
+     *
+     * @param lG List of input geometries
+     * @param bBox  Geometry to check relation with collection
+     * @return The selected collection
+     */
+    public static List<Geometry> selectIntersectMost(List<Geometry> lG, Geometry bBox) {
+        FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+        List<Geometry> result = new ArrayList<>();
+        result.addAll(lG.stream().filter(x -> bBox.contains(x)).collect(Collectors.toList()));
+        result.addAll(lG.stream().filter(x -> bBox.overlaps(x)).filter(x -> (x.intersection(bBox).getArea() / x.getArea()) > 0.5).collect(Collectors.toList()));
+        return result;
     }
 
     /**
@@ -306,11 +320,10 @@ public class CollecTransform {
      *
      * @param sFCToSort SimpleFeature
      * @return The sorted {@link SimpleFeatureCollection}
-     * @throws IOException from {@link DefaultFeatureCollection}
      */
-    public static SimpleFeatureCollection sortSFCWithField(SimpleFeatureCollection sFCToSort, String field, boolean maxToMin) throws IOException {
+    public static SimpleFeatureCollection sortSFCWithField(SimpleFeatureCollection sFCToSort, String field, boolean maxToMin) {
         if (sFCToSort.isEmpty() || !CollecMgmt.isCollecContainsAttribute(sFCToSort, field)) //todo add the check if is numeric
-            return null;
+            return new DefaultFeatureCollection();
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
         SortByImpl[] sortOrder = {new SortByImpl(ff.property(field), maxToMin ? SortOrder.DESCENDING : SortOrder.ASCENDING)};
         return new SortedSimpleFeatureCollection(sFCToSort, sortOrder);
@@ -355,11 +368,6 @@ public class CollecTransform {
         return lines;
     }
 
-    /**
-     * @param sfcToSort
-     * @param sfcIntersection
-     * @return
-     */
     public static SimpleFeatureCollection getSFCfromSFCIntersection(SimpleFeatureCollection sfcToSort, SimpleFeatureCollection sfcIntersection) {
         DefaultFeatureCollection result = new DefaultFeatureCollection();
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
@@ -370,8 +378,7 @@ public class CollecTransform {
             return null;
         Arrays.stream(collec.toArray(new SimpleFeature[0])).forEach(theFeature -> {
             Geometry theFeatureGeom = (Geometry) theFeature.getDefaultGeometry();
-            if (geometry.contains(theFeatureGeom)
-                    || (theFeatureGeom.intersects(geometry) && geometry.intersection(theFeatureGeom).getArea() > theFeatureGeom.getArea() * 0.5))
+            if (geometry.contains(theFeatureGeom) || (theFeatureGeom.intersects(geometry) && geometry.intersection(theFeatureGeom).getArea() > theFeatureGeom.getArea() * 0.5))
                 result.add(theFeature);
         });
         return result;
@@ -383,7 +390,7 @@ public class CollecTransform {
      * @param in             Input {@link SimpleFeatureCollection}
      * @param gridResolution Resolution of the grid's mesh
      * @return the discretized {@link SimpleFeatureCollection}
-     * @throws IOException
+     * @throws IOException if grid data cannot be accessed of output cannot be written into memory.
      */
     public static SimpleFeatureCollection gridDiscretize(SimpleFeatureCollection in, double gridResolution) throws IOException {
         return gridDiscretize(in, gridResolution, false);
@@ -442,7 +449,7 @@ public class CollecTransform {
      * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
      *
      * @param geometry input {@link Geometry}
-     * @param inputSFC
+     * @param inputSFC input collection
      * @return the (most) intersecting {@link SimpleFeature}}
      */
     public static SimpleFeature getIntersectingSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC) {
@@ -463,7 +470,7 @@ public class CollecTransform {
                         return theFeature;
                         // if the parcel is in between two features, we put the feature in a sorted collection
                     else if (theFeatureGeom.intersects(geometry))
-                        index.put(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, geometry)).getArea(), theFeature);
+                        index.put(Objects.requireNonNull(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, geometry))).getArea(), theFeature);
                 }
             } catch (Exception problem) {
                 problem.printStackTrace();
@@ -479,12 +486,11 @@ public class CollecTransform {
      * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection. Reduce the precision of the {@link Geometry}s
      *
      * @param geometry       input {@link Geometry}
-     * @param inputSFC
-     * @param precisionModel
+     * @param inputSFC input collection
+     * @param precisionModel precision of the intersection
      * @return the (most) intersecting {@link SimpleFeature}}
      */
-    public static SimpleFeature getIntersectingSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC,
-                                                                    PrecisionModel precisionModel) {
+    public static SimpleFeature getIntersectingSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC, PrecisionModel precisionModel) {
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
         Geometry givenFeatureGeom = GeometryPrecisionReducer.reduce(geometry, precisionModel);
         SortedMap<Double, SimpleFeature> index = new TreeMap<>();

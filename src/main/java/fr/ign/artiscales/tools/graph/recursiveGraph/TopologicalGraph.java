@@ -167,7 +167,8 @@ public class TopologicalGraph {
   }
   
   public static <G extends Geometry, E extends GraphElement<G,E>> void export(Collection<E> feats, File fileOut,	Class<? extends Geometry> geomType) {
-		System.out.println("save " + feats.size() + " to " + fileOut);
+	    if(DEBUG)
+          System.out.println("save " + feats.size() + " to " + fileOut);
 		if (feats.isEmpty())
 			return;
 		SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();

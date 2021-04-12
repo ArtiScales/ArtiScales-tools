@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class CollecMgmt {
@@ -259,7 +260,7 @@ public class CollecMgmt {
      * @throws IOException
      */
     public static SimpleFeatureCollection convertAttributeToFloat(SimpleFeatureCollection sfcIn, String attributesToConvertName) throws IOException {
-        return convertAttributeToFloat(sfcIn, Arrays.asList(attributesToConvertName));
+        return convertAttributeToFloat(sfcIn, Collections.singletonList(attributesToConvertName));
     }
 
     /**
@@ -268,7 +269,7 @@ public class CollecMgmt {
      * @param sfcIn
      * @param attributesToConvertName
      * @return
-     * @throws IOException
+     * @throws IOException if cannot write result into memory
      */
     public static SimpleFeatureCollection convertAttributeToFloat(SimpleFeatureCollection sfcIn, List<String> attributesToConvertName) throws IOException {
         DefaultFeatureCollection df = new DefaultFeatureCollection();
@@ -306,7 +307,7 @@ public class CollecMgmt {
                             val = null;
                         else
                             val = Float.valueOf((String) at);
-                        newSchema.set(attribute.getLocalName(), val == null ? null : val.floatValue());
+                        newSchema.set(attribute.getLocalName(), val);
                     }
                 }
                 df.add(newSchema.buildFeature(Attribute.makeUniqueId()));
