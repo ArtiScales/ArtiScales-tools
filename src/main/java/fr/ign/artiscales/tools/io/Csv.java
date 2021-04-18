@@ -29,14 +29,45 @@ public class Csv {
 //    }
 
     /**
+     * Export a {@link DescriptiveStatistics} ofject to a .csv tab
+     * @param ds {@link DescriptiveStatistics} with values
+     * @param outFile file to write in
+     * @throws IOException writing file
+     *
+     */
+    public static void exportDescStatToCSV(DescriptiveStatistics ds, File outFile) throws IOException {
+        List<String> lVal = new ArrayList<>();
+        for (double val : ds.getValues())
+            lVal.add(String.valueOf(val));
+        simpleCSVWriter(lVal, outFile, false);
+    }
+
+    /**
+     * Get a list of unique values for a given field from a .csv file
+     * @param csvFile csv file
+     * @param fieldName name of the field to sum values
+     * @return a list of unique values
+     */
+    public static List<String> getUniqueFieldValue(File csvFile, String fieldName) throws IOException {
+        CSVReader r = new CSVReader(new FileReader(csvFile));
+        int i = Attribute.getIndice(r.readNext(), fieldName);
+        List<String> result = new ArrayList<>();
+        for (String[] l : r.readAll())
+            if (!result.contains(l[i]))
+                result.add(l[i]);
+        return result;
+    }
+
+    /**
      * Get the indice number on the position of the header of a .csv file
      *
      * @param csvFile .csv file with a header
+     * @param fieldName name of the field to get indice from
      * @return the indice on which number
      */
-    public static int getIndice(File csvFile, String attributeName) throws IOException {
+    public static int getIndice(File csvFile, String fieldName) throws IOException {
         CSVReader r = new CSVReader(new FileReader(csvFile));
-        int i = Attribute.getIndice(r.readNext(), attributeName);
+        int i = Attribute.getIndice(r.readNext(), fieldName);
         r.close();
         return i;
     }
@@ -187,7 +218,7 @@ public class Csv {
      * @param filesToMerge
      * @param outFile
      * @return the outFile param where a merged .csv file should have been generated
-     * @throws IOException
+     * @throws IOException reading or writing file
      */
     public static File mergeCSVFiles(List<File> filesToMerge, File outFile) throws IOException {
         CSVReader defCsv = new CSVReader(new FileReader(filesToMerge.get(0)));
@@ -212,8 +243,8 @@ public class Csv {
      * Generates a .csv file out of a {@link HashMap}. Used mainly for the MUP-City particular evaluation analysis
      *
      * @param results
-     * @param folderOut
-     * @param name
+     * @param folderOut Folder where the .csv file is created
+     * @param name      Name of the .csv file
      * @throws IOException
      */
     public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double[]>> results, String name, String firstLine, File folderOut)
@@ -240,8 +271,8 @@ public class Csv {
      * Generates a .csv file out of a {@link HashMap}. Used mainly for the MUP-City analysis objects RasterMergeResult
      *
      * @param results
-     * @param folderOut
-     * @param name
+     * @param folderOut Folder where the .csv file is created
+     * @param name      Name of the .csv file
      * @throws IOException
      */
     public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double>> results, File folderOut, String name) throws IOException {
@@ -479,23 +510,21 @@ public class Csv {
 
         // selec the longest tab
         int longestTab = 0;
-        for (Object[] tab : cellRepet.values()) {
+        for (Object[] tab : cellRepet.values())
             if (tab.length > longestTab)
                 longestTab = tab.length;
-        }
         // put the main names
         for (String nomm : cellRepet.keySet())
             writer.append(nomm).append(",");
         writer.append("\n");
         for (int i = 0; i <= longestTab - 1; i++) {
-            for (String nomm : cellRepet.keySet()) {
+            for (String nomm : cellRepet.keySet())
                 try {
                     writer.append(String.valueOf(cellRepet.get(nomm)[i])).append(",");
                 } catch (ArrayIndexOutOfBoundsException a) {
                     writer.append(",");
                     // normal that it gets Arrays exceptions.
                 }
-            }
             writer.append("\n");
         }
         writer.close();

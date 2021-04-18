@@ -3,6 +3,7 @@ package fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec;
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.GeoJSON;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Shp;
 import org.geotools.data.DataStore;
@@ -119,7 +120,7 @@ public class CollecMgmt {
                 // if we don't want to keep attributes, we create features out of new features
                 // containing only geometry
                 Arrays.stream(sfc.toArray(new SimpleFeature[0])).forEach(feat -> {
-                    defaultSFBuilder.set("the_geom", feat.getDefaultGeometry());
+                    defaultSFBuilder.set(CollecMgmt.getDefaultGeomName(), feat.getDefaultGeometry());
                     newParcelCollection.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId()));
                 });
             }

@@ -46,8 +46,8 @@ public class FindObjectInDirection {
     /**
      * Find an object in the collection collectionToSelect in a direction perpendicular to bound (a LineString object) in a direction opposite to parcel
      *
-     * @param linestringFeature
-     * @param oppositeDirectionFeature
+     * @param linestringFeature feature containing the line for which a perpendicular line is drawn
+     * @param oppositeDirectionFeature feature containing the geometry used to not draw line in that direction
      * @param collectionToSelect       collection of segment to search for
      * @param maximumDistance          distance till which the algorithm is looking for a road segment
      * @return a perpendicular parcel
@@ -61,8 +61,8 @@ public class FindObjectInDirection {
     /**
      * Find an object in the collection collectionToSelect in a direction perpendicular to bound (a LineString object) in a direction opposite to parcel.
      *
-     * @param linestring
-     * @param oppositeDirection
+     * @param linestring draw line perpendicular to that geometry
+     * @param oppositeDirection Geometry used to not draw line in that direction
      * @param collectionToSelect collection of segment to search for
      * @param maximumDistance    distance till which the algorithm is looking for a road segment
      * @return
@@ -74,8 +74,8 @@ public class FindObjectInDirection {
     /**
      * Find an object in the collection collectionToSelect in a direction perpendicular to bound (a LineString object) in a direction opposite to parcel.
      *
-     * @param linestring
-     * @param oppositeDirection
+     * @param linestring draw line perpendicular to that geometry
+     * @param oppositeDirection Geometry used to not draw line in that direction
      * @param collectionToSelect collection of segment to search for
      * @param maximumDistance    distance till which the algorithm is looking for a segment
      * @param attrImportance     road attribute setting the road importance. Can be null
@@ -110,8 +110,7 @@ public class FindObjectInDirection {
         return Optional.ofNullable(bestcandidateParcel);
     }
 
-    private static LineString generateLineofSight(LineString geom, Geometry oppositeDirection,
-                                                  double maximumDistance) {
+    private static LineString generateLineofSight(LineString geom, Geometry oppositeDirection, double maximumDistance) {
         Coordinate dp1 = geom.getCoordinateN(0);
         Coordinate dp2 = geom.getCoordinateN(1);
 

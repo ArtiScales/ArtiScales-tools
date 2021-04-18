@@ -20,6 +20,11 @@ public class Schemas {
      */
     private static String epsg = "EPSG:2154";
 
+    /**
+     * Get a schema for {@link Polygon} with no {@link org.opengis.feature.Attribute}
+     * @param name Name of the schema
+     * @return empty builder
+     */
     public static SimpleFeatureBuilder getBasicSchema(String name) {
         SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
         try {
@@ -29,6 +34,25 @@ public class Schemas {
         }
         sfTypeBuilder.setName(name);
         sfTypeBuilder.add(CollecMgmt.getDefaultGeomName(), Polygon.class);
+        sfTypeBuilder.setDefaultGeometry(CollecMgmt.getDefaultGeomName());
+        SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
+        return new SimpleFeatureBuilder(featureType);
+    }
+
+    /**
+     * Get a schema for {@link MultiLineString} with no {@link org.opengis.feature.Attribute}
+     * @param name Name of the schema
+     * @return empty builder
+     */
+    public static SimpleFeatureBuilder getBasicMLSSchema(String name) {
+        SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
+        try {
+            sfTypeBuilder.setCRS(CRS.decode(epsg));
+        } catch (FactoryException e) {
+            e.printStackTrace();
+        }
+        sfTypeBuilder.setName(name);
+        sfTypeBuilder.add(CollecMgmt.getDefaultGeomName(), MultiLineString.class);
         sfTypeBuilder.setDefaultGeometry(CollecMgmt.getDefaultGeomName());
         SimpleFeatureType featureType = sfTypeBuilder.buildFeatureType();
         return new SimpleFeatureBuilder(featureType);

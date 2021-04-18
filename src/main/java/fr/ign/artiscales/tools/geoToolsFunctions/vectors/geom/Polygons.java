@@ -109,8 +109,19 @@ public class Polygons {
     public static Polygon polygonUnion(List<Polygon> list, GeometryPrecisionReducer reducer) {
         if (list.isEmpty())
             return null;
-        List<Geometry> reducedList = list.stream().filter(Objects::nonNull).map(reducer::reduce).collect(Collectors.toList());
-        return (Polygon) new CascadedPolygonUnion(reducedList).union();
+        Geometry p = new CascadedPolygonUnion(list.stream().filter(Objects::nonNull).map(reducer::reduce).collect(Collectors.toList())).union();
+        try {
+           return (Polygon) p;
+       }
+       catch (Exception e){
+           System.out.println("Polygons.polygonUnion() : cannot return MultiPolygon " + p);
+           Polygon largest = (Polygon) p.getGeometryN(0);
+           for (int i = 1; i < p.getNumGeometries(); i++)
+               if (p.getGeometryN(i).getArea() > largest.getArea())
+                   largest = (Polygon) p.getGeometryN(i);
+           System.out.println("Return the largest polygon : "+largest);
+           return largest;
+       }
     }
 
     /**
