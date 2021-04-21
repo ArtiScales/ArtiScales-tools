@@ -13,6 +13,7 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Geometry;
+import org.opengis.feature.simple.SimpleFeature;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,26 +81,49 @@ public class CityGeneration {
      * @return a {@link SimpleFeatureCollection} of urban block
      * @throws IOException
      */
+    public static SimpleFeatureCollection createUrbanBlock(List<SimpleFeature> parcel) throws IOException {
+        DefaultFeatureCollection df = new DefaultFeatureCollection();
+        df.addAll(parcel);
+        return createUrbanBlock(df.collection());
+    }
+
+    /**
+     * Generate urban block out of a parcel plan. Urban block can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
+     *
+     * @param parcel input parcel
+     * @return a {@link SimpleFeatureCollection} of urban block
+     * @throws IOException
+     */
     public static SimpleFeatureCollection createUrbanBlock(SimpleFeatureCollection parcel) throws IOException {
-//		Geometry bigGeom = Geom.unionSFC(parcel).buffer(1).buffer(-1);
+        return createUrbanBlock(parcel, false);
+    }
+
+    /**
+     * Generate urban block out of a parcel plan. Urban block can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
+     *
+     * @param parcel   input parcel
+     * @param doBuffer do we generate a 1m buffer and then a -1m buffer ? it may alter geometries but it fills holes.
+     * @return a {@link SimpleFeatureCollection} of urban block
+     * @throws IOException
+     */
+    public static SimpleFeatureCollection createUrbanBlock(SimpleFeatureCollection parcel, boolean doBuffer) throws IOException {
         Geometry bigGeom = Geom.unionSFC(parcel);
+        if (doBuffer)
+            bigGeom = bigGeom.buffer(1).buffer(-1);
+        return createUrbanBlock(bigGeom);
+    }
+
+    public static SimpleFeatureCollection createUrbanBlock(Geometry bigGeom) throws IOException {
         DefaultFeatureCollection df = new DefaultFeatureCollection();
         SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaID("block");
-
         AtomicInteger indexGen = new AtomicInteger();
-        IntStream.range(0, bigGeom.getNumGeometries())
-                .forEach(x -> {
-                            int index = indexGen.getAndIncrement();
-                            sfBuilder.add(bigGeom.getGeometryN(index));
-                            Object[] obj = {index};
-                            df.add(sfBuilder.buildFeature(Attribute.makeUniqueId(), obj));
-                        }
-                );
-//		for (int i = 0; i < bigGeom.getNumGeometries(); i++) {
-//			sfBuilder.add(bigGeom.getGeometryN(i));
-//			Object[] obj = { i };
-//			df.add(sfBuilder.buildFeature(String.valueOf(count++), obj));
-//		}
+        IntStream.range(0, bigGeom.getNumGeometries()).forEach(x -> {
+                    int index = indexGen.getAndIncrement();
+                    sfBuilder.add(bigGeom.getGeometryN(index));
+                    Object[] obj = {index};
+                    df.add(sfBuilder.buildFeature(Attribute.makeUniqueId(), obj));
+                }
+        );
         return new SpatialIndexFeatureCollection(df.collection());
     }
 
