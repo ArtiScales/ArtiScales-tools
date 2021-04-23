@@ -18,10 +18,10 @@ import java.io.InputStream;
 public class ProfileUrbanFabric {
     static String profileFolder;
     String nameBuildingType;
-    double maximalArea, minimalArea, minimalWidthContactRoad, streetWidth, largeStreetWidth, maxDepth, maxDistanceForNearestRoad,
-            maxWidth;
+    double maximalArea, minimalArea, minimalWidthContactRoad, streetWidth, largeStreetWidth, maxDepth, maxDistanceForNearestRoad, maxWidth;
     int largeStreetLevel, decompositionLevelWithoutStreet;
     double lenDriveway, noise, harmonyCoeff = 0.5;
+    boolean generatePeripheralRoad;
 
     public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
                               double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet) {
@@ -36,9 +36,12 @@ public class ProfileUrbanFabric {
         this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
     }
 
+    /**
+     * For every parameter use
+     */
     public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
                               double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet, double lenDriveway,
-                              double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth) {
+                              double maxDepth, double maxDistanceForNearestRoad, double maxWidth, boolean generatePeripheralRoad) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
@@ -52,42 +55,28 @@ public class ProfileUrbanFabric {
         this.maxDepth = maxDepth;
         this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
         this.maxWidth = maxWidth;
+        this.generatePeripheralRoad = generatePeripheralRoad;
     }
 
     /**
      * For Straight Skeleton
-     *
-     * @param nameBuildingType
-     * @param maximalArea
-     * @param minimalArea
-     * @param maxDepth
-     * @param maxDistanceForNearestRoad
-     * @param minWidth
-     * @param maxWidth
-     * @param streetWidth
      */
-    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea,
-                              double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth, double streetWidth) {
+    public ProfileUrbanFabric(String nameBuildingType, double minimalArea,
+                              double maxDepth, double maxDistanceForNearestRoad, double minWidth,
+                              double maxWidth, double streetWidth, boolean generatePeripheralRoad) {
         super();
         this.nameBuildingType = nameBuildingType;
-        this.maximalArea = maximalArea;
         this.minimalArea = minimalArea;
         this.streetWidth = streetWidth;
         this.maxDepth = maxDepth;
         this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
         this.maxWidth = maxWidth;
+        this.minimalWidthContactRoad = minWidth;
+        this.generatePeripheralRoad = generatePeripheralRoad;
     }
 
     /**
      * Builder for Oriented Bounding Box
-     *
-     * @param nameBuildingType
-     * @param maximalArea
-     * @param minimalArea
-     * @param maximalWidth
-     * @param streetWidth
-     * @param decompositionLevelWithoutStreet
-     * @param largeStreetLevel
      */
     public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double streetWidth,
                               int largeStreetLevel, int decompositionLevelWithoutStreet) {
@@ -104,12 +93,6 @@ public class ProfileUrbanFabric {
 
     /**
      * Builder for flag cut
-     *
-     * @param nameBuildingType
-     * @param maximalArea
-     * @param minimalArea
-     * @param maximalWidth
-     * @param lenDriveway
      */
     public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double lenDriveway) {
         super();
@@ -172,6 +155,15 @@ public class ProfileUrbanFabric {
         ProfileUrbanFabric profile = mapper.readValue(fileInputStream, ProfileUrbanFabric.class);
         fileInputStream.close();
         return profile;
+    }
+
+
+    public boolean isGeneratePeripheralRoad() {
+        return generatePeripheralRoad;
+    }
+
+    public void setGeneratePeripheralRoad(boolean generatePeripheralRoad) {
+        this.generatePeripheralRoad = generatePeripheralRoad;
     }
 
     public String getNameBuildingType() {

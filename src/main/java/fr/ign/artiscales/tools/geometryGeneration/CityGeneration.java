@@ -102,14 +102,14 @@ public class CityGeneration {
      * Generate urban block out of a parcel plan. Urban block can be viewed as a block but must have a discontinuity (i.e. road or public space) between them.
      *
      * @param parcel   input parcel
-     * @param doBuffer do we generate a 1m buffer and then a -1m buffer ? it may alter geometries but it fills holes.
+     * @param doBuffer do we generate a 2.2m buffer and then a -2.2m buffer (this length corresponds to the minimal width of a road) ? it may alter geometries but it fills holes.
      * @return a {@link SimpleFeatureCollection} of urban block
      * @throws IOException
      */
     public static SimpleFeatureCollection createUrbanBlock(SimpleFeatureCollection parcel, boolean doBuffer) throws IOException {
         Geometry bigGeom = Geom.unionSFC(parcel);
         if (doBuffer)
-            bigGeom = bigGeom.buffer(1).buffer(-1);
+            bigGeom = bigGeom.buffer(2.2).buffer(-2.2);
         return createUrbanBlock(bigGeom);
     }
 
