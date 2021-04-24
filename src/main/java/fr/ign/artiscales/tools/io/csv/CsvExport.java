@@ -1,8 +1,7 @@
-package fr.ign.artiscales.tools.io;
+package fr.ign.artiscales.tools.io.csv;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
-import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.io.File;
@@ -20,7 +19,7 @@ import java.util.Objects;
  *
  * @author Maxime Colomb
  */
-public class Csv {
+public class CsvExport {
 
     public static boolean needFLine = true;
 
@@ -30,162 +29,16 @@ public class Csv {
 
     /**
      * Export a {@link DescriptiveStatistics} ofject to a .csv tab
-     * @param ds {@link DescriptiveStatistics} with values
+     *
+     * @param ds      {@link DescriptiveStatistics} with values
      * @param outFile file to write in
      * @throws IOException writing file
-     *
      */
     public static void exportDescStatToCSV(DescriptiveStatistics ds, File outFile) throws IOException {
         List<String> lVal = new ArrayList<>();
         for (double val : ds.getValues())
             lVal.add(String.valueOf(val));
         simpleCSVWriter(lVal, outFile, false);
-    }
-
-    /**
-     * Get a list of unique values for a given field from a .csv file
-     * @param csvFile csv file
-     * @param fieldName name of the field to sum values
-     * @return a list of unique values
-     */
-    public static List<String> getUniqueFieldValue(File csvFile, String fieldName) throws IOException {
-        CSVReader r = new CSVReader(new FileReader(csvFile));
-        int i = Attribute.getIndice(r.readNext(), fieldName);
-        List<String> result = new ArrayList<>();
-        for (String[] l : r.readAll())
-            if (!result.contains(l[i]))
-                result.add(l[i]);
-        return result;
-    }
-
-    /**
-     * Get the indice number on the position of the header of a .csv file
-     *
-     * @param csvFile .csv file with a header
-     * @param fieldName name of the field to get indice from
-     * @return the indice on which number
-     */
-    public static int getIndice(File csvFile, String fieldName) throws IOException {
-        CSVReader r = new CSVReader(new FileReader(csvFile));
-        int i = Attribute.getIndice(r.readNext(), fieldName);
-        r.close();
-        return i;
-    }
-
-    /**
-     * Get the values of cells corresponding to the value of another field's cell.
-     *
-     * @param csvFile              CSV {@link File} with a comma as a separator
-     * @param targetAttributeName  name of the field that will be compared
-     * @param targetAttributeValue value of the cell that will be compared
-     * @param wantedAttributeName  name of the field of the wanted cell
-     * @return the value of the cells in an {@link ArrayList}
-     * @throws IOException by CSVReader
-     */
-    public static List<String> getCells(File csvFile, String targetAttributeName, String targetAttributeValue, String wantedAttributeName) throws IOException {
-        CSVReader r = new CSVReader(new FileReader(csvFile));
-        String[] fLine = r.readNext();
-        int iTarget = Attribute.getIndice(fLine, targetAttributeName);
-        int iWanted = Attribute.getIndice(fLine, wantedAttributeName);
-        List<String> result = new ArrayList<>();
-        for (String[] line : r.readAll())
-            if (line[iTarget].equals(targetAttributeValue))
-                result.add(line[iWanted]);
-        r.close();
-        return result;
-    }
-
-    /**
-     * Get the value of a cell corresponding to the value of another field's cell. Unique result, stop at first.
-     *
-     * @param csvFile              CSV {@link File} with a comma as a separator
-     * @param targetAttributeName  name of the field that will be compared
-     * @param targetAttributeValue value of the cell that will be compared
-     * @param wantedAttributeName  name of the field of the wanted cell
-     * @return the values of the cell
-     * @throws IOException by CSVReader
-     */
-    public static String getCell(File csvFile, String targetAttributeName, String targetAttributeValue, String wantedAttributeName) throws IOException {
-        CSVReader r = new CSVReader(new FileReader(csvFile));
-        String[] fLine = r.readNext();
-        int iTarget = Attribute.getIndice(fLine, targetAttributeName);
-        String result = "";
-        for (String[] line : r.readAll())
-            if (line[iTarget].equals(targetAttributeValue)) {
-                result = line[Attribute.getIndice(fLine, wantedAttributeName)];
-                break;
-            }
-        r.close();
-        return result;
-    }
-
-    /**
-     * Create a String out of a CSV line with only the indicated indexes. Separate the values with a "-"
-     *
-     * @param headers list of indexes to put
-     * @param line    the csv line in a tab
-     * @return the concatenated string
-     */
-    public static String makeLine(List<Integer> headers, String[] line) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < line.length; i++)
-            if (headers.contains(i))
-                result.append("-").append(line[i]);
-        return result.substring(1, result.length());
-    }
-
-    /**
-     * Add some basic statistic for a predeterminde column of a csv file. Add extra lines to the end of the .csv.
-     *
-     * @param csvFile    path to the .csv {@link File}
-     * @param nbCol      number of the column to calulate stats (begins at 0)
-     * @param isFirstCol true if there's a header and it will be ignored
-     * @throws IOException
-     */
-    public static void calculateColumnsBasicStat(File csvFile, int nbCol, boolean isFirstCol) throws IOException {
-        CSVReader r = new CSVReader(new FileReader(csvFile));
-        String[] fCol = null;
-        if (isFirstCol)
-            fCol = r.readNext();
-        List<String[]> lines = r.readAll();
-        DescriptiveStatistics ds = new DescriptiveStatistics();
-        for (String[] line : lines) {
-            try {
-                ds.addValue(Double.parseDouble(line[nbCol]));
-            } catch (NumberFormatException ignored) {
-            }
-        }
-        r.close();
-        CSVWriter w = new CSVWriter(new FileWriter(csvFile));
-        if (isFirstCol)
-            w.writeNext(fCol);
-        w.writeAll(lines);
-
-        String[] line = new String[lines.get(0).length];
-        line[0] = "mean";
-        line[nbCol] = String.valueOf(ds.getMean());
-        w.writeNext(line);
-
-        line[0] = "median";
-        line[nbCol] = String.valueOf(ds.getPercentile(50));
-        w.writeNext(line);
-
-        line[0] = "min";
-        line[nbCol] = String.valueOf(ds.getMin());
-        w.writeNext(line);
-
-        line[0] = "max";
-        line[nbCol] = String.valueOf(ds.getMax());
-        w.writeNext(line);
-
-        line[0] = "StandardDeviation";
-        line[nbCol] = String.valueOf(ds.getStandardDeviation());
-        w.writeNext(line);
-
-        line[0] = "sum";
-        line[nbCol] = String.valueOf(ds.getSum());
-        w.writeNext(line);
-        w.close();
     }
 
     /**

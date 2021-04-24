@@ -3,10 +3,8 @@ package fr.ign.artiscales.tools.carto;
 import com.opencsv.CSVReader;
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
 import org.geotools.data.DataStore;
-import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.DefaultFeatureCollection;
@@ -20,7 +18,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
 public class JoinCSVToGeoFile {
 
@@ -44,31 +41,9 @@ public class JoinCSVToGeoFile {
      * @deprecated not tested and unfinished method
      */
 
-    public static File joinCSVToShapeFile(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile, List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
-        ShapefileDataStore sds = new ShapefileDataStore(geoFile.toURI().toURL());
-        File result = joinCSVToGeoFile(sds.getFeatureSource(sds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile, attrsToStat, statsToDo);
-        sds.dispose();
-        return result;
-    }
-
-    /**
-     * @param geoFile
-     * @param joinGeoField
-     * @param csvFile
-     * @param joinCsvField
-     * @param outFile
-     * @param attrsToStat
-     * @param statsToDo
-     * @return
-     * @throws IOException
-     * @deprecated not tested and unfinished method
-     */
-
-    public static File joinCSVToGeopackage(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile,
-                                           List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
-        DataStore ds = Geopackages.getDataStore(geoFile);
-        File result = joinCSVToGeoFile(Objects.requireNonNull(ds).getFeatureSource(ds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile,
-                attrsToStat, statsToDo);
+    public static File joinCSV(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile, List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
+        DataStore ds = CollecMgmt.getDataStore(geoFile);
+        File result = joinCSVToGeoFile(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile, attrsToStat, statsToDo);
         ds.dispose();
         return result;
     }
