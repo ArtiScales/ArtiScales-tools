@@ -3,7 +3,6 @@ package fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec;
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.GeoJSON;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Shp;
 import org.geotools.data.DataStore;
@@ -79,12 +78,44 @@ public class CollecMgmt {
         defaultGISFileType = newDefaultGISFileType;
     }
 
+    /**
+     * Merge geofiles. They must be of the same type, Geopackage (.gpkg) or Shapefile (.shp). Try to keep attributes.
+     * @param file2MergeIn List of geofiles to merge
+     * @param fileOut Where to write the merged File
+     * @return the merged File
+     * @throws IOException Reading and writing
+     */
+    public static File mergeFiles(List<File> file2MergeIn, File fileOut) throws IOException {
+        return mergeFiles(file2MergeIn, fileOut, null, true);
+    }
+
+    /**
+     * Merge geofiles. They must be of the same type, Geopackage (.gpkg) or Shapefile (.shp). Try to keep attributes.
+     * @param file2MergeIn List of geofiles to merge
+     * @param fileOut Where to write the merged File
+     * @param boundFile apply a mask on the result
+     * @param keepAttributes keep every attribute. Must be the same schema between every files.
+     * @return the merged File
+     * @throws IOException Reading, writing, or unknown extension
+     */
+    public static File mergeFiles(List<File> file2MergeIn, File fileOut, File boundFile, boolean keepAttributes) throws IOException {
+        switch (file2MergeIn.get(0).getName().split("\\.")[file2MergeIn.get(0).getName().split("\\.").length - 1].toLowerCase()) {
+            case "gpkg":
+                return Geopackages.mergeGpkgFiles(file2MergeIn,fileOut,boundFile,keepAttributes);
+            case "shp":
+                return Shp.mergeVectFiles(file2MergeIn,fileOut,boundFile,keepAttributes);
+            case "geojson":
+            case "json":
+                throw new IOException("Merge JSON file : not implemented yet");
+        }
+        throw new IOException("getDataStore: extension unknown");
+    }
+
     public static SimpleFeatureCollection mergeSFC(List<SimpleFeatureCollection> sfcs, boolean keepAttributes, File boundFile) throws IOException {
         return mergeSFC(sfcs, sfcs.get(0).getSchema(), keepAttributes, boundFile);
     }
 
-    public static SimpleFeatureCollection mergeSFC(List<SimpleFeatureCollection> sfcs, SimpleFeatureType schemaRef, boolean keepAttributes,
-                                                   File boundFile) throws IOException {
+    public static SimpleFeatureCollection mergeSFC(List<SimpleFeatureCollection> sfcs, SimpleFeatureType schemaRef, boolean keepAttributes, File boundFile) throws IOException {
         // sfBuilder used only if number of attributes's the same but with different schemas
         SimpleFeatureBuilder defaultSFBuilder = new SimpleFeatureBuilder(schemaRef);
         DefaultFeatureCollection newParcelCollection = new DefaultFeatureCollection();
