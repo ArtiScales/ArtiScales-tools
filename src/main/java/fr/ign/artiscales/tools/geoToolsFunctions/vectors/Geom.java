@@ -28,42 +28,50 @@ import java.util.stream.Stream;
 
 public class Geom {
 //	public static void main(String[] args) throws Exception {
-////		WKTReader w = new WKTReader();
-////		Geometry g1 = w.read(
-////				"MULTIPOLYGON(((673440.63000000000465661 6861804.29600000008940697, 673460.79399999999441206 6861808.7630000002682209, 673462.83400000003166497 6861767.34200000017881393, 673463.73699999996460974 6861748.78500000014901161, 673447.48300000000745058 6861747.04299999959766865, 673445.22400000004563481 6861765.99000000022351742, 673445.17700000002514571 6861766.35099999979138374, 673440.63000000000465661 6861804.29600000008940697)))");
-////		Geometry g2 = w.read(
-////				"MULTIPOLYGON(((673421.24399999994784594 6861799.9419999998062849, 673440.63000000000465661 6861804.29600000008940697, 673445.17700000002514571 6861766.35099999979138374, 673445.22400000004563481 6861765.99000000022351742, 673447.48300000000745058 6861747.04299999959766865, 673431.51699999999254942 6861744.02900000009685755, 673430.20799999998416752 6861751.13599999994039536, 673428.08600000001024455 6861762.71600000001490116, 673427.69499999994877726 6861764.86799999978393316, 673421.24399999994784594 6861799.9419999998062849)))");
-////		Geometry g3 = w.read(
-////				"MULTIPOLYGON(((673408.16000000003259629 6861730.82299999985843897, 673418.18299999996088445 6861733.1380000002682209, 673425.25300000002607703 6861734.76699999999254942, 673429.11499999999068677 6861718.72400000039488077, 673429.4529999999795109 6861717.3030000003054738, 673435.87399999995250255 6861690.64499999955296516, 673423.22699999995529652 6861688.84200000017881393, 673421.97600000002421439 6861688.63300000037997961, 673413.99600000004284084 6861713.00499999988824129, 673413.67500000004656613 6861713.96700000017881393, 673411.13199999998323619 6861721.74399999994784594, 673410.95600000000558794 6861722.28600000031292439, 673408.16000000003259629 6861730.82299999985843897)))");
-//		ShapefileDataStore sd = new ShapefileDataStore(((new File("/tmp/tmp.shp")).toURI().toURL()));
-//		System.out.println(createBufferBorder(sd.getFeatureSource().getFeatures()));
-//	}
-
+//		WKTReader w = new WKTReader();
+//		Geometry g1 = w.read(
+//				"MULTIPOLYGON(((673440.63000000000465661 6861804.29600000008940697, 673460.79399999999441206 6861808.7630000002682209, 673462.83400000003166497 6861767.34200000017881393, 673463.73699999996460974 6861748.78500000014901161, 673447.48300000000745058 6861747.04299999959766865, 673445.22400000004563481 6861765.99000000022351742, 673445.17700000002514571 6861766.35099999979138374, 673440.63000000000465661 6861804.29600000008940697)))");
+//		Geometry g2 = w.read(
+//				"MULTIPOLYGON(((673421.24399999994784594 6861799.9419999998062849, 673440.63000000000465661 6861804.29600000008940697, 673445.17700000002514571 6861766.35099999979138374, 673445.22400000004563481 6861765.99000000022351742, 673447.48300000000745058 6861747.04299999959766865, 673431.51699999999254942 6861744.02900000009685755, 673430.20799999998416752 6861751.13599999994039536, 673428.08600000001024455 6861762.71600000001490116, 673427.69499999994877726 6861764.86799999978393316, 673421.24399999994784594 6861799.9419999998062849)))");
+//		Geometry g3 = w.read(
+//				"MULTIPOLYGON(((673408.16000000003259629 6861730.82299999985843897, 673418.18299999996088445 6861733.1380000002682209, 673425.25300000002607703 6861734.76699999999254942, 673429.11499999999068677 6861718.72400000039488077, 673429.4529999999795109 6861717.3030000003054738, 673435.87399999995250255 6861690.64499999955296516, 673423.22699999995529652 6861688.84200000017881393, 673421.97600000002421439 6861688.63300000037997961, 673413.99600000004284084 6861713.00499999988824129, 673413.67500000004656613 6861713.96700000017881393, 673411.13199999998323619 6861721.74399999994784594, 673410.95600000000558794 6861722.28600000031292439, 673408.16000000003259629 6861730.82299999985843897)))");
+//List <Geometry> list = new ArrayList<>();
+//long start = System.nanoTime();
+//unionGeom(list);
+//        System.out.println("time : "+(System.nanoTime()-start));
+//    }
 
     /**
-     * Export a simple geometry in a shapeFile
+     * select and export a list of geometries from a simple feature collection
      *
-     * @param geom
-     * @param fileName
-     * @return A ShapeFile containing the exported {@link Geometry}
-     * @throws IOException
+     * @param collec input
+     * @return the list of the simple feature's geometries
      */
-    public static File exportGeom(Geometry geom, File fileName) throws IOException {
-        SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaMultiPolygon("geom");
-        sfBuilder.add(geom);
-        SimpleFeature feature = sfBuilder.buildFeature(Attribute.makeUniqueId());
-        DefaultFeatureCollection dFC = new DefaultFeatureCollection();
-        dFC.add(feature);
-        return CollecMgmt.exportSFC(dFC.collection(), fileName);
+    public static List<Geometry> importListGeom(SimpleFeatureCollection collec) {
+        List<Geometry> result = new ArrayList<>();
+        Arrays.stream(collec.toArray(new SimpleFeature[0])).forEach(sf -> result.add((Geometry) sf.getDefaultGeometry()));
+        return result;
     }
 
     /**
-     * Export a list of geometries in a shapeFile.
+     * Export a single geometry in a geo file by converting them in a SimpleFeatureCollection.
      *
-     * @param geoms    {@link List} of objects extending {@link Geometry} type
-     * @param fileName
-     * @return A ShapeFile containing the exported {@link Geometry}
-     * @throws IOException
+     * @param geom     the geometry to export
+     * @param fileName the file to write
+     * @return A geo file containing the exported {@link Geometry}
+     * @throws IOException Writing file
+     */
+    public static File exportGeom(Geometry geom, File fileName) throws IOException {
+        return exportGeom(new ArrayList<>(List.of(geom)), fileName);
+    }
+
+    /**
+     * Export a list of geometries in a geo file by converting them in a SimpleFeatureCollection.
+     *
+     * @param geoms    {@link List} of objects extending {@link Geometry} type
+     * @param fileName file to where the list of geometries is written
+     * @return A geo file containing the exported {@link Geometry}
+     * @throws IOException writing geo file
      */
     public static File exportGeom(List<? extends Geometry> geoms, File fileName) throws IOException {
         return CollecMgmt.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon(CollecMgmt.getDefaultGeomName())), fileName);
@@ -75,15 +83,14 @@ public class Geom {
      * @param geoms     List of objects extending {@link Geometry} type
      * @param sfBuilder Builder for simple features
      * @return the collection of {@link Geometry}s
-     * @throws IOException
      */
-    public static SimpleFeatureCollection geomsToCollec(List<? extends Geometry> geoms, SimpleFeatureBuilder sfBuilder) throws IOException {
+    public static SimpleFeatureCollection geomsToCollec(List<? extends Geometry> geoms, SimpleFeatureBuilder sfBuilder) {
         DefaultFeatureCollection dFC = new DefaultFeatureCollection();
         for (Geometry geom : geoms) {
             sfBuilder.add(geom);
             dFC.add(sfBuilder.buildFeature(Attribute.makeUniqueId()));
         }
-        return dFC.collection();
+        return dFC;
     }
 
     /**
@@ -194,10 +201,7 @@ public class Geom {
     public static Geometry unionGeom(List<? extends Geometry> lG) {
         if (lG.size() == 1)
             return lG.get(0);
-        GeometryFactory factory = new GeometryFactory();
-        Stream<? extends Geometry> s = lG.stream();
-        GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-        return geometryCollection.union();
+        return (new GeometryFactory()).buildGeometry(lG).union();
     }
 
 //	public static Geometry unionGeom(Geometry g1, Geometry g2) {

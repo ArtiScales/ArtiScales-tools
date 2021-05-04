@@ -6,7 +6,6 @@ import fr.ign.artiscales.tools.geoToolsFunctions.StatisticOperation;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.geom.Lines;
 import org.geotools.data.DataStore;
-import org.geotools.data.DataUtilities;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
@@ -195,7 +194,7 @@ public class CollecTransform {
      * clean the {@link SimpleFeatureCollection} of feature which area is inferior to areaMin
      *
      * @param collecIn Input {@link SimpleFeatureCollection}
-     * @param areaMin area threshold under which feature will be ignored
+     * @param areaMin  area threshold under which feature will be ignored
      * @return the cleaned {@link SimpleFeatureCollection}
      * @throws IOException unable to copy result in memory
      */
@@ -217,49 +216,64 @@ public class CollecTransform {
         return newParcel.collection();
     }
 
-    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, File boxFile) throws IOException {
-        return selectIntersection(SFCIn, boxFile, 0);
+    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, File toIntersectFile) throws IOException {
+        return selectIntersection(SFCIn, toIntersectFile, 0);
     }
 
-    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, File boxFile, double distance) throws IOException {
-        DataStore dsZone = CollecMgmt.getDataStore(boxFile);
-        Geometry bBox = Geom.unionSFC(DataUtilities.collection(dsZone.getFeatureSource(dsZone.getTypeNames()[0]).getFeatures()));
-        SimpleFeatureCollection result = selectIntersection(SFCIn, bBox, distance);
+    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, File toIntersectFile, double distance) throws IOException {
+        DataStore dsZone = CollecMgmt.getDataStore(toIntersectFile);
+        SimpleFeatureCollection result = selectIntersection(SFCIn, Geom.importListGeom(dsZone.getFeatureSource(dsZone.getTypeNames()[0]).getFeatures()), distance);
         dsZone.dispose();
         return result;
     }
 
+    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, SimpleFeatureCollection toIntersectSFC) {
+        return selectIntersection(SFCIn, Geom.importListGeom(toIntersectSFC));
+    }
+
+    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, List<Geometry> lG) {
+        return selectIntersection(SFCIn, lG, 0);
+    }
+
+    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, List<Geometry> lG, double distance) {
+        DefaultFeatureCollection result = new DefaultFeatureCollection();
+        for (Geometry g : lG)
+            Arrays.stream(selectIntersection(SFCIn, g, distance).toArray(new SimpleFeature[0])).forEach(sf -> {
+                if (!result.contains(sf))
+                    result.add(sf);
+            });
+        return result;
+    }
+
     public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection collection, Geometry geom, double distance) {
+        if (distance == 0)
+            return selectIntersection(collection, geom);
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
         return collection.subCollection(ff.dwithin(ff.property(collection.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geom),
                 distance, SI.METRE.toString()));
     }
 
-    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, SimpleFeatureCollection bBox) {
-        return selectIntersection(SFCIn, Geom.unionSFC(bBox));
-    }
 
     public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, SimpleFeature feat) {
         return selectIntersection(SFCIn, (Geometry) feat.getDefaultGeometry());
     }
 
-    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, Geometry bBox) {
+    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, Geometry toIntersect) {
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-        return SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox)));
+        return SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(toIntersect)));
     }
 
     /**
      * Make the intersection but for overlapping object, check if they are mostly included in the geometry (more than 50% of their footprint are inside geometry) or not
      *
-     * @param lG List of input geometries
-     * @param bBox  Geometry to check relation with collection
+     * @param lG   List of input geometries
+     * @param toIntersect Geometry to check relation with collection
      * @return The selected collection
      */
-    public static List<Geometry> selectIntersectMost(List<Geometry> lG, Geometry bBox) {
-        FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+    public static List<Geometry> selectIntersectMost(List<Geometry> lG, Geometry toIntersect) {
         List<Geometry> result = new ArrayList<>();
-        result.addAll(lG.stream().filter(x -> bBox.contains(x)).collect(Collectors.toList()));
-        result.addAll(lG.stream().filter(x -> bBox.overlaps(x)).filter(x -> (x.intersection(bBox).getArea() / x.getArea()) > 0.5).collect(Collectors.toList()));
+        result.addAll(lG.stream().filter(toIntersect::contains).collect(Collectors.toList()));
+        result.addAll(lG.stream().filter(toIntersect::overlaps).filter(x -> (x.intersection(toIntersect).getArea() / x.getArea()) > 0.5).collect(Collectors.toList()));
         return result;
     }
 
@@ -267,17 +281,17 @@ public class CollecTransform {
      * Make the intersection but for overlapping object, check if they are mostly included in the geometry (more than 50% of their footprint are inside geometry) or not
      *
      * @param SFCIn input collection
-     * @param bBox  Geometry to check relation with collection
+     * @param toIntersect  Geometry to check relation with collection
      * @return The selected collection
      */
-    public static SimpleFeatureCollection selectIntersectMost(SimpleFeatureCollection SFCIn, Geometry bBox) {
+    public static SimpleFeatureCollection selectIntersectMost(SimpleFeatureCollection SFCIn, Geometry toIntersect) {
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
         DefaultFeatureCollection df = new DefaultFeatureCollection();
-        df.addAll(SFCIn.subCollection(ff.within(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox))));
-        try (SimpleFeatureIterator it = SFCIn.subCollection(ff.overlaps(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(bBox))).features()) {
+        df.addAll(SFCIn.subCollection(ff.within(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(toIntersect))));
+        try (SimpleFeatureIterator it = SFCIn.subCollection(ff.overlaps(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(toIntersect))).features()) {
             while (it.hasNext()) {
                 SimpleFeature sf = it.next();
-                if (((Geometry) sf.getDefaultGeometry()).intersection(bBox).getArea() / ((Geometry) sf.getDefaultGeometry()).getArea() > 0.5)
+                if (((Geometry) sf.getDefaultGeometry()).intersection(toIntersect).getArea() / ((Geometry) sf.getDefaultGeometry()).getArea() > 0.5)
                     df.add(sf);
             }
         }
@@ -408,7 +422,7 @@ public class CollecTransform {
     public static SimpleFeatureCollection gridDiscretize(SimpleFeatureCollection in, double gridResolution, boolean hexagonal) throws IOException {
         DefaultFeatureCollection dfCuted = new DefaultFeatureCollection();
         SimpleFeatureBuilder finalFeatureBuilder = Schemas.getBasicSchemaMultiPolygon("discretized-" + in.getSchema().getName());
-        SimpleFeatureCollection gridFeatures ;
+        SimpleFeatureCollection gridFeatures;
         if (hexagonal)
             gridFeatures = Grids.createHexagonalGrid(in.getBounds(), gridResolution).getFeatures();
         else
@@ -486,7 +500,7 @@ public class CollecTransform {
      * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection. Reduce the precision of the {@link Geometry}s
      *
      * @param geometry       input {@link Geometry}
-     * @param inputSFC input collection
+     * @param inputSFC       input collection
      * @param precisionModel precision of the intersection
      * @return the (most) intersecting {@link SimpleFeature}}
      */

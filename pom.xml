@@ -48,9 +48,9 @@
 				<version>2.4</version>
 				<configuration>
 					<compilerVersion>1.8</compilerVersion>
-					<source>1.8</source>
+					<source>9</source>
 <!--					<complianceLevel>1.8</complianceLevel>-->
-					<target>1.8</target>
+					<target>9</target>
 					<includes>
 						<include>**/*</include>
 					</includes>

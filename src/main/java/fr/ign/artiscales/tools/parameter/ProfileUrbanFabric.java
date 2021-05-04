@@ -58,6 +58,14 @@ public class ProfileUrbanFabric {
         this.generatePeripheralRoad = generatePeripheralRoad;
     }
 
+    public void setMaximalArea(double maximalArea) {
+        this.maximalArea = maximalArea;
+    }
+
+    public void setMinimalArea(double minimalArea) {
+        this.minimalArea = minimalArea;
+    }
+
     /**
      * For Straight Skeleton
      */
