@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.InvalidPropertiesFormatException;
 import java.util.List;
 
 public class CollecMgmt {
@@ -80,8 +81,9 @@ public class CollecMgmt {
 
     /**
      * Merge geofiles. They must be of the same type, Geopackage (.gpkg) or Shapefile (.shp). Try to keep attributes.
+     *
      * @param file2MergeIn List of geofiles to merge
-     * @param fileOut Where to write the merged File
+     * @param fileOut      Where to write the merged File
      * @return the merged File
      * @throws IOException Reading and writing
      */
@@ -91,9 +93,10 @@ public class CollecMgmt {
 
     /**
      * Merge geofiles. They must be of the same type, Geopackage (.gpkg) or Shapefile (.shp). Try to keep attributes.
-     * @param file2MergeIn List of geofiles to merge
-     * @param fileOut Where to write the merged File
-     * @param boundFile apply a mask on the result
+     *
+     * @param file2MergeIn   List of geofiles to merge
+     * @param fileOut        Where to write the merged File
+     * @param boundFile      apply a mask on the result
      * @param keepAttributes keep every attribute. Must be the same schema between every files.
      * @return the merged File
      * @throws IOException Reading, writing, or unknown extension
@@ -101,9 +104,9 @@ public class CollecMgmt {
     public static File mergeFiles(List<File> file2MergeIn, File fileOut, File boundFile, boolean keepAttributes) throws IOException {
         switch (file2MergeIn.get(0).getName().split("\\.")[file2MergeIn.get(0).getName().split("\\.").length - 1].toLowerCase()) {
             case "gpkg":
-                return Geopackages.mergeGpkgFiles(file2MergeIn,fileOut,boundFile,keepAttributes);
+                return Geopackages.mergeGpkgFiles(file2MergeIn, fileOut, boundFile, keepAttributes);
             case "shp":
-                return Shp.mergeVectFiles(file2MergeIn,fileOut,boundFile,keepAttributes);
+                return Shp.mergeVectFiles(file2MergeIn, fileOut, boundFile, keepAttributes);
             case "geojson":
             case "json":
                 throw new IOException("Merge JSON file : not implemented yet");
@@ -178,7 +181,7 @@ public class CollecMgmt {
             return "";
     }
 
-    public static void setDefaultGeomName(String geomName){
+    public static void setDefaultGeomName(String geomName) {
         forcedGeomName = geomName;
     }
 
@@ -240,7 +243,6 @@ public class CollecMgmt {
         return getEachUniqueFieldFromSFC(sfcIn, attributes, dontCheckAttribute);
     }
 
-
     /**
      * Check if the given Simple Feature contains the given field name. Uses the Schemas.isSchemaContainsAttribute method.
      *
@@ -286,26 +288,24 @@ public class CollecMgmt {
     /**
      * Convert an attribute of a {@link SimpleFeatureCollection} to float type (needed for rasterization)
      *
-     * @param sfcIn
-     * @param attributesToConvertName
-     * @return
-     * @throws IOException
+     * @param sfcIn                  input collection
+     * @param attributeToConvertName attribute to convert
+     * @return the collection with converted field
      */
-    public static SimpleFeatureCollection convertAttributeToFloat(SimpleFeatureCollection sfcIn, String attributesToConvertName) throws IOException {
-        return convertAttributeToFloat(sfcIn, Collections.singletonList(attributesToConvertName));
+    public static SimpleFeatureCollection convertAttributeToFloat(SimpleFeatureCollection sfcIn, String attributeToConvertName) {
+        return convertAttributeToFloat(sfcIn, Collections.singletonList(attributeToConvertName));
     }
 
     /**
-     * Convert a list of attributes to float (needed for rasterization - really?)
+     * Convert a list of attributes to float type(needed for rasterization)
      *
-     * @param sfcIn
-     * @param attributesToConvertName
-     * @return
-     * @throws IOException if cannot write result into memory
+     * @param sfcIn                   input collection
+     * @param attributesToConvertName list of attribute names to convert
+     * @return the collection with converted field
      */
-    public static SimpleFeatureCollection convertAttributeToFloat(SimpleFeatureCollection sfcIn, List<String> attributesToConvertName) throws IOException {
+    public static SimpleFeatureCollection convertAttributeToFloat(SimpleFeatureCollection sfcIn, List<String> attributesToConvertName) {
         DefaultFeatureCollection df = new DefaultFeatureCollection();
-
+        //set new builder informations
         SimpleFeatureType schema = sfcIn.getSchema();
         SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
         for (AttributeDescriptor attr : schema.getAttributeDescriptors())
@@ -313,12 +313,12 @@ public class CollecMgmt {
                 sfTypeBuilder.add(attr);
         for (String attributeToConvertName : attributesToConvertName)
             sfTypeBuilder.add(attributeToConvertName, Float.class);
-
         sfTypeBuilder.setName(schema.getName());
         sfTypeBuilder.setCRS(schema.getCoordinateReferenceSystem());
         String geomName = schema.getGeometryDescriptor().getLocalName();
         sfTypeBuilder.setDefaultGeometry(geomName);
         SimpleFeatureBuilder newSchema = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
+        // iterate and fill
         try (SimpleFeatureIterator it = sfcIn.features()) {
             while (it.hasNext()) {
                 SimpleFeature feat = it.next();
@@ -349,7 +349,7 @@ public class CollecMgmt {
             System.out.println("Collec.convertAttributeToFloat: Impossible to cast " + attributesToConvertName + " to float. Input SFC returned");
             return sfcIn;
         }
-        return df.collection();
+        return df;
     }
 
     /**
@@ -382,7 +382,7 @@ public class CollecMgmt {
      * @param toExport collection to export
      * @param fileOut  file to export
      * @return the wrote file
-     * @throws IOException
+     * @throws IOException when writing the geo file
      */
     public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, boolean overwrite) throws IOException {
         if (toExport.isEmpty()) {
@@ -399,15 +399,17 @@ public class CollecMgmt {
     }
 
     /**
-     * Export a simple feature collection. If the shapefile already exists, either overwrite it or merge it with the existing shapefile.
+     * Export a simple feature collection. If the geo file already exists, either overwrite it or merge it with the existing feature collection.
      *
-     * @param toExport
-     * @param fileOut
-     * @return the ShapeFile
-     * @throws IOException
+     * @param toExport   Collection to export
+     * @param fileOut    file name and path where to write
+     * @param ft         schema of the collection
+     * @param outputType type of geo file to write
+     * @param overwrite  do we overwrite or merge if an existing geo file is present ?
+     * @return the geo file
+     * @throws IOException when writing the geo file
      */
-    public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft, String outputType, boolean overwrite)
-            throws IOException {
+    public static File exportSFC(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft, String outputType, boolean overwrite) throws IOException {
         if (outputType.equals(".shp"))
             return Shp.exportSFCtoSHP(toExport, fileOut, ft, overwrite);
         else if (outputType.equals(".gpkg"))
@@ -415,7 +417,7 @@ public class CollecMgmt {
         else if (defaultGISFileType != null && !defaultGISFileType.equals(""))
             return exportSFC(toExport, fileOut, ft, defaultGISFileType, overwrite);
         else
-            return null;
+            throw new InvalidPropertiesFormatException("Cannot export " + toExport.getSchema().getName() + " to " + fileOut + ": unknown type " + outputType);
     }
 
     private static void coord2D(Coordinate c) {

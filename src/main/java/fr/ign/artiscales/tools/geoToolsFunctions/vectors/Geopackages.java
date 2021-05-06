@@ -58,8 +58,7 @@ public class Geopackages {
      */
 
 
-    public static File exportSFCtoGPKG(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft, boolean overwrite)
-            throws IOException {
+    public static File exportSFCtoGPKG(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft, boolean overwrite) throws IOException {
         if (!fileOut.getName().endsWith(".gpkg"))
             fileOut = new File(fileOut + ".gpkg");
         if (fileOut.exists())

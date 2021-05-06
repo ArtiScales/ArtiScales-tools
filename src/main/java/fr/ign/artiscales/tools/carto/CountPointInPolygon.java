@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Class to count points into a polygon
+ */
 public class CountPointInPolygon {
     /**
      * Count points that are included in every polygons of a collection. Doesn't keep the polygon attributes.
@@ -70,7 +73,6 @@ public class CountPointInPolygon {
         SimpleFeatureType schemaOut = polygonsCollec.getSchema();
         sfTypeBuilder.setName(schemaOut.getName() + "-counted-" + pointsCollec.getSchema().getName());
         String geomName = schemaOut.getGeometryDescriptor().getLocalName();
-
         sfTypeBuilder.setCRS(schemaOut.getCoordinateReferenceSystem());
         GeometryDescriptor gd = schemaOut.getGeometryDescriptor();
         AttributeTypeBuilder attributeBuilder = new AttributeTypeBuilder();
@@ -79,8 +81,7 @@ public class CountPointInPolygon {
         GeometryDescriptor att = (GeometryDescriptor) attributeBuilder.buildDescriptor(gd.getLocalName());
         sfTypeBuilder.add(att);
         sfTypeBuilder.setDefaultGeometry(att.getLocalName());
-
-        sfTypeBuilder.add("count" + namePoint, Integer.class);
+        sfTypeBuilder.add("count" + namePoint, Integer.class); // count stat is anyway added
         // set optional attributes
         if (keepAttributes)
             for (AttributeDescriptor attr : schemaOut.getAttributeDescriptors()) {
@@ -109,10 +110,8 @@ public class CountPointInPolygon {
                     sfTypeBuilder.add(attrToStat + "-" + statToDo, Double.class);
         SimpleFeatureBuilder sfb = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
         DefaultFeatureCollection result = new DefaultFeatureCollection();
-        int i = 0;
         try (SimpleFeatureIterator polyIt = polygonsCollec.features()) {
             while (polyIt.hasNext()) {
-                System.out.println((i++ + " on " + polygonsCollec.size()));
                 SimpleFeature poly = polyIt.next();
                 // set already existing polygon attributes
                 sfb.set(geomName, poly.getDefaultGeometry());

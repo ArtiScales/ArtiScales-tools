@@ -58,19 +58,10 @@ public class ProfileUrbanFabric {
         this.generatePeripheralRoad = generatePeripheralRoad;
     }
 
-    public void setMaximalArea(double maximalArea) {
-        this.maximalArea = maximalArea;
-    }
-
-    public void setMinimalArea(double minimalArea) {
-        this.minimalArea = minimalArea;
-    }
-
     /**
      * For Straight Skeleton
      */
-    public ProfileUrbanFabric(String nameBuildingType, double minimalArea,
-                              double maxDepth, double maxDistanceForNearestRoad, double minWidth,
+    public ProfileUrbanFabric(String nameBuildingType, double minimalArea, double maxDepth, double maxDistanceForNearestRoad, double minWidth,
                               double maxWidth, double streetWidth, boolean generatePeripheralRoad) {
         super();
         this.nameBuildingType = nameBuildingType;
@@ -165,7 +156,6 @@ public class ProfileUrbanFabric {
         return profile;
     }
 
-
     public boolean isGeneratePeripheralRoad() {
         return generatePeripheralRoad;
     }
@@ -182,8 +172,16 @@ public class ProfileUrbanFabric {
         return maximalArea;
     }
 
+    public void setMaximalArea(double maximalArea) {
+        this.maximalArea = maximalArea;
+    }
+
     public double getMinimalArea() {
         return minimalArea;
+    }
+
+    public void setMinimalArea(double minimalArea) {
+        this.minimalArea = minimalArea;
     }
 
     public double getMinimalWidthContactRoad() {
@@ -192,6 +190,10 @@ public class ProfileUrbanFabric {
 
     public int getDecompositionLevelWithoutStreet() {
         return decompositionLevelWithoutStreet;
+    }
+
+    public void setDecompositionLevelWithoutStreet(int decompositionLevelWithoutStreet) {
+        this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
     }
 
     public double getLenDriveway() {
