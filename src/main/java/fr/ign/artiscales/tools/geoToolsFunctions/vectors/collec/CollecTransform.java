@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -46,11 +45,12 @@ import java.util.stream.Collectors;
 
 public class CollecTransform {
 
-//    public static void main(String[] args) throws IOException, ParseException {
-//        DataStore ds = CollecMgmt.getDataStore(new File("/home/mc/Nextcloud/boulot/inria/ICIproject/donnees/IGN/batVeme.gpkg"));
-//        WKTReader w = new WKTReader();
-//        CollecMgmt.exportSFC(selectIntersectMost(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(),  w.read("MultiPolygon (((652775.20000001532025635 6860152.6000018734484911, 652890.40000001527369022 6860182.5000018747523427, 653153.70000001508742571 6860223.5000018747523427, 653160.69000001507811248 6860223.73000187519937754, 653143.20000001508742571 6860189.10000187437981367, 653128.00000001513399184 6860164.30000187642872334, 653058.23000001511536539 6860131.28000187687575817, 652967.84000001521781087 6860088.50000187568366528, 652877.45000001508742571 6860045.72000187635421753, 652787.06000001542270184 6860002.94000187795609236, 652806.50000001536682248 6860012.90000187605619431, 652813.20000001532025635 6860019.60000187624245882, 652801.30000001541338861 6860055.70000187680125237, 652775.20000001532025635 6860152.6000018734484911)))")),new File("/tmp/interMost.gpkg"));
-//        ds.dispose();
+//    public static void main(String[] args) throws IOException {
+//        DataStore dsP = CollecMgmt.getDataStore(new File("/tmp/b.gpkg"));
+//        DataStore dsM = CollecMgmt.getDataStore(new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/parcel2003.gpkg"));
+//        CollecMgmt.exportSFC(selectIntersection(dsP.getFeatureSource(dsP.getTypeNames()[0]).getFeatures(), dsM.getFeatureSource(dsM.getTypeNames()[0]).getFeatures()), new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/building2003.gpkg"));
+//        dsP.dispose();
+//        dsM.dispose();
 //    }
 
     /**
@@ -266,7 +266,7 @@ public class CollecTransform {
     /**
      * Make the intersection but for overlapping object, check if they are mostly included in the geometry (more than 50% of their footprint are inside geometry) or not
      *
-     * @param lG   List of input geometries
+     * @param lG          List of input geometries
      * @param toIntersect Geometry to check relation with collection
      * @return The selected collection
      */
@@ -280,8 +280,8 @@ public class CollecTransform {
     /**
      * Make the intersection but for overlapping object, check if they are mostly included in the geometry (more than 50% of their footprint are inside geometry) or not
      *
-     * @param SFCIn input collection
-     * @param toIntersect  Geometry to check relation with collection
+     * @param SFCIn       input collection
+     * @param toIntersect Geometry to check relation with collection
      * @return The selected collection
      */
     public static SimpleFeatureCollection selectIntersectMost(SimpleFeatureCollection SFCIn, Geometry toIntersect) {
@@ -298,35 +298,47 @@ public class CollecTransform {
         return df;
     }
 
-    /**
-     * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.
-     * That code may erase values if exactly the same area. Tried to find a better solution but it would have to be implemented (<a href="https://stackoverflow.com/questions/60338900/java-geotools-sort-a-featureiterator-by-features-area">see here</a>).
-     *
-     * @param sFCToSort SimpleFeature
-     * @return The sorted {@link SimpleFeatureCollection}
-     * @throws IOException from {@link DefaultFeatureCollection}
-     */
-    public static SimpleFeatureCollection sortSFCWithArea(SimpleFeatureCollection sFCToSort) throws IOException {
-        return sortSFCWithArea(sFCToSort, false);
-    }
+//    /**
+//     * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.
+//     * That code may erase values if exactly the same area. Tried to find a better solution but it would have to be implemented (<a href="https://stackoverflow.com/questions/60338900/java-geotools-sort-a-featureiterator-by-features-area">see here</a>).
+//     *
+//     * @param sFCToSort SimpleFeature
+//     * @return The sorted {@link SimpleFeatureCollection}
+//     * @throws IOException from {@link DefaultFeatureCollection}
+//     */
+//    public static SimpleFeatureCollection sortSFCWithArea(SimpleFeatureCollection sFCToSort) throws IOException {
+//        return sortSFCWithArea(sFCToSort, false);
+//    }
+//
+//    /**
+//     * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.
+//     * That code may erase values if exactly the same area. Tried to find a better solution but it would have to be implemented (<a href="https://stackoverflow.com/questions/60338900/java-geotools-sort-a-featureiterator-by-features-area">see here</a>).
+//     *
+//     * @param sFCToSort SimpleFeature
+//     * @return The sorted {@link SimpleFeatureCollection}
+//     * @throws IOException from {@link DefaultFeatureCollection}
+//     */
+//    public static SimpleFeatureCollection sortSFCWithArea(SimpleFeatureCollection sFCToSort, boolean maxToMin) throws IOException {
+//        DefaultFeatureCollection result = new DefaultFeatureCollection();
+//        SortedMap<Double, SimpleFeature> sortedMap = new TreeMap<>(maxToMin ? Collections.reverseOrder() : null);
+//        Arrays.stream(sFCToSort.toArray(new SimpleFeature[0])).forEach(feat -> sortedMap.put(((Geometry) feat.getDefaultGeometry()).getArea() + Math.random() / 1000, feat)); //decimals have been added to avoid overwritting
+//        for (Map.Entry<Double, SimpleFeature> entry : sortedMap.entrySet())
+//            result.add(entry.getValue());
+//        if (sFCToSort.size() != result.size())        // check if features have been lost or not
+//            System.out.println("Warning : sortSFCWithArea() has overwrote features");
+//        return result.collection();
+//    }
 
     /**
-     * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.
-     * That code may erase values if exactly the same area. Tried to find a better solution but it would have to be implemented (<a href="https://stackoverflow.com/questions/60338900/java-geotools-sort-a-featureiterator-by-features-area">see here</a>).
+     * Get the Simple Feature that has the largest area from a collection
      *
-     * @param sFCToSort SimpleFeature
-     * @return The sorted {@link SimpleFeatureCollection}
-     * @throws IOException from {@link DefaultFeatureCollection}
+     * @param sFCToSort
+     * @return the larget feature
      */
-    public static SimpleFeatureCollection sortSFCWithArea(SimpleFeatureCollection sFCToSort, boolean maxToMin) throws IOException {
-        DefaultFeatureCollection result = new DefaultFeatureCollection();
-        SortedMap<Double, SimpleFeature> sortedMap = new TreeMap<>(maxToMin ? Collections.reverseOrder() : null);
+    public static SimpleFeature getBiggestSF(SimpleFeatureCollection sFCToSort) {
+        SortedMap<Double, SimpleFeature> sortedMap = new TreeMap<>(Collections.reverseOrder());
         Arrays.stream(sFCToSort.toArray(new SimpleFeature[0])).forEach(feat -> sortedMap.put(((Geometry) feat.getDefaultGeometry()).getArea() + Math.random() / 1000, feat)); //decimals have been added to avoid overwritting
-        for (Map.Entry<Double, SimpleFeature> entry : sortedMap.entrySet())
-            result.add(entry.getValue());
-        if (sFCToSort.size() != result.size())        // check if features have been lost or not
-            System.out.println("Warning : sortSFCWithArea() has overwrote features");
-        return result.collection();
+        return sortedMap.get(sortedMap.firstKey());
     }
 
     /**
