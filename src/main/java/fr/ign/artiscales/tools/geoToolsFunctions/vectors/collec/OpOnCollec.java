@@ -24,9 +24,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class OpOnCollec {
-    public static void main(String[] args) throws IOException {
-        sortDiffGeom(new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/out/simulatedParcel.gpkg"),new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/outNewBuildingNoMerge/simulatedParcel.gpkg"),new File("/tmp"),true);
-    }
+
     /**
      * Get statistics about a field of a collection
      *
@@ -203,6 +201,8 @@ public class OpOnCollec {
         }
         CollecMgmt.exportSFC(same, fSame);
         CollecMgmt.exportSFC(notSame, fNotSame);
+        dsRef.dispose();
+        dsParcelToCompare.dispose();
         return new SimpleFeatureCollection[]{same, notSame};
     }
 }
