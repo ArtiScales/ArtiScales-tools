@@ -29,6 +29,7 @@ import org.opengis.filter.FilterVisitor;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -264,7 +265,9 @@ public class CollecMgmt {
     public static boolean isCollecContainsAttribute(SimpleFeatureCollection collec, String attributeFiledName) {
         return Schemas.isSchemaContainsAttribute(collec.getSchema(), attributeFiledName);
     }
-
+    public static DataStore getDataStore(URL url) throws IOException {
+            return Geopackages.getDataStore(url);
+    }
     /**
      * get the corresponding Data Store looking the file's attribute
      *

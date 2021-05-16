@@ -91,13 +91,9 @@ public class Polygons {
     }
 
     public static Polygon polygonDifference(List<Polygon> a, List<Polygon> b) {
-        Geometry difference = FeaturePolygonizer.getDifference(a, b);
-        List<Polygon> p = getPolygons(difference); // .stream().map(x -> (Polygon) x).collect(Collectors.toList());
-        if (p.size() != 1) {
-            System.out.println("polygonDifference():" + p.size() + " polygons");
-            p.forEach(System.out::println);
+        List<Polygon> p = getPolygons(FeaturePolygonizer.getDifference(a, b)); // .stream().map(x -> (Polygon) x).collect(Collectors.toList());
+        if (p.size() != 1)
             return null;
-        }
         return p.get(0);
     }
 

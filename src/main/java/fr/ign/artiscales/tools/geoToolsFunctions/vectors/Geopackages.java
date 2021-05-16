@@ -11,6 +11,7 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +43,13 @@ public class Geopackages {
 //        map.put(GeoPkgDataStoreFactory.DATABASE.key, file.getPath());
 //        return DataStoreFinder.getDataStore(map);
 //    }
+
+    public static DataStore getDataStore(URL url) throws IOException {
+        HashMap<String, Object> map = new HashMap<>();
+        map.put(GeoPkgDataStoreFactory.DBTYPE.key, "geopkg");
+        map.put(GeoPkgDataStoreFactory.DATABASE.key, url.toExternalForm());
+        return DataStoreFinder.getDataStore(map);
+    }
 
     public static DataStore getDataStore(File file) throws IOException {
         if (!file.exists() || !file.getName().endsWith(".gpkg")) {

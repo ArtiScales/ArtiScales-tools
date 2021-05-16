@@ -25,6 +25,10 @@ import java.util.stream.Collectors;
 
 public class OpOnCollec {
 
+    public static void main(String[] args) throws IOException {
+        sortDiffGeom(new File("/tmp/same.gpkg"),new File("/tmp/Correct/same.gpkg"),new File("/tmp/comp"), true, true);
+    }
+
     /**
      * Get statistics about a field of a collection
      *
@@ -146,7 +150,7 @@ public class OpOnCollec {
      * </ul>
      * @throws IOException reading and writing files.
      */
-    public static SimpleFeatureCollection[] sortDiffGeom(File parcelRefFile, File parcelToCompareFile,File parcelOutFolder, boolean overwrite) throws IOException {
+    public static SimpleFeatureCollection[] sortDiffGeom(File parcelRefFile, File parcelToCompareFile,File parcelOutFolder,boolean addDeletedGeom, boolean overwrite) throws IOException {
         File fSame = new File(parcelOutFolder, "same" + CollecMgmt.getDefaultGISFileType());
         File fNotSame = new File(parcelOutFolder, "notSame" + CollecMgmt.getDefaultGISFileType());
 
@@ -173,13 +177,12 @@ public class OpOnCollec {
                 double geomArea = geomPRef.getArea();
                 //for every intersected parcels, we check if it is close to (as tiny geometry changes)
                 SimpleFeatureCollection parcelsCompIntersectRef = parcelToCompare.subCollection(ff.intersects(pName, ff.literal(geomPRef)));
-                HausdorffSimilarityMeasure hausDis = new HausdorffSimilarityMeasure();
                 try (SimpleFeatureIterator itParcelIntersectRef = parcelsCompIntersectRef.features()) {
                     while (itParcelIntersectRef.hasNext()) {
                         Geometry g = (Geometry) itParcelIntersectRef.next().getDefaultGeometry();
                         double inter = Objects.requireNonNull(Geom.scaledGeometryReductionIntersection(Arrays.asList(geomPRef, g))).getArea();
                         // if there are parcel intersection and a similar area, we conclude that parcel haven't changed. We put it in the \"same\" collection and stop the search
-                        if ((inter > 0.95 * geomArea && inter < 1.05 * geomArea) || hausDis.measure(g, geomPRef) > 0.95) {
+                        if ((inter > 0.9 * geomArea && inter < 1.1 * geomArea) ){//|| hausDis.measure(g, geomPRef) < 0.05) {
                             same.add(pRef);
                             continue refParcel;
                         }
@@ -192,7 +195,7 @@ public class OpOnCollec {
                 List<Geometry> geomList = Arrays.stream(parcelsCompIntersectRef.toArray(new SimpleFeature[0])).map(x -> (Geometry) x.getDefaultGeometry()).collect(Collectors.toList());
                 geomList.add(geomPRef);
                 for (Polygon polygon : FeaturePolygonizer.getPolygons(geomList))
-                    if (polygon.getArea() > geomArea * 0.9 && polygon.getArea() < geomArea * 1.1 && polygon.buffer(0.5).contains(geomPRef))
+                    if (!addDeletedGeom && polygon.getArea() > geomArea * 0.9 && polygon.getArea() < geomArea * 1.1 && polygon.buffer(1).contains(geomPRef))
                         continue refParcel;
                 notSame.add(pRef);
             }

@@ -1,5 +1,6 @@
 package fr.ign.artiscales.tools.geoToolsFunctions.vectors;
 
+import fr.ign.artiscales.tools.FeaturePolygonizer;
 import fr.ign.artiscales.tools.geoToolsFunctions.Attribute;
 import fr.ign.artiscales.tools.geoToolsFunctions.Schemas;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
@@ -18,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -157,6 +159,66 @@ public class Geom {
         return geometryCollection.union();
     }
 
+    public static Geometry safeUnion(Geometry g1, Geometry g2) {
+        try {
+            return g1.union(g2);
+        } catch (TopologyException tp) {
+            try {
+                return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(1000)).union(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(1000)));
+            } catch (TopologyException tp2) {
+                try {
+                    return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(100)).union(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(100)));
+                } catch (TopologyException tp3) {
+                    try {
+                        return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(10)).union(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(10)));
+                    } catch (TopologyException tp4) {
+                        try {
+                            return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(1)).union(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(1)));
+                        } catch (TopologyException tp5) {
+                            return null;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static Geometry safeDifference(Geometry a, Geometry b) {
+        try {
+            return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(a)), new ArrayList<>(Collections.singletonList(b)));
+        } catch (TopologyException tp) {
+            try {
+                PrecisionModel pm = new PrecisionModel(1000);
+                Geometry aReduced = GeometryPrecisionReducer.reduce(a, pm);
+                Geometry bReduced = GeometryPrecisionReducer.reduce(b, pm);
+                return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(aReduced)), new ArrayList<>(Collections.singletonList(bReduced)));
+            } catch (TopologyException tp2) {
+                try {
+                    PrecisionModel pm = new PrecisionModel(1000);
+                    Geometry aReduced = GeometryPrecisionReducer.reduce(a, pm);
+                    Geometry bReduced = GeometryPrecisionReducer.reduce(b, pm);
+                    return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(aReduced)), new ArrayList<>(Collections.singletonList(bReduced)));
+                } catch (TopologyException tp3) {
+                    try {
+                        PrecisionModel pm = new PrecisionModel(1000);
+                        Geometry aReduced = GeometryPrecisionReducer.reduce(a, pm);
+                        Geometry bReduced = GeometryPrecisionReducer.reduce(b, pm);
+                        return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(aReduced)), new ArrayList<>(Collections.singletonList(bReduced)));
+                    } catch (TopologyException tp4) {
+                        try {
+                            PrecisionModel pm = new PrecisionModel(1000);
+                            Geometry aReduced = GeometryPrecisionReducer.reduce(a, pm);
+                            Geometry bReduced = GeometryPrecisionReducer.reduce(b, pm);
+                            return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(aReduced)), new ArrayList<>(Collections.singletonList(bReduced)));
+                        } catch (TopologyException tp5) {
+                            return null;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public static boolean safeIntersect(Geometry g1, Geometry g2) {
         try {
             return g1.intersects(g2);
@@ -166,7 +228,6 @@ public class Geom {
             } catch (TopologyException tp2) {
                 try {
                     return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(100)).intersects(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(100)));
-
                 } catch (TopologyException tp3) {
                     try {
                         return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(10)).intersects(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(10)));
@@ -182,25 +243,56 @@ public class Geom {
         }
     }
 
+    public static Geometry safeIntersection(Geometry g1, Geometry g2) {
+        try {
+            return g1.intersection(g2);
+        } catch (TopologyException tp) {
+            try {
+                return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(1000)).intersection(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(1000)));
+            } catch (TopologyException tp2) {
+                try {
+                    return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(100)).intersection(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(100)));
+                } catch (TopologyException tp3) {
+                    try {
+                        return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(10)).intersection(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(10)));
+                    } catch (TopologyException tp4) {
+                        try {
+                            return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(1)).intersection(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(1)));
+                        } catch (TopologyException tp5) {
+                            return null;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public static Geometry unionSFC(SimpleFeatureCollection collection) {
         if (collection.size() == 1)
             return (Geometry) collection.features().next().getDefaultGeometry();
         try {
-            return unionPrecisionReduce(collection, 1000);
-        } catch (TopologyException e) {
+            return unionPrecisionReduce(collection, 10000);
+
+//            return combineIntoOneGeometry(Arrays.stream(collection.toArray(new SimpleFeature[collection.size()])).map(
+//                    sf -> (Geometry) sf.getDefaultGeometry()).collect(Collectors.toList())) ; todo try to union without simplyfinging geoemtries. see https://docs.geotools.org/stable/userguide/library/jts/combine.html
+        } catch (TopologyException e0) {
             try {
-                return unionPrecisionReduce(collection, 100);
-            } catch (TopologyException ee) {
+                return unionPrecisionReduce(collection, 1000);
+            } catch (TopologyException e) {
                 try {
-                    return unionPrecisionReduce(collection, 10);
-                } catch (TopologyException eee) {
+                    return unionPrecisionReduce(collection, 100);
+                } catch (TopologyException ee) {
                     try {
-                        return unionPrecisionReduce(collection, 2);
-                    } catch (TopologyException eeee) {
+                        return unionPrecisionReduce(collection, 10);
+                    } catch (TopologyException eee) {
                         try {
-                            return unionPrecisionReduce(collection, 0.1);
-                        } catch (TopologyException eeeee) {
-                            return unionPrecisionReduce(collection, 0.001);
+                            return unionPrecisionReduce(collection, 2);
+                        } catch (TopologyException eeee) {
+                            try {
+                                return unionPrecisionReduce(collection, 0.1);
+                            } catch (TopologyException eeeee) {
+                                return unionPrecisionReduce(collection, 0.001);
+                            }
                         }
                     }
                 }
@@ -227,6 +319,27 @@ public class Geom {
         if (lG.size() == 1)
             return lG.get(0);
         return (new GeometryFactory()).buildGeometry(lG).union();
+    }
+
+    /**
+     * Return the intersecting geometry with the highest area of intersection.
+     *
+     * @param lG   Input list of geometries
+     * @param geom Intersection polygon
+     * @return the largest {@link Geometry}
+     */
+    public static Geometry getBiggestIntersectingGeometry(List<? extends Geometry> lG, Geometry geom) {
+        HashMap<Geometry, Double> result = new HashMap<>();
+        for (Geometry g : lG) {
+            double area = (Objects.requireNonNull(scaledGeometryReductionIntersection(Arrays.asList(g, geom))).getArea());
+            if (area > 0)
+                result.put(g, area);
+        }
+        List<Entry<Geometry, Double>> sorted = result.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toList());
+        // if list is empty, we return null
+        if (sorted.isEmpty())
+            return null;
+        return sorted.get(sorted.size() - 1).getKey();
     }
 
 //	public static Geometry unionGeom(Geometry g1, Geometry g2) {
@@ -291,25 +404,4 @@ public class Geom {
 //				collector.add(g);
 //		}
 //	}
-
-    /**
-     * Return the intersecting geometry with the highest area of intersection.
-     *
-     * @param lG   Input list of geometries
-     * @param geom Intersection polygon
-     * @return the largest {@link Geometry}
-     */
-    public static Geometry getBiggestIntersectingGeometry(List<? extends Geometry> lG, Geometry geom) {
-        HashMap<Geometry, Double> result = new HashMap<>();
-        for (Geometry g : lG) {
-            double area = (Objects.requireNonNull(scaledGeometryReductionIntersection(Arrays.asList(g, geom))).getArea());
-            if (area > 0)
-                result.put(g, area);
-        }
-        List<Entry<Geometry, Double>> sorted = result.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toList());
-        // if list is empty, we return null
-        if (sorted.isEmpty())
-            return null;
-        return sorted.get(sorted.size() - 1).getKey();
-    }
 }

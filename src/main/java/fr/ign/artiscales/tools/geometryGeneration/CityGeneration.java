@@ -7,8 +7,6 @@ import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geom;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.Geopackages;
 import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
 import org.geotools.data.DataStore;
-import org.geotools.data.collection.SpatialIndexFeatureCollection;
-import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
@@ -26,7 +24,7 @@ import java.util.stream.IntStream;
 
 /**
  * Class to generate shapefiles related to community shape.
- *
+ *polygonDifference():
  * @author Maxime Colomb
  */
 public class CityGeneration {
@@ -40,7 +38,7 @@ public class CityGeneration {
      * @param parcelFile input parcel
      * @param outFolder  folder where goes the generated urban block
      * @return a collection of urban block
-     * @throws IOException
+     * @throws IOException reading geo file
      */
     public static File createUrbanBlockShp(File parcelFile, File outFolder) throws IOException {
         File result = new File(outFolder, "block.shp");
@@ -48,9 +46,9 @@ public class CityGeneration {
             System.out.println("createUrbanBlock(): block already exists");
             return result;
         }
-        ShapefileDataStore parcelSDS = new ShapefileDataStore(parcelFile.toURI().toURL());
-        SimpleFeatureCollection block = createUrbanBlock(parcelSDS.getFeatureSource().getFeatures());
-        parcelSDS.dispose();
+        DataStore parcelDS = CollecMgmt.getDataStore(parcelFile);
+        SimpleFeatureCollection block = createUrbanBlock(parcelDS.getFeatureSource(parcelDS.getTypeNames()[0]).getFeatures());
+        parcelDS.dispose();
         return CollecMgmt.exportSFC(block, new File(outFolder, "block.shp"));
     }
 
@@ -60,7 +58,7 @@ public class CityGeneration {
      * @param parcelFile input parcel
      * @param outFolder  folder where goes the generated urban block
      * @return a collection of urban block
-     * @throws IOException
+     * @throws IOException reading parcel file
      */
     public static File createUrbanBlock(File parcelFile, File outFolder) throws IOException {
         File result = new File(outFolder, "block.gpkg");
@@ -79,12 +77,11 @@ public class CityGeneration {
      *
      * @param parcel input parcel
      * @return a {@link SimpleFeatureCollection} of urban block
-     * @throws IOException
      */
-    public static SimpleFeatureCollection createUrbanBlock(List<SimpleFeature> parcel) throws IOException {
+    public static SimpleFeatureCollection createUrbanBlock(List<SimpleFeature> parcel) {
         DefaultFeatureCollection df = new DefaultFeatureCollection();
         df.addAll(parcel);
-        return createUrbanBlock(df.collection());
+        return createUrbanBlock(df);
     }
 
     /**
@@ -93,9 +90,8 @@ public class CityGeneration {
      *
      * @param parcel input parcel
      * @return a {@link SimpleFeatureCollection} of urban block
-     * @throws IOException
      */
-    public static SimpleFeatureCollection createUrbanBlock(SimpleFeatureCollection parcel) throws IOException {
+    public static SimpleFeatureCollection createUrbanBlock(SimpleFeatureCollection parcel) {
         return createUrbanBlock(parcel, true);
     }
 
@@ -105,16 +101,15 @@ public class CityGeneration {
      * @param parcel   input parcel
      * @param doBuffer do we generate a 1.1m buffer and then a -1.1m buffer (this length allow to fill gaps superior to 2.2m, corresponding to the minimal width of a road). It may alter geometries but it fills holes.
      * @return a {@link SimpleFeatureCollection} of urban block
-     * @throws IOException
      */
-    public static SimpleFeatureCollection createUrbanBlock(SimpleFeatureCollection parcel, boolean doBuffer) throws IOException {
+    public static SimpleFeatureCollection createUrbanBlock(SimpleFeatureCollection parcel, boolean doBuffer) {
         Geometry bigGeom = Geom.unionSFC(parcel);
         if (doBuffer)
             bigGeom = bigGeom.buffer(1.1).buffer(-1.1);
         return createUrbanBlock(bigGeom);
     }
 
-    public static SimpleFeatureCollection createUrbanBlock(Geometry bigGeom) throws IOException {
+    public static SimpleFeatureCollection createUrbanBlock(Geometry bigGeom) {
         DefaultFeatureCollection df = new DefaultFeatureCollection();
         SimpleFeatureBuilder sfBuilder = Schemas.getBasicSchemaID("block");
         AtomicInteger indexGen = new AtomicInteger();
@@ -125,7 +120,7 @@ public class CityGeneration {
                     df.add(sfBuilder.buildFeature(Attribute.makeUniqueId(), obj));
                 }
         );
-        return new SpatialIndexFeatureCollection(df.collection());
+        return df;
     }
 
     /**
