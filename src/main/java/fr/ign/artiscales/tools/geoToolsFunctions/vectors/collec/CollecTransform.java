@@ -259,6 +259,8 @@ public class CollecTransform {
     }
 
     public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, Geometry toIntersect) {
+        if (SFCIn == null || SFCIn.isEmpty())
+            return new DefaultFeatureCollection(); //TODO ais je defais ça avant ? checker
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
         return SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(toIntersect)));
     }

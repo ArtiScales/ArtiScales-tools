@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
 public class OpOnCollec {
 
     public static void main(String[] args) throws IOException {
-        sortDiffGeom(new File("/tmp/same.gpkg"),new File("/tmp/Correct/same.gpkg"),new File("/tmp/comp"), true, true);
+        sortDiffGeom(new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/parcel2003.gpkg"),
+                new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/parcel2018.gpkg"),new File("/tmp"), true, true);
     }
 
     /**
@@ -167,7 +168,7 @@ public class OpOnCollec {
         PropertyName pName = ff.property(parcelRef.getSchema().getGeometryDescriptor().getLocalName());
         DefaultFeatureCollection same = new DefaultFeatureCollection();
         DefaultFeatureCollection notSame = new DefaultFeatureCollection();
-
+        HausdorffSimilarityMeasure hausDis = new HausdorffSimilarityMeasure();
         // for every reference parcels, we check if an intersection with the intersection compared parcels are +/- 5% of its area and their shapes are similar regarding to the Hausdorf distance mesure
         try (SimpleFeatureIterator itRef = parcelRef.features()) {
             refParcel:
@@ -182,7 +183,7 @@ public class OpOnCollec {
                         Geometry g = (Geometry) itParcelIntersectRef.next().getDefaultGeometry();
                         double inter = Objects.requireNonNull(Geom.scaledGeometryReductionIntersection(Arrays.asList(geomPRef, g))).getArea();
                         // if there are parcel intersection and a similar area, we conclude that parcel haven't changed. We put it in the \"same\" collection and stop the search
-                        if ((inter > 0.9 * geomArea && inter < 1.1 * geomArea) ){//|| hausDis.measure(g, geomPRef) < 0.05) {
+                        if ((inter > 0.95 * geomArea && inter < 1.05 * geomArea) || hausDis.measure(g, geomPRef) > 0.95) {
                             same.add(pRef);
                             continue refParcel;
                         }

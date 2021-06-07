@@ -18,76 +18,71 @@ import java.io.InputStream;
 public class ProfileUrbanFabric {
     static String profileFolder;
     String nameBuildingType;
-    double maximalArea, minimalArea, minimalWidthContactRoad, streetWidth, largeStreetWidth, maxDepth, maxDistanceForNearestRoad, maxWidth;
-    int largeStreetLevel, decompositionLevelWithoutStreet;
+    double maximalArea, minimalArea, minimalWidthContactRoad, laneWidth, streetWidth, maxDepth, maxDistanceForNearestRoad, maxWidth;
+    int streetLane, blockShape;
     double lenDriveway, noise, harmonyCoeff = 0.5;
-    boolean generatePeripheralRoad;
 
     public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
-                              double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet) {
+                              double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int blockShape) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
         this.minimalArea = minimalArea;
         this.minimalWidthContactRoad = minimalWidthContactRoad;
-        this.streetWidth = smallStreetWidth;
-        this.largeStreetWidth = largeStreetWidth;
-        this.largeStreetLevel = largeStreetLevel;
-        this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
+        this.laneWidth = smallStreetWidth;
+        this.streetWidth = largeStreetWidth;
+        this.streetLane = largeStreetLevel;
+        this.blockShape = blockShape;
     }
 
     /**
      * For every parameter use
      */
     public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
-                              double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int decompositionLevelWithoutStreet, double lenDriveway,
-                              double maxDepth, double maxDistanceForNearestRoad, double maxWidth, boolean generatePeripheralRoad) {
+                              double laneWidth, double streetWidth, int streetLane, int blockShape, double lenDriveway,
+                              double maxDepth, double maxDistanceForNearestRoad, double maxWidth) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
         this.minimalArea = minimalArea;
         this.minimalWidthContactRoad = minimalWidthContactRoad;
-        this.streetWidth = smallStreetWidth;
-        this.largeStreetWidth = largeStreetWidth;
-        this.largeStreetLevel = largeStreetLevel;
-        this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
+        this.laneWidth = laneWidth;
+        this.streetWidth = streetWidth;
+        this.streetLane = streetLane;
+        this.blockShape = blockShape;
         this.lenDriveway = lenDriveway;
         this.maxDepth = maxDepth;
         this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
         this.maxWidth = maxWidth;
-        this.generatePeripheralRoad = generatePeripheralRoad;
     }
 
     /**
      * For Straight Skeleton
      */
-    public ProfileUrbanFabric(String nameBuildingType, double minimalArea, double maxDepth, double maxDistanceForNearestRoad, double minWidth,
-                              double maxWidth, double streetWidth, boolean generatePeripheralRoad) {
+    public ProfileUrbanFabric(String nameBuildingType, double minimalArea, double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth, double streetWidth) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.minimalArea = minimalArea;
-        this.streetWidth = streetWidth;
+        this.laneWidth = streetWidth;
         this.maxDepth = maxDepth;
         this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
         this.maxWidth = maxWidth;
         this.minimalWidthContactRoad = minWidth;
-        this.generatePeripheralRoad = generatePeripheralRoad;
     }
 
     /**
      * Builder for Oriented Bounding Box
      */
-    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double streetWidth,
-                              int largeStreetLevel, int decompositionLevelWithoutStreet) {
+    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double streetWidth, int largeStreetLevel, int blockShape) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
         this.minimalArea = minimalArea;
         this.minimalWidthContactRoad = maximalWidth;
-        this.largeStreetWidth = streetWidth;
         this.streetWidth = streetWidth;
-        this.largeStreetLevel = largeStreetLevel;
-        this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
+        this.laneWidth = streetWidth;
+        this.streetLane = largeStreetLevel;
+        this.blockShape = blockShape;
     }
 
     /**
@@ -106,28 +101,28 @@ public class ProfileUrbanFabric {
     }
 
     public ProfileUrbanFabric(String[] firstLine, String[] line) {
-        int iMaximalArea = 999, iDecompositionLevelWithoutStreet = 999, iLargeStreetLevel = 999, iStreetWidth = 999,
-                iHarmonyCoeff = 999, iLargeStreetWidth = 999, iMinimalWidthContactRoad = 999;
+        int iMaximalArea = 999, iBlockShape = 999, iStreetLane = 999, iLaneWidth = 999,
+                iHarmonyCoeff = 999, iStreetWidth = 999, iMinimalWidthContactRoad = 999;
         for (int i = 0; i < firstLine.length; i++) {
             String index = firstLine[i];
             switch (index) {
                 case "maximalArea":
                     iMaximalArea = i;
                     break;
-                case "decompositionLevelWithoutStreet":
-                    iDecompositionLevelWithoutStreet = i;
+                case "blockShape":
+                    iBlockShape = i;
                     break;
-                case "largeStreetLevel":
-                    iLargeStreetLevel = i;
+                case "streetLane":
+                    iStreetLane = i;
                     break;
-                case "streetWidth":
-                    iStreetWidth = i;
+                case "laneWidth":
+                    iLaneWidth = i;
                     break;
                 case "harmonyCoeff":
                     iHarmonyCoeff = i;
                     break;
-                case "largeStreetWidth":
-                    iLargeStreetWidth = i;
+                case "streetWidth":
+                    iLaneWidth = i;
                     break;
                 case "minimalWidthContactRoad":
                     iMinimalWidthContactRoad = i;
@@ -136,10 +131,10 @@ public class ProfileUrbanFabric {
         }
         this.maximalArea = Double.parseDouble(line[iMaximalArea]);
         this.minimalWidthContactRoad = Double.parseDouble(line[iMinimalWidthContactRoad]);
-        this.streetWidth = Double.parseDouble(line[iStreetWidth]);
-        this.largeStreetWidth = Double.parseDouble(line[iLargeStreetWidth]);
-        this.largeStreetLevel = Integer.parseInt(line[iLargeStreetLevel]);
-        this.decompositionLevelWithoutStreet = Integer.parseInt(line[iDecompositionLevelWithoutStreet]);
+        this.laneWidth = Double.parseDouble(line[iLaneWidth]);
+        this.streetWidth = Double.parseDouble(line[iLaneWidth]);
+        this.streetLane = Integer.parseInt(line[iStreetLane]);
+        this.blockShape = Integer.parseInt(line[iBlockShape]);
         this.harmonyCoeff = Double.parseDouble(line[iHarmonyCoeff]);
     }
 
@@ -154,14 +149,6 @@ public class ProfileUrbanFabric {
         ProfileUrbanFabric profile = mapper.readValue(fileInputStream, ProfileUrbanFabric.class);
         fileInputStream.close();
         return profile;
-    }
-
-    public boolean isGeneratePeripheralRoad() {
-        return generatePeripheralRoad;
-    }
-
-    public void setGeneratePeripheralRoad(boolean generatePeripheralRoad) {
-        this.generatePeripheralRoad = generatePeripheralRoad;
     }
 
     public String getNameBuildingType() {
@@ -188,37 +175,37 @@ public class ProfileUrbanFabric {
         return minimalWidthContactRoad;
     }
 
-    public int getDecompositionLevelWithoutStreet() {
-        return decompositionLevelWithoutStreet;
+    public int getBlockShape() {
+        return blockShape;
     }
 
-    public void setDecompositionLevelWithoutStreet(int decompositionLevelWithoutStreet) {
-        this.decompositionLevelWithoutStreet = decompositionLevelWithoutStreet;
+    public void setBlockShape(int blockShape) {
+        this.blockShape = blockShape;
     }
 
     public double getLenDriveway() {
         return lenDriveway;
     }
 
-    public double getStreetWidth() {
-        return streetWidth;
+    public double getLaneWidth() {
+        return laneWidth;
     }
 
-    public double getLargeStreetWidth() {
-        if (largeStreetWidth != 0.0) {
-            return largeStreetWidth;
-        } else {
+    public double getStreetWidth() {
+        if (streetWidth != 0.0) {
             return streetWidth;
+        } else {
+            return laneWidth;
         }
     }
 
-    public void setLargeStreetWidth(double newStreetWidth) {
-        this.largeStreetWidth = newStreetWidth;
+    public void setStreetWidth(double newStreetWidth) {
+        this.streetWidth = newStreetWidth;
     }
 
-    public int getLargeStreetLevel() {
-        if (largeStreetLevel != 0) {
-            return largeStreetLevel;
+    public int getStreetLane() {
+        if (streetLane != 0) {
+            return streetLane;
         } else {
             return 999;
         }
@@ -227,8 +214,8 @@ public class ProfileUrbanFabric {
     @Override
     public String toString() {
         return "ProfileBuilding " + nameBuildingType + " [maximalArea=" + maximalArea + ", minimalArea=" + minimalArea + ", minimalWidthContactRoad="
-                + minimalWidthContactRoad + ", smallStreetWidth=" + streetWidth + ", largeStreetWidth=" + largeStreetWidth + ", largeStreetLevel="
-                + largeStreetLevel + ", decompositionLevelWithoutStreet=" + decompositionLevelWithoutStreet + ", lenDriveway=" + lenDriveway + "]";
+                + minimalWidthContactRoad + ", smallStreetWidth=" + laneWidth + ", largeStreetWidth=" + streetWidth + ", largeStreetLevel="
+                + streetLane + ", decompositionLevelWithoutStreet=" + blockShape + ", lenDriveway=" + lenDriveway + "]";
     }
 
     public File exportToJSON(File f) throws IOException {

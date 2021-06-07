@@ -29,38 +29,39 @@ public class JoinCSVToGeoFile {
     // }
 
     /**
-     * @param geoFile
-     * @param joinGeoField
-     * @param csvFile
-     * @param joinCsvField
-     * @param outFile
-     * @param attrsToStat
-     * @param statsToDo
-     * @return
-     * @throws IOException
-     * @deprecated not tested and unfinished method
+     * @deprecated untested
+     * @param geoFile geo file containing the collection of features to join
+     * @param joinGeoField  field of the collection of features to join
+     * @param csvFile csv to join
+     * @param joinCsvField common field of the csv to join
+     * @param outFile write the result on this file
+     * @param attrsToStat list of attributes to to stats on
+     * @param statsToDo Statistical operations to do. Can be null
+
+     * @return the joined file
+     * @throws IOException reading .csv file and geo file
      */
 
-    public static File joinCSV(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile, List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
+    public static File joinCSVToGeoFile(File geoFile, String joinGeoField, File csvFile, String joinCsvField, File outFile, List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
         DataStore ds = CollecMgmt.getDataStore(geoFile);
-        File result = joinCSVToGeoFile(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile, attrsToStat, statsToDo);
+        SimpleFeatureCollection result = joinCSVToGeoFile(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures(), joinGeoField, csvFile, joinCsvField, outFile, attrsToStat, statsToDo);
         ds.dispose();
-        return result;
+        return CollecMgmt.exportSFC(result, outFile);
     }
 
     /**
-     * @param sfc
-     * @param joinGeoField
-     * @param csvFile
-     * @param joinCsvField
-     * @param outFile
-     * @param attrsToStat
-     * @param statsToDo
+     * @deprecated untested
+     * @param sfc collection of features to join
+     * @param joinGeoField  field of the collection of features to join
+     * @param csvFile csv to join
+     * @param joinCsvField common field of the csv to join
+     * @param outFile write the result on this file
+     * @param attrsToStat list of attributes to to stats on
+     * @param statsToDo Statistical operations to do. Can be null
      * @return
-     * @throws IOException
-     * @deprecated not tested and unfinished method
+     * @throws IOException reading .csv file
      */
-    public static File joinCSVToGeoFile(SimpleFeatureCollection sfc, String joinGeoField, File csvFile, String joinCsvField, File outFile,
+    public static SimpleFeatureCollection joinCSVToGeoFile(SimpleFeatureCollection sfc, String joinGeoField, File csvFile, String joinCsvField, File outFile,
                                         List<String> attrsToStat, List<StatisticOperation> statsToDo) throws IOException {
         // TODO finish to develop that
         CSVReader reader = new CSVReader(new FileReader(csvFile));
@@ -91,15 +92,15 @@ public class JoinCSVToGeoFile {
         SimpleFeatureBuilder build = new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
         try (SimpleFeatureIterator it = sfc.features()) {
             while (it.hasNext()) {
-                CSVReader r = new CSVReader(new FileReader(csvFile));
-                r.readNext();
-                List<String[]> read = r.readAll();
                 SimpleFeature com = it.next();
                 for (AttributeDescriptor field : schema.getAttributeDescriptors())
                     build.set(field.getLocalName(), com.getAttribute(field.getLocalName()));
-
                 String valu = String.valueOf(com.getAttribute(joinGeoField));
                 int count = 0;
+                // reading and running through the .csv
+                CSVReader r = new CSVReader(new FileReader(csvFile));
+                r.readNext();
+                List<String[]> read = r.readAll();
                 String[] lastLine = new String[read.get(0).length];
                 for (String[] line : read)
                     if (line[cpIndice].equals(valu)) {
@@ -111,8 +112,9 @@ public class JoinCSVToGeoFile {
                 int nbAttTmp = nbAtt - 1;
                 for (String l : lastLine)
                     build.set(nbAttTmp++, l);
-                if (statsToDo.contains(StatisticOperation.COUNT))
+                if (statsToDo != null &&  statsToDo.contains(StatisticOperation.COUNT))
                     build.set("count", count);
+
                 //TODO add other stats
                 result.add(build.buildFeature(null));
                 r.close();
@@ -121,6 +123,6 @@ public class JoinCSVToGeoFile {
             problem.printStackTrace();
         }
         reader.close();
-        return CollecMgmt.exportSFC(result, outFile);
+        return result;
     }
 }

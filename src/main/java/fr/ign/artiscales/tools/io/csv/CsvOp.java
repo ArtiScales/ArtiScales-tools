@@ -95,7 +95,7 @@ public class CsvOp {
 
 
     /**
-     * Add some basic statistic for a predeterminde column of a csv file. Add extra lines to the end of the .csv.
+     * Add some basic statistic for a predetermined column of a csv file. Add extra lines to the end of the .csv.
      *
      * @param csvFile    path to the .csv {@link File}
      * @param nbCol      number of the column to calulate stats (begins at 0)
