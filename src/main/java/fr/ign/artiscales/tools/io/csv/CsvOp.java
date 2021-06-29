@@ -15,6 +15,7 @@ import java.util.List;
 
 public class CsvOp {
 
+    public static Character sep = ',';
     /**
      * Get a list of unique values for a given field from a .csv file
      *
@@ -23,7 +24,7 @@ public class CsvOp {
      * @return a list of unique values
      */
     public static List<String> getUniqueFieldValue(File csvFile, String fieldName) throws IOException {
-        CSVReader r = new CSVReader(new FileReader(csvFile));
+        CSVReader r = new CSVReader(new FileReader(csvFile), sep);
         int i = Attribute.getIndice(r.readNext(), fieldName);
         List<String> result = new ArrayList<>();
         for (String[] l : r.readAll())
@@ -43,7 +44,7 @@ public class CsvOp {
      * @throws IOException by CSVReader
      */
     public static List<String> getCells(File csvFile, String targetAttributeName, String targetAttributeValue, String wantedAttributeName) throws IOException {
-        CSVReader r = new CSVReader(new FileReader(csvFile));
+        CSVReader r = new CSVReader(new FileReader(csvFile), sep);
         String[] fLine = r.readNext();
         int iTarget = Attribute.getIndice(fLine, targetAttributeName);
         int iWanted = Attribute.getIndice(fLine, wantedAttributeName);
@@ -66,7 +67,7 @@ public class CsvOp {
      * @throws IOException by CSVReader
      */
     public static String getCell(File csvFile, String targetAttributeName, String targetAttributeValue, String wantedAttributeName) throws IOException {
-        CSVReader r = new CSVReader(new FileReader(csvFile));
+        CSVReader r = new CSVReader(new FileReader(csvFile), sep);
         String[] fLine = r.readNext();
         int iTarget = Attribute.getIndice(fLine, targetAttributeName);
         String result = "";

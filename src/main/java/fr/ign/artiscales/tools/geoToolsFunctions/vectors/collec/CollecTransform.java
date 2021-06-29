@@ -191,6 +191,29 @@ public class CollecTransform {
     }
 
     /**
+     * Get the closest feature of a geometry from an input collection by checking meters by meters which feature is the closest.
+     * If multiple are found, return a random single feature.
+     * @param collec input collection
+     * @param featGeom geometry to look around
+     * @return closest feature
+     */
+    public static SimpleFeature getClostestFeat(SimpleFeatureCollection collec, Geometry featGeom){
+        double x = 0;
+        FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
+        //we check meters by meters if there's entrances
+        while (x < 75) {
+            SimpleFeatureCollection closest = collec.subCollection(ff.dwithin(ff.property(collec.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(featGeom), x, "meters"));
+            if (closest.size() > 0) {
+                if (closest.size() != 1)
+                    System.out.println("getClostestFeat(): multiple entrances have been found at equally distance :" + closest);
+                return Arrays.stream(closest.toArray(new SimpleFeature[0])).findFirst().get();
+            }
+            x++;
+        }
+        return null;
+    }
+
+    /**
      * clean the {@link SimpleFeatureCollection} of feature which area is inferior to areaMin
      *
      * @param collecIn Input {@link SimpleFeatureCollection}
