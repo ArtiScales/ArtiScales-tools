@@ -26,11 +26,11 @@
 				<directory>src/main/resources</directory>
 			</resource>
 		</resources>
-		<testResources>
+<!--		<testResources>
 			<testResource>
 				<directory>src/test/resources</directory>
 			</testResource>
-		</testResources>
+		</testResources> -->
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -48,9 +48,9 @@
 				<version>2.4</version>
 				<configuration>
 					<compilerVersion>1.8</compilerVersion>
-					<source>9</source>
+					<source>11</source>
 <!--					<complianceLevel>1.8</complianceLevel>-->
-					<target>9</target>
+					<target>11</target>
 					<includes>
 						<include>**/*</include>
 					</includes>
@@ -145,6 +145,11 @@
 		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-epsg-hsql</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools.jdbc</groupId>
+			<artifactId>gt-jdbc-postgis</artifactId>
 			<version>${geotools.version}</version>
 		</dependency>
 		<dependency>

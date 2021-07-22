@@ -5,7 +5,6 @@ import com.opencsv.CSVWriter;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,18 +13,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+
 /**
  * Class that contains multiple methods to manipulate a .csv file
  *
  * @author Maxime Colomb
  */
-public class CsvExport {
+public class CsvExport extends Csv {
 
     public static boolean needFLine = true;
 
-//    public static void main(String[] args) throws IOException {
-//        mergeCsvFilesCol(Arrays.asList(new File("/tmp/age-80 - P.tif-tocsv.csv"), new File("/tmp/sex-Homme.tif-tocsv.csv"), new File("/tmp/resto.tif-tocsv.csv")), new File("/tmp/"), "merged.csv", true);
-//    }
 
     /**
      * Export a {@link DescriptiveStatistics} ofject to a .csv tab
@@ -74,13 +71,13 @@ public class CsvExport {
      * @throws IOException reading or writing file
      */
     public static File mergeCSVFiles(List<File> filesToMerge, File outFile) throws IOException {
-        CSVReader defCsv = new CSVReader(new FileReader(filesToMerge.get(0)));
+        CSVReader defCsv = getCSVReader(filesToMerge.get(0));
         String[] firstLineDef = defCsv.readNext();
         defCsv.close();
-        CSVWriter output = new CSVWriter(new FileWriter(outFile, true));
+        CSVWriter output = getCSVWriter(outFile, true);
         output.writeNext(firstLineDef);
         for (File fileToMerge : filesToMerge) {
-            CSVReader ptCsv = new CSVReader(new FileReader(fileToMerge));
+            CSVReader ptCsv = getCSVReader(fileToMerge);
             String[] firstLine = ptCsv.readNext();
             if (firstLine.length != firstLineDef.length)
                 System.out.println("mergeCSVFiles() method merges different files");
@@ -316,14 +313,14 @@ public class CsvExport {
             }
         if (ordered) {
             // check that every files has the same line amount
-            int length = (new CSVReader(new FileReader(listFiles.get(0)))).readAll().size();
+            int length = (getCSVReader(listFiles.get(0))).readAll().size();
             for (File f : listFiles)
-                if ((new CSVReader(new FileReader(f))).readAll().size() != length)
+                if (getCSVReader(f).readAll().size() != length)
                     System.out.println("mergeCsvFilesCol doesn't have the same size column. You may have a problem, tabs are unlikely to have the same order, and would prefer use the ordered=false argument");
             boolean coordinates = true;
             HashMap<String, Object[]> mergedCSV = new HashMap<>();
             for (File f : listFiles) {
-                CSVReader csvr = new CSVReader(new FileReader(f));
+                CSVReader csvr = getCSVReader(f);
                 String[] attrNames = csvr.readNext();
                 if (coordinates) {
                     Object[] obj = new Object[length];
@@ -331,7 +328,7 @@ public class CsvExport {
                     for (String[] l : csvr.readAll())
                         obj[i++] = l[0];
                     mergedCSV.put(String.valueOf(attrNames[0]), obj);
-                    csvr = new CSVReader(new FileReader(f));
+                    csvr = getCSVReader(f);
                     csvr.readNext();
                     coordinates = false;
                 }
@@ -360,7 +357,6 @@ public class CsvExport {
     public static File generateCsvFileCol(HashMap<String, Object[]> cellRepet, File folderOut, String name) throws IOException {
         File fileName = new File(folderOut + "/" + name + ".csv");
         FileWriter writer = new FileWriter(fileName, false);
-
         // selec the longest tab
         int longestTab = 0;
         for (Object[] tab : cellRepet.values())
@@ -403,5 +399,21 @@ public class CsvExport {
 
     public static void simpleCSVWriter(List<String> lines, File f, boolean append) throws IOException {
         simpleCSVWriter(lines, "", f, append);
+    }
+
+    public static void exportMatrix(double[][] matrixValue, String[] colName, String[] rowName, File fileOut) throws IOException {
+        CSVWriter w = getCSVWriter(fileOut);
+        String[] newColName = new String[colName.length + 1];
+        newColName[0] = "";
+        System.arraycopy(colName, 0, newColName, 1, colName.length);
+        w.writeNext(newColName);
+        for (int i = 0; i < rowName.length; i++) {
+            String[] line = new String[colName.length + 1];
+            line[0] = rowName[i];
+            for (int j = 1; j <= colName.length; j++)
+                line[j] = String.valueOf(matrixValue[j - 1][i]);
+            w.writeNext(line);
+        }
+        w.close();
     }
 }

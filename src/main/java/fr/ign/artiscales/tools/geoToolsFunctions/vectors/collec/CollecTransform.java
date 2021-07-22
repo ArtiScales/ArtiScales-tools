@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.SortedMap;
@@ -191,13 +192,32 @@ public class CollecTransform {
     }
 
     /**
+     * From a given collection, compute the ratio of surface of intersection regarding to a distinct geometry.
+     * @param inSFC input collection
+     * @param geomIntersection geometry to calculate the intersection with
+     * @return A collection with only intersecting geometries and the percentage of their intersection with the #geomIntersection
+     */
+    public static HashMap<SimpleFeature, Double> getRatioIntersection(SimpleFeatureCollection inSFC, Geometry geomIntersection) {
+        HashMap<SimpleFeature, Double> d = new HashMap<>();
+        try (SimpleFeatureIterator it = inSFC.features()) {
+            while (it.hasNext()) {
+                SimpleFeature feat = it.next();
+                if (((Geometry) feat.getDefaultGeometry()).intersects(geomIntersection))
+                    d.put(feat, geomIntersection.intersection((Geometry) feat.getDefaultGeometry()).getArea() / ((Geometry) feat.getDefaultGeometry()).getArea());
+            }
+        }
+        return d;
+    }
+
+    /**
      * Get the closest feature of a geometry from an input collection by checking meters by meters which feature is the closest.
      * If multiple are found, return a random single feature.
-     * @param collec input collection
+     *
+     * @param collec   input collection
      * @param featGeom geometry to look around
      * @return closest feature
      */
-    public static SimpleFeature getClostestFeat(SimpleFeatureCollection collec, Geometry featGeom){
+    public static SimpleFeature getClostestFeat(SimpleFeatureCollection collec, Geometry featGeom) {
         double x = 0;
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
         //we check meters by meters if there's entrances
@@ -357,7 +377,7 @@ public class CollecTransform {
     /**
      * Get the Simple Feature that has the largest area from a collection
      *
-     * @param sFCToSort
+     * @param sFCToSort SimpleFeatureCollection to sort
      * @return the larget feature
      */
     public static SimpleFeature getBiggestSF(SimpleFeatureCollection sFCToSort) {

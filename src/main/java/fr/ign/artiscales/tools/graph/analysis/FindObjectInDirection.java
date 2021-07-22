@@ -46,7 +46,7 @@ public class FindObjectInDirection {
     /**
      * Find an object in the collection collectionToSelect in a direction perpendicular to bound (a LineString object) in a direction opposite to parcel
      *
-     * @param linestringFeature feature containing the line for which a perpendicular line is drawn
+     * @param linestringFeature        feature containing the line for which a perpendicular line is drawn
      * @param oppositeDirectionFeature feature containing the geometry used to not draw line in that direction
      * @param collectionToSelect       collection of segment to search for
      * @param maximumDistance          distance till which the algorithm is looking for a road segment
@@ -61,8 +61,8 @@ public class FindObjectInDirection {
     /**
      * Find an object in the collection collectionToSelect in a direction perpendicular to bound (a LineString object) in a direction opposite to parcel.
      *
-     * @param linestring draw line perpendicular to that geometry
-     * @param oppositeDirection Geometry used to not draw line in that direction
+     * @param linestring         draw line perpendicular to that geometry
+     * @param oppositeDirection  Geometry used to not draw line in that direction
      * @param collectionToSelect collection of segment to search for
      * @param maximumDistance    distance till which the algorithm is looking for a road segment
      * @return
@@ -74,8 +74,8 @@ public class FindObjectInDirection {
     /**
      * Find an object in the collection collectionToSelect in a direction perpendicular to bound (a LineString object) in a direction opposite to parcel.
      *
-     * @param linestring draw line perpendicular to that geometry
-     * @param oppositeDirection Geometry used to not draw line in that direction
+     * @param linestring         draw line perpendicular to that geometry
+     * @param oppositeDirection  Geometry used to not draw line in that direction
      * @param collectionToSelect collection of segment to search for
      * @param maximumDistance    distance till which the algorithm is looking for a segment
      * @param attrImportance     road attribute setting the road importance. Can be null
@@ -89,20 +89,18 @@ public class FindObjectInDirection {
         LineString ls = generateLineofSight(linestring, oppositeDirection, maximumDistance);
         if (ls == null)
             return Optional.empty();
-        double distance = Double.POSITIVE_INFINITY;
+        double distance = maximumDistance;
         SimpleFeature bestcandidateParcel = null;
         try (SimpleFeatureIterator iterator = CollecTransform.selectIntersection(collectionToSelect, ls).features()) {
             while (iterator.hasNext()) {
                 SimpleFeature boundaryTemp = iterator.next();
                 if (oppositeDirection.buffer(0.5).contains((Geometry) boundaryTemp.getDefaultGeometry()))
                     continue;
-                double distTemp = ((Geometry) boundaryTemp.getDefaultGeometry()).distance(oppositeDirection);
-                if (attrImportance != null && CollecMgmt.isCollecContainsAttribute(collectionToSelect, attrImportance) && bestcandidateParcel != null && Format.getDoubleFromCommaFormattedString(bestcandidateParcel, attrImportance) > Format.getDoubleFromCommaFormattedString(boundaryTemp, attrImportance))
+                // if importance is higher and the road is at common distance
+                if (attrImportance != null && CollecMgmt.isCollecContainsAttribute(collectionToSelect, attrImportance)
+                        && (bestcandidateParcel != null ? Format.getDoubleFromCommaFormattedString(bestcandidateParcel, attrImportance) : 0) < Format.getDoubleFromCommaFormattedString(boundaryTemp, attrImportance)
+                        && ((Geometry) boundaryTemp.getDefaultGeometry()).distance(oppositeDirection) < distance)
                     bestcandidateParcel = boundaryTemp;
-                else if (distTemp < distance) {
-                    distance = distTemp;
-                    bestcandidateParcel = boundaryTemp;
-                }
             }
         } catch (Exception e) {
             e.printStackTrace();
