@@ -168,8 +168,8 @@ public class OpOnCollec {
         PropertyName pName = ff.property(parcelRef.getSchema().getGeometryDescriptor().getLocalName());
         DefaultFeatureCollection same = new DefaultFeatureCollection();
         DefaultFeatureCollection notSame = new DefaultFeatureCollection();
-        HausdorffSimilarityMeasure hausDis = new HausdorffSimilarityMeasure();
-        // for every reference parcels, we check if an intersection with the intersection compared parcels are +/- 5% of its area and their shapes are similar regarding to the Hausdorf distance mesure
+        HausdorffSimilarityMeasure hausSim = new HausdorffSimilarityMeasure();
+        // for every reference parcels, we check if an intersection with the intersection compared parcels are +/- 5% of its area and their shapes are similar regarding to the Hausdorff distance mesure
         try (SimpleFeatureIterator itRef = parcelRef.features()) {
             refParcel:
             while (itRef.hasNext()) {
@@ -183,7 +183,7 @@ public class OpOnCollec {
                         Geometry g = (Geometry) itParcelIntersectRef.next().getDefaultGeometry();
                         double inter = Objects.requireNonNull(Geom.scaledGeometryReductionIntersection(Arrays.asList(geomPRef, g))).getArea();
                         // if there are parcel intersection and a similar area, we conclude that parcel haven't changed. We put it in the \"same\" collection and stop the search
-                        if ((inter > 0.95 * geomArea && inter < 1.05 * geomArea) || hausDis.measure(g, geomPRef) > 0.95) {
+                        if ((inter > 0.95 * geomArea && inter < 1.05 * geomArea) || hausSim.measure(g, geomPRef) > 0.95) {
                             same.add(pRef);
                             continue refParcel;
                         }

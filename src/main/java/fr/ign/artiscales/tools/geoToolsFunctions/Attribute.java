@@ -38,7 +38,7 @@ public class Attribute {
      */
     public static int getLongIndice(String[] head) throws FileNotFoundException {
         for (int i = 0; i < head.length; i = i + 1) {
-            if (head[i].toLowerCase().contains("longitude") || head[i].equalsIgnoreCase("long")
+            if (head[i].toLowerCase().contains("longitude") || head[i].equalsIgnoreCase("lon") || head[i].equalsIgnoreCase("long")
                     || head[i].equalsIgnoreCase("y") || head[i].equalsIgnoreCase("lambert_y")
                     || (head[i].toLowerCase().contains("y") && head[i].toLowerCase().contains("coord")))
                 return i;
