@@ -57,6 +57,19 @@ public class CollecTransform {
     /**
      * Return a SimpleFeature with the merged geometries and the schema of the input collection but no attribute
      *
+     * @param collecFile input geofile
+     * @return a {@link SimpleFeature} with no values
+     */
+    public static SimpleFeature unionSFC(File collecFile) throws IOException {
+        DataStore ds = CollecMgmt.getDataStore(collecFile);
+        SimpleFeature union = unionSFC(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures());
+        ds.dispose();
+        return union;
+    }
+
+    /**
+     * Return a SimpleFeature with the merged geometries and the schema of the input collection but no attribute
+     *
      * @param collec input {@link SimpleFeatureCollection}
      * @return a {@link SimpleFeature} with no values
      */
@@ -193,7 +206,8 @@ public class CollecTransform {
 
     /**
      * From a given collection, compute the ratio of surface of intersection regarding to a distinct geometry.
-     * @param inSFC input collection
+     *
+     * @param inSFC            input collection
      * @param geomIntersection geometry to calculate the intersection with
      * @return A collection with only intersecting geometries and the percentage of their intersection with the #geomIntersection
      */
@@ -387,14 +401,18 @@ public class CollecTransform {
     }
 
     /**
-     * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.
+     * Sort a SimpleFeatureCollection by one of its numeric field. Uses a sorted collection and a stream method.
      *
      * @param sFCToSort SimpleFeature
+     * @param field Name of the field to sort
+     * @param maxToMin
      * @return The sorted {@link SimpleFeatureCollection}
      */
     public static SimpleFeatureCollection sortSFCWithField(SimpleFeatureCollection sFCToSort, String field, boolean maxToMin) {
-        if (sFCToSort.isEmpty() || !CollecMgmt.isCollecContainsAttribute(sFCToSort, field)) //todo add the check if is numeric
+        if (sFCToSort.isEmpty() || !CollecMgmt.isCollecContainsAttribute(sFCToSort, field))
             return new DefaultFeatureCollection();
+        //todo add the check if is numeric
+//        if(sFCToSort.getSchema().getDescriptor(field).getType().
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
         SortByImpl[] sortOrder = {new SortByImpl(ff.property(field), maxToMin ? SortOrder.DESCENDING : SortOrder.ASCENDING)};
         return new SortedSimpleFeatureCollection(sFCToSort, sortOrder);

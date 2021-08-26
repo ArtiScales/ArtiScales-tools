@@ -385,7 +385,7 @@ public class CsvExport extends Csv {
             fileOut = new File(fileOut + ".csv");
         fileOut.getParentFile().mkdirs();
         FileWriter writer = new FileWriter(fileOut, append);
-        if (needFLine) {
+        if (needFLine || !append) {
             writer.append(firstLine).append("\n");
             needFLine = false;
         }
@@ -411,7 +411,7 @@ public class CsvExport extends Csv {
             String[] line = new String[colName.length + 1];
             line[0] = rowName[i];
             for (int j = 1; j <= colName.length; j++)
-                line[j] = String.valueOf(matrixValue[j - 1][i]);
+                line[j] = String.valueOf(matrixValue[i][j - 1]);
             w.writeNext(line);
         }
         w.close();

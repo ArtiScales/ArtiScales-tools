@@ -102,6 +102,7 @@ public class CsvOp extends Csv {
 
     public static String getCell(InputStream csvInputStream, String targetAttributeName, String targetAttributeValue, String wantedAttributeName) throws IOException {
         CSVReader r = getCSVReader(csvInputStream);
+        assert r != null;
         String[] fLine = r.readNext();
         int iTarget = Attribute.getIndice(fLine, targetAttributeName);
         String[] line;
@@ -344,6 +345,71 @@ public class CsvOp extends Csv {
         return fileOut;
     }
 
+    /**
+     * Get only the wanted column of a .csv. Could easily be overload to select multiple column.
+     *
+     * @param csvFile         Input .csv
+     * @param outFile         Output .csv
+     * @param columnName      Name of the column to isolate
+     * @param keepFirstColumn Do we keep the first column, that could contain information, or not.
+     * @return the output file
+     * @throws IOException reading and writing
+     */
+    public static File isolateColumn(File csvFile, File outFile, String columnName, boolean keepFirstColumn) throws IOException {
+        CSVReader r = Csv.getCSVReader(csvFile);
+        CSVWriter w = Csv.getCSVWriter(outFile);
+        String[] fLine = r.readNext();
+        int iToKeep = Attribute.getIndice(fLine, columnName);
+        if (keepFirstColumn)
+            w.writeNext(new String[]{fLine[0], fLine[iToKeep]});
+        else
+            w.writeNext(new String[]{fLine[iToKeep]});
+        for (String[] line : r.readAll())
+            if (keepFirstColumn)
+                w.writeNext(new String[]{line[0], line[iToKeep]});
+            else
+                w.writeNext(new String[]{line[iToKeep]});
+
+        r.close();
+        w.close();
+        return outFile;
+    }
+
+    /**
+     * Change the first column of a .csv file with a new line by re-writing. Input and output files must be different
+     *
+     * @param csvFile  input .csv file
+     * @param outFile  output .csv file
+     * @param newFLine new header for the .csv
+     * @return output file
+     * @throws IOException reading and writing
+     */
+    public static File renameFirstColumn(File csvFile, File outFile, String[] newFLine) throws IOException {
+        CSVReader r = Csv.getCSVReader(csvFile);
+        CSVWriter w = Csv.getCSVWriter(outFile);
+        String[] fLine = r.readNext();
+        if (csvFile == outFile)
+            System.out.println("renameFirstColumn: input and output files are the same. That could be smart but unfortunately function is not ready for it");
+        if (fLine.length != newFLine.length)
+            System.out.println("renameFirstColumn: different length between original and new first line");
+        w.writeNext(newFLine);
+        for (String[] line : r.readAll())
+            w.writeNext(line);
+        r.close();
+        w.close();
+        return outFile;
+    }
+
+    /**
+     * Filter lines from a .csv file by comparing values of a field to a given fix values
+     *
+     * @param csvFile          .csv file
+     * @param outFile          file to write the output
+     * @param fieldNameFilter  name of the field for comparison
+     * @param fieldValueFilter value of the field for which to compare the #fieldNameFilter values
+     * @return the wrote #outFile
+     * @throws IOException reading and writing
+     */
     public static File filterCSV(File csvFile, File outFile, String fieldNameFilter, String fieldValueFilter) throws IOException {
         CSVReader r = Csv.getCSVReader(csvFile);
         CSVWriter w = Csv.getCSVWriter(outFile);

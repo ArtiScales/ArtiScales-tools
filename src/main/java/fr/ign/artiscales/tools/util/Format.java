@@ -14,9 +14,8 @@ public class Format {
      * @param sf    SimpleFeature incriminated
      * @param field String attribute that represents a comma separated double
      * @return the value
-     * @throws ParseException if the beginning of the attribute value cannot be parsed.
      */
-    public static double getDoubleFromCommaFormattedString(SimpleFeature sf, String field) throws ParseException {
+    public static double getDoubleFromCommaFormattedString(SimpleFeature sf, String field) {
         if (sf.getAttribute(field) == null)
             return 0.0;
         try {
@@ -25,7 +24,13 @@ public class Format {
             try {
                 return (int) sf.getAttribute(field);
             } catch (ClassCastException cc) {
-                return sf.getAttribute(field) != null ? NumberFormat.getInstance(Locale.FRANCE).parse((String) sf.getAttribute(field)).doubleValue() : 0.0;
+                try {
+                    return sf.getAttribute(field) != null ? NumberFormat.getInstance(Locale.FRANCE).parse((String) sf.getAttribute(field)).doubleValue() : 0.0;
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                    System.err.println("getDoubleFromCommaFormattedString(): return 0");
+                    return 0.0;
+                }
             }
         }
     }

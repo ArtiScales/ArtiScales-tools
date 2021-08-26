@@ -342,6 +342,14 @@ public class Geom {
         return sorted.get(sorted.size() - 1).getKey();
     }
 
+    public static Geometry precisionReduction(Geometry g, int scale) {
+        return GeometryPrecisionReducer.reduce(g, new PrecisionModel(scale));
+    }
+
+    public static Geometry precisionReduction(Geometry g) {
+        return precisionReduction(g, 2);
+    }
+
 //	public static Geometry unionGeom(Geometry g1, Geometry g2) {
 //		if (g1 instanceof GeometryCollection) {
 //			if (g2 instanceof GeometryCollection)
