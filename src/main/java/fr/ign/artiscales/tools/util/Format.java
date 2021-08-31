@@ -34,4 +34,36 @@ public class Format {
             }
         }
     }
+
+    /**
+     * Get rid of that comma infecting some French datasets
+     *
+     * @param sf    SimpleFeature incriminated
+     * @param field String attribute that represents a comma separated double
+     * @return the value
+     */
+    public static float getFloatFromCommaFormattedString(SimpleFeature sf, String field) {
+        if (sf.getAttribute(field) == null)
+            return 0.0f;
+        try {
+            return (float) sf.getAttribute(field);
+        } catch (ClassCastException c) {
+            try {
+                return (int) sf.getAttribute(field);
+            } catch (ClassCastException cc) {
+                try {
+                    return (float) ((double) sf.getAttribute(field));
+                } catch (ClassCastException ccc) {
+                    try {
+                        return sf.getAttribute(field) != null ? NumberFormat.getInstance(Locale.FRANCE).parse((String) sf.getAttribute(field)).floatValue() : 0.0f;
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                        System.err.println("getDoubleFromCommaFormattedString(): return 0");
+                        return 0.0f;
+                    }
+                }
+            }
+
+        }
+    }
 }
