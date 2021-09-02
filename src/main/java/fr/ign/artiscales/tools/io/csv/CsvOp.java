@@ -401,7 +401,7 @@ public class CsvOp extends Csv {
     }
 
     /**
-     * Filter lines from a .csv file by comparing values of a field to a given fix values
+     * Filter lines from a .csv file by comparing values of a field to a given fixed values
      *
      * @param csvFile          .csv file
      * @param outFile          file to write the output
@@ -411,6 +411,27 @@ public class CsvOp extends Csv {
      * @throws IOException reading and writing
      */
     public static File filterCSV(File csvFile, File outFile, String fieldNameFilter, String fieldValueFilter) throws IOException {
+        return filterCSV(csvFile, outFile, fieldNameFilter, fieldValueFilter, null);
+    }
+
+    /**
+     * Filter lines from a .csv file by comparing values of a field to a given fixed values
+     *
+     * @param csvFile          .csv file
+     * @param outFile          file to write the output
+     * @param fieldNameFilter  name of the field for comparison
+     * @param fieldValueFilter value of the field for which to compare the #fieldNameFilter values
+     * @param op               Kind of operation to make on the strings. Could be :
+     *                         <ul>
+     *                         <li><b>startsWith</b>: beginning of the string must match</li>
+     *                         <li><b>endsWith</b>: end of the string must match</li>
+     *                         <li><b>contains</b>: some place of the string must match</li>
+     *                         <li><b>any other key</b>: strings must be equals</li>
+     *                         </ul>
+     * @return the wrote #outFile
+     * @throws IOException reading and writing
+     */
+    public static File filterCSV(File csvFile, File outFile, String fieldNameFilter, String fieldValueFilter, String op) throws IOException {
         CSVReader r = Csv.getCSVReader(csvFile);
         CSVWriter w = Csv.getCSVWriter(outFile);
         String[] fLine = r.readNext();
@@ -419,8 +440,23 @@ public class CsvOp extends Csv {
         Iterator<String[]> it = r.iterator();
         while (it.hasNext()) {
             String[] line = it.next();
-            if (line[i].equals(fieldValueFilter))
-                w.writeNext(line);
+            switch (op) {
+                case "startsWith":
+                    if (line[i].startsWith(fieldValueFilter))
+                        w.writeNext(line);
+                    break;
+                case "endsWith":
+                    if (line[i].endsWith(fieldValueFilter))
+                        w.writeNext(line);
+                    break;
+                case "contains":
+                    if (line[i].contains(fieldValueFilter))
+                        w.writeNext(line);
+                    break;
+                default:
+                    if (line[i].equals(fieldValueFilter))
+                        w.writeNext(line);
+            }
         }
         r.close();
         w.close();
