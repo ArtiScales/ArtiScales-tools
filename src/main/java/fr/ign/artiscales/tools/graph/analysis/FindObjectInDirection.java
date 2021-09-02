@@ -11,6 +11,7 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.linearref.LengthIndexedLine;
 import org.locationtech.jts.math.Vector2D;
 import org.opengis.feature.simple.SimpleFeature;
 
@@ -89,6 +90,7 @@ public class FindObjectInDirection {
         LineString ls = generateLineofSight(linestring, oppositeDirection, maximumDistance);
         if (ls == null)
             return Optional.empty();
+
         double distance = maximumDistance;
         SimpleFeature bestcandidateParcel = null;
         try (SimpleFeatureIterator iterator = CollecTransform.selectIntersection(collectionToSelect, ls).features()) {
@@ -109,15 +111,20 @@ public class FindObjectInDirection {
     }
 
     private static LineString generateLineofSight(LineString geom, Geometry oppositeDirection, double maximumDistance) {
-        Coordinate dp1 = geom.getCoordinateN(0);
-        Coordinate dp2 = geom.getCoordinateN(1);
+        LengthIndexedLine lil = new LengthIndexedLine(geom);
+        Coordinate lineCenter = lil.extractPoint(geom.getLength() / 2);
+//        Coordinate lineCenter = geom.getCentroid().getCoordinate();
+
+//        Coordinate dp1 = geom.getCoordinateN(0);
+//        Coordinate dp2 = geom.getCoordinateN(1);
+
+        Coordinate dp1 = lil.extractPoint(geom.getLength() * 0.4);
+        Coordinate dp2 = lil.extractPoint(geom.getLength() * 0.6);
 
         Vector2D vLine = new Vector2D(dp1, dp2);
 
         Vector2D vectOrth = vLine.rotateByQuarterCircle(1).normalize().multiply(smallVectorSize);
         Vector2D vectOrthNeg = vectOrth.negate().normalize().multiply(smallVectorSize);
-
-        Coordinate lineCenter = geom.getCentroid().getCoordinate();
 
         Coordinate dpDep = vectOrth.translate(lineCenter);
         Coordinate dpDepNeg = vectOrthNeg.translate(lineCenter);
@@ -136,7 +143,7 @@ public class FindObjectInDirection {
                 isInPolygonDep = false;
             }
             System.out.println(
-                    FindObjectInDirection.class + " TRANSLATION IS IN PARCEL IN BOTH DIRECTION " + oppositeDirection);
+                    FindObjectInDirection.class + " TRANSLATION IS IN PARCEL IN BOTH DIRECTION FOR " + factory.createPoint(dpDep) + " AND " + factory.createPoint(dpDepNeg) + " IN " + oppositeDirection);
         }
 
         if ((!isInPolygonDep) && (!isInPolygonDepNeg)) {
