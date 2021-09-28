@@ -411,7 +411,7 @@ public class CsvOp extends Csv {
      * @throws IOException reading and writing
      */
     public static File filterCSV(File csvFile, File outFile, String fieldNameFilter, String fieldValueFilter) throws IOException {
-        return filterCSV(csvFile, outFile, fieldNameFilter, fieldValueFilter, null);
+        return filterCSV(csvFile, outFile, fieldNameFilter, fieldValueFilter, "equals");
     }
 
     /**
@@ -453,9 +453,10 @@ public class CsvOp extends Csv {
                     if (line[i].contains(fieldValueFilter))
                         w.writeNext(line);
                     break;
-                default:
+                case "equals":
                     if (line[i].equals(fieldValueFilter))
                         w.writeNext(line);
+                    break;
             }
         }
         r.close();

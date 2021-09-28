@@ -47,7 +47,7 @@ public class Attribute {
     }
 
     /**
-     * Get the indice number on the position of the Latitude field from a .csv
+     * Get the indice number representing the position of a field representing city or zip code from a .csv
      *
      * @param head the header of the .csv file
      * @return the indice on which number
@@ -64,14 +64,15 @@ public class Attribute {
     }
 
     /**
-     * Get the indice number on the position of the Latitude field from a .csv
+     * Get the indice number representing the position of the given field.
      *
-     * @param head the header of the .csv file
+     * @param head       the header of the .csv file
+     * @param indiceName Full and complete name of the header
      * @return the indice on which number
      */
     public static int getIndice(String[] head, String indiceName) throws FileNotFoundException {
         for (int i = 0; i < head.length; i = i + 1)
-            if (head[i].contains(indiceName))
+            if (head[i].equals(indiceName))
                 return i;
         throw new FileNotFoundException("Attribute.getIndice : no " + indiceName + " indice found");
     }
