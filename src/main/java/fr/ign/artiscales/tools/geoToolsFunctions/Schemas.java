@@ -14,6 +14,9 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.referencing.FactoryException;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class Schemas {
     /**
      * Class containing methods to deal with Schemas and/or SimpleFeatureBuilders
@@ -22,10 +25,11 @@ public class Schemas {
 
     /**
      * Get a schema for {@link Polygon} with no {@link org.opengis.feature.Attribute}
+     *
      * @param name Name of the schema
      * @return empty builder
      */
-    public static SimpleFeatureBuilder getBasicSchema(String name) {
+    public static SimpleFeatureBuilder getBasicPolygonSchema(String name) {
         SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
         try {
             sfTypeBuilder.setCRS(CRS.decode(epsg));
@@ -40,7 +44,27 @@ public class Schemas {
     }
 
     /**
+     * Get basic schemas for different geometries.
+     *
+     * @param name          name of the future feature collection
+     * @param geometryClass name of the geometry type. For now only Polygon, MultiPolygon and MultiLineString implemented.
+     * @return a basic SFB with no attribute
+     */
+    public static SimpleFeatureBuilder getBasicSchema(String name, String geometryClass) {
+        if (geometryClass.toLowerCase().contains("multipolygon")) {
+            return getBasicMultiPolygonSchema(name);
+        } else if (geometryClass.toLowerCase().contains("polygon")) {
+            return getBasicPolygonSchema(name);
+        } else if (geometryClass.toLowerCase().contains("multilinestring")) {
+            return getBasicMLSSchema(name);
+        }
+        throw new IllegalArgumentException("getBasicSchema : geometry type" + geometryClass + " unimplemented");
+    }
+
+
+    /**
      * Get a schema for {@link MultiLineString} with no {@link org.opengis.feature.Attribute}
+     *
      * @param name Name of the schema
      * @return empty builder
      */
@@ -73,7 +97,7 @@ public class Schemas {
         return new SimpleFeatureBuilder(featureType);
     }
 
-    public static SimpleFeatureBuilder getBasicSchemaMultiPolygon(String name) {
+    public static SimpleFeatureBuilder getBasicMultiPolygonSchema(String name) {
         SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
         try {
             sfTypeBuilder.setCRS(CRS.decode(epsg));
@@ -216,7 +240,6 @@ public class Schemas {
         return new SimpleFeatureBuilder(sfTypeBuilder.buildFeatureType());
     }
 
-
     /**
      * not tested
      *
@@ -251,5 +274,18 @@ public class Schemas {
 
     public static void setEpsg(String epsg) {
         Schemas.epsg = epsg;
+    }
+
+    /**
+     * Get name of attributes that are in every input SFCs
+     *
+     * @param sfcs input
+     * @return the matching field names
+     */
+    public static List<String> getMatchingFields(List<SimpleFeatureCollection> sfcs) {
+        List<String> result = sfcs.get(0).getSchema().getAttributeDescriptors().stream().map(AttributeDescriptor::getLocalName).collect(Collectors.toList());
+        for (int i = 1; i < sfcs.size(); i++)
+            sfcs.get(i).getSchema().getAttributeDescriptors().stream().filter(a -> !result.contains(a.getLocalName())).forEach(a -> result.remove(a.getLocalName()));
+        return result;
     }
 }

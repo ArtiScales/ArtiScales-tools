@@ -33,17 +33,6 @@ public class Geopackages {
 //		}
 //	}
 
-//    public static DataStore getDataStore(FileInputStream file) throws IOException {
-//        GeoPkgDataStoreFactory ds = new GeoPkgDataStoreFactory();
-//        HashMap<String, Object> map = new HashMap<>();
-//        GeoPackage gp = new GeoPackage();
-//        SimpleFeatureReader // pas sur que ça existe ...
-//        gp.reader(new FeatureEntry(),null,null);
-//        map.put(GeoPkgDataStoreFactory.DBTYPE.key, "geopkg");
-//        map.put(GeoPkgDataStoreFactory.DATABASE.key, file.getPath());
-//        return DataStoreFinder.getDataStore(map);
-//    }
-
     public static DataStore getDataStore(URL url) throws IOException {
         HashMap<String, Object> map = new HashMap<>();
         map.put(GeoPkgDataStoreFactory.DBTYPE.key, "geopkg");
@@ -61,10 +50,6 @@ public class Geopackages {
         map.put(GeoPkgDataStoreFactory.DATABASE.key, file.getPath());
         return DataStoreFinder.getDataStore(map);
     }
-    /*
-     * ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures()
-     */
-
 
     public static File exportSFCtoGPKG(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft, boolean overwrite) throws IOException {
         if (!fileOut.getName().endsWith(".gpkg"))
@@ -115,17 +100,12 @@ public class Geopackages {
                 nbFile--;
             }
         }
-        // check to prevent event in case of a willing of keeping attributes
-        File fRef = file2MergeIn.get(0);
-        DataStore dSref = getDataStore(fRef);
-        SimpleFeatureType schemaRef = dSref.getFeatureSource(dSref.getTypeNames()[0]).getFeatures().getSchema();
-        dSref.dispose();
         List<SimpleFeatureCollection> sfcs = new ArrayList<>();
         for (File f : file2MergeIn) {
             DataStore sds = getDataStore(f);
             sfcs.add(DataUtilities.collection(sds.getFeatureSource(sds.getTypeNames()[0]).getFeatures()));
             sds.dispose();
         }
-        return CollecMgmt.exportSFC(CollecMgmt.mergeSFC(sfcs, schemaRef, keepAttributes, boundFile), fileOut, ".gpkg", true);
+        return CollecMgmt.exportSFC(CollecMgmt.mergeSFC(sfcs, keepAttributes, boundFile), fileOut, ".gpkg", true);
     }
 }

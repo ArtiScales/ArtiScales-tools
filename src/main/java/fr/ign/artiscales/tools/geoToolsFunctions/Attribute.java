@@ -3,6 +3,9 @@ package fr.ign.artiscales.tools.geoToolsFunctions;
 import java.io.FileNotFoundException;
 import java.rmi.server.UID;
 
+/**
+ * Classes to deal with collection's attributes
+ */
 public class Attribute {
 
     /**

@@ -404,8 +404,8 @@ public class CollecTransform {
      * Sort a SimpleFeatureCollection by one of its numeric field. Uses a sorted collection and a stream method.
      *
      * @param sFCToSort SimpleFeature
-     * @param field Name of the field to sort
-     * @param maxToMin
+     * @param field     Name of the field to sort
+     * @param maxToMin  if true, sort from maximal to minimal value (do the opposite if false)
      * @return The sorted {@link SimpleFeatureCollection}
      */
     public static SimpleFeatureCollection sortSFCWithField(SimpleFeatureCollection sFCToSort, String field, boolean maxToMin) {
@@ -457,12 +457,18 @@ public class CollecTransform {
         return lines;
     }
 
-    public static SimpleFeatureCollection getSFCfromSFCIntersection(SimpleFeatureCollection sfcToSort, SimpleFeatureCollection sfcIntersection) {
+    /**
+     * Reduce the input collection with only features that half of their area are intersecting the comparison collection
+     *
+     * @param inputSFC      input collection
+     * @param comparisonSFC collection to compare area
+     * @return only inputSFC feature's which geometries intersect half of the comparisonSFC's features.
+     */
+    public static SimpleFeatureCollection getSFCfromSFCIntersection(SimpleFeatureCollection inputSFC, SimpleFeatureCollection comparisonSFC) {
         DefaultFeatureCollection result = new DefaultFeatureCollection();
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-        Geometry geometry = Geom.unionSFC(sfcIntersection);
-        SimpleFeatureCollection collec = sfcToSort
-                .subCollection(ff.intersects(ff.property(sfcToSort.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
+        Geometry geometry = Geom.unionSFC(comparisonSFC);
+        SimpleFeatureCollection collec = inputSFC.subCollection(ff.intersects(ff.property(inputSFC.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
         if (collec.isEmpty())
             return null;
         Arrays.stream(collec.toArray(new SimpleFeature[0])).forEach(theFeature -> {
@@ -496,7 +502,7 @@ public class CollecTransform {
      */
     public static SimpleFeatureCollection gridDiscretize(SimpleFeatureCollection in, double gridResolution, boolean hexagonal) throws IOException {
         DefaultFeatureCollection dfCuted = new DefaultFeatureCollection();
-        SimpleFeatureBuilder finalFeatureBuilder = Schemas.getBasicSchemaMultiPolygon("discretized-" + in.getSchema().getName());
+        SimpleFeatureBuilder finalFeatureBuilder = Schemas.getBasicMultiPolygonSchema("discretized-" + in.getSchema().getName());
         SimpleFeatureCollection gridFeatures;
         if (hexagonal)
             gridFeatures = Grids.createHexagonalGrid(in.getBounds(), gridResolution).getFeatures();

@@ -93,7 +93,13 @@ public class CollecMgmt {
     }
 
     /**
-     * Merge geofiles. They must be of the same type, Geopackage (.gpkg) or Shapefile (.shp). Try to keep attributes.
+     * Merge geofiles. They must be of the same type, Geopackage (.gpkg) or Shapefile (.shp). Load every SFC in memory.
+     * If we want to keep attribute, different situations happens after a schema check :
+     * <ul>
+     *    <li>if they have the same schema, they are merged and schemas and attribute are kept.</li>
+     *    <li>if they doesn't have the same schema but the same number of attribute, we make the assumption that attributes are the same and they are merged.</li>
+     *     <li>if they doesn't have the same schema, we'll complete only the attributes that have the exact same name on every SFC.</li>
+     * </ul>
      *
      * @param file2MergeIn   List of geofiles to merge
      * @param fileOut        Where to write the merged File
@@ -115,48 +121,64 @@ public class CollecMgmt {
         throw new IOException("getDataStore: extension unknown");
     }
 
+    /**
+     * Merge collections of simple feature collection.
+     * If we want to keep attribute, different situations happens after a schema check :
+     * <ul>
+     *     <li>if they have the same schema, they are merged and schemas and attribute are kept.</li>
+     *     <li>if they doesn't have the same schema but the same number of attribute, we make the assumption that attributes are the same and they are merged.</li>
+     *     <li>if they doesn't have the same schema, we'll complete only the attributes that have the exact same name on every SFC.</li>
+     * </ul>
+     *
+     * @param sfcs           List of simplefeature to merge
+     * @param boundFile      apply a mask on the result
+     * @param keepAttributes keep every attribute. Must be the same schema between every files.
+     * @return the merged File
+     * @throws IOException Reading, writing, or unknown extension
+     */
     public static SimpleFeatureCollection mergeSFC(List<SimpleFeatureCollection> sfcs, boolean keepAttributes, File boundFile) throws IOException {
-        return mergeSFC(sfcs, sfcs.get(0).getSchema(), keepAttributes, boundFile);
-    }
-
-    public static SimpleFeatureCollection mergeSFC(List<SimpleFeatureCollection> sfcs, SimpleFeatureType schemaRef, boolean keepAttributes, File boundFile) throws IOException {
         // sfBuilder used only if number of attributes's the same but with different schemas
-        SimpleFeatureBuilder defaultSFBuilder = new SimpleFeatureBuilder(schemaRef);
+        SimpleFeatureType schemaRef = sfcs.get(0).getSchema();
         DefaultFeatureCollection newParcelCollection = new DefaultFeatureCollection();
+        List<String> matchingFields = new ArrayList<>();
         lookOutAttribute:
-        if (keepAttributes) {
-            // check if the schemas of the shape are the same and if not, if they have the same number of attributes
+        if (keepAttributes) { // check if the schemas of the shape are the same and if not, if they have the same number of attributes
             int nbAttr = schemaRef.getAttributeCount();
             for (SimpleFeatureCollection sfc : sfcs) {
                 SimpleFeatureType schemaComp = sfc.getSchema();
-                if (schemaComp.equals(schemaRef))
+                if (schemaComp.equals(schemaRef) || nbAttr == schemaComp.getAttributeCount())
                     continue;
-                // System.out.println(f + " have not the same schema as " + fRef + ". Try to still add attribute if number is the same but output may be fuzzy"); TODO put that in a
-                // logger
-                if (nbAttr != schemaComp.getAttributeCount()) {
-                    System.out.println("Not the same amount of attributes in the shapefile : Output won't have any attributes");
-                    keepAttributes = false;
-                    break lookOutAttribute;
-                }
+                System.out.println("Not the same amount of attributes in the file.");
+                matchingFields = Schemas.getMatchingFields(sfcs);
+                System.out.println("matching fields are " + matchingFields);
+                break lookOutAttribute;
             }
         }
+        List<String> finalMatchingFields = matchingFields;
         for (SimpleFeatureCollection sfc : sfcs) {
             if (keepAttributes) {
-                // Merge the feature and assignate a new id number. If collections doesn't have the exactly same schema but the same number of attributes,
-                // we add every attribute regarding their position
+                SimpleFeatureBuilder defaultSFBuilder = new SimpleFeatureBuilder(schemaRef);
+                if (matchingFields.isEmpty()) // Same schema (or we assume that) : Merge the feature and assignate a new id number. If collections doesn't have the exactly same schema but the same number of attributes, we add every attribute regarding their position
+                    Arrays.stream(sfc.toArray(new SimpleFeature[0])).forEach(feat -> {
+                        Object[] attr = new Object[feat.getAttributeCount() - 1];
+                        for (int h = 1; h < feat.getAttributeCount(); h++)
+                            attr[h - 1] = feat.getAttribute(h);
+                        defaultSFBuilder.add(feat.getDefaultGeometry());
+                        newParcelCollection.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId(), attr));
+                    });
+                else { // we only keep matching fields
+                    Arrays.stream(sfc.toArray(new SimpleFeature[0])).forEach(feat -> {
+                        for (String field : finalMatchingFields) {
+                            defaultSFBuilder.set(field, feat.getAttribute(field));
+                        }
+                        newParcelCollection.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId()));
+                    });
+                }
+            } else { // if we don't want to keep attributes, we create features out of new features containing only geometry
+                SimpleFeatureBuilder basicSFBuilder = Schemas.getBasicSchema(schemaRef.getName().toString(), schemaRef.getGeometryDescriptor().getType().toString());
                 Arrays.stream(sfc.toArray(new SimpleFeature[0])).forEach(feat -> {
-                    Object[] attr = new Object[feat.getAttributeCount() - 1];
-                    for (int h = 1; h < feat.getAttributeCount(); h++)
-                        attr[h - 1] = feat.getAttribute(h);
-                    defaultSFBuilder.add(feat.getDefaultGeometry());
-                    newParcelCollection.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId(), attr));
-                });
-            } else {
-                // if we don't want to keep attributes, we create features out of new features
-                // containing only geometry
-                Arrays.stream(sfc.toArray(new SimpleFeature[0])).forEach(feat -> {
-                    defaultSFBuilder.set(CollecMgmt.getDefaultGeomName(), feat.getDefaultGeometry());
-                    newParcelCollection.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId()));
+                    basicSFBuilder.set(CollecMgmt.getDefaultGeomName(), feat.getDefaultGeometry());
+                    newParcelCollection.add(basicSFBuilder.buildFeature(Attribute.makeUniqueId()));
                 });
             }
         }
@@ -193,8 +215,9 @@ public class CollecMgmt {
     /**
      * Get the unique values of a SimpleFeatureCollection from a combination of fields. Each fields are separated with a "-" character.
      *
-     * @param sfcIn      input {@link SimpleFeatureCollection}
-     * @param attributes field name to create the combination of unique values
+     * @param sfcIn              input {@link SimpleFeatureCollection}
+     * @param attributes         field name to create the combination of unique values
+     * @param dontCheckAttribute don't check if the collection contains every input attribute (the error will be caught)
      * @return the list of unique values
      */
     public static List<String> getEachUniqueFieldFromSFC(SimpleFeatureCollection sfcIn, String[] attributes, boolean dontCheckAttribute) {
@@ -240,8 +263,7 @@ public class CollecMgmt {
      * @return the list of unique values
      */
     public static List<String> getEachUniqueFieldFromSFC(SimpleFeatureCollection sfcIn, String attribute, boolean dontCheckAttribute) {
-        String[] attributes = {attribute};
-        return getEachUniqueFieldFromSFC(sfcIn, attributes, dontCheckAttribute);
+        return getEachUniqueFieldFromSFC(sfcIn, new String[]{attribute}, dontCheckAttribute);
     }
 
     /**
@@ -265,13 +287,15 @@ public class CollecMgmt {
     public static boolean isCollecContainsAttribute(SimpleFeatureCollection collec, String attributeFiledName) {
         return Schemas.isSchemaContainsAttribute(collec.getSchema(), attributeFiledName);
     }
+
     public static DataStore getDataStore(URL url) throws IOException {
-            return Geopackages.getDataStore(url);
+        return Geopackages.getDataStore(url);
     }
+
     /**
-     * get the corresponding Data Store looking the file's attribute
+     * get the data Store matching the file's attribute. Must either be a geopackage (.gpkg), a shapefile (.shp), or a geojson (.json or .geojson).
      *
-     * @param f input geographic file. Must either be a geopackage (.gpkg), a shapefile (.shp), or a geojson (.json or .geojson)
+     * @param f input geographic file
      * @return The corresponding DataStore
      * @throws IOException If the file's not found or contains a wrong extension
      */

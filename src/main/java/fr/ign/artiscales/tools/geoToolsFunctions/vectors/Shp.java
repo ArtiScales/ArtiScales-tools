@@ -1,5 +1,12 @@
 package fr.ign.artiscales.tools.geoToolsFunctions.vectors;
 
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
+import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecTransform;
+import org.geotools.data.shapefile.ShapefileDataStore;
+import org.geotools.data.shapefile.ShapefileDataStoreFactory;
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.opengis.feature.simple.SimpleFeatureType;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -10,18 +17,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecMgmt;
-import fr.ign.artiscales.tools.geoToolsFunctions.vectors.collec.CollecTransform;
-import org.geotools.data.shapefile.ShapefileDataStore;
-import org.geotools.data.shapefile.ShapefileDataStoreFactory;
-import org.geotools.data.simple.SimpleFeatureCollection;
-import org.opengis.feature.simple.SimpleFeatureType;
-
 public class Shp {
 	public static File mergeVectFiles(List<File> file2MergeIn, File f) throws IOException {
 		return mergeVectFiles(file2MergeIn, f, true);
 	}
-	
+
 	public static File mergeVectFiles(List<File> file2MergeIn,File fileOut, boolean keepAttributes) throws IOException {
 		return  mergeVectFiles(file2MergeIn, fileOut, null, keepAttributes) ;
 	}
@@ -29,20 +29,16 @@ public class Shp {
 	/**
 	 * Merge a list of shapeFiles. The method employed is depending on the schemas of the shapefiles and if the attributes need to be kept.
 	 * <ul>
-	 * <li>If shemas are the same, the simplefeatures are added to a defaultfeature collection</li>
-	 * <li>If shemas aren't the same but have the same number of attributes, simple features are (a warning is sent)</li>
-	 * <li>If shemas aren't the same with different number of attributes, only the geometry of the file are kept.</li>
+	 * <li>If schemas are the same, the simplefeatures are added to a defaultfeature collection</li>
+	 * <li>If schemas aren't the same but have the same number of attributes, simple features are (a warning is sent)</li>
+	 * <li>If schemas aren't the same with different number of attributes, only the geometry of the file are kept.</li>
 	 * </ul>
-	 * Possible to define an geometric bound on which only the intersecting data are kept.
-	 * 
-	 * @param file2MergeIn
-	 *            List of shapefiles to merge
-	 * @param fileOut
-	 *            Output shapefile
-	 * @param boundFile
-	 *            Bound shapefile
-	 * @param keepAttributes
-	 *            Do we need to keep the attributes or not
+	 * Possible to define a geometric bound on which only the intersecting data are kept.
+	 *
+	 * @param file2MergeIn   List of shapefiles to merge
+	 * @param fileOut        Output shapefile
+	 * @param boundFile      Bound shapefile
+	 * @param keepAttributes Do we need to keep the attributes or not
 	 * @return The merged ShapeFile
 	 * @throws IOException
 	 */
@@ -63,27 +59,22 @@ public class Shp {
 				nbFile--;
 			}
 		}
-		// check to prevent event in case of a willing of keeping attributes
-		File fRef = file2MergeIn.get(0);
-		ShapefileDataStore dSref = new ShapefileDataStore(fRef.toURI().toURL());
-		SimpleFeatureType schemaRef = dSref.getFeatureSource().getFeatures().getSchema();
-		dSref.dispose();
 		List<SimpleFeatureCollection> sfcs = new ArrayList<>();
 		for (File f : file2MergeIn) {
 			ShapefileDataStore sds = new ShapefileDataStore(f.toURI().toURL());
 			sfcs.add(sds.getFeatureSource().getFeatures());
 			sds.dispose();
 		}
-		return CollecMgmt.exportSFC(CollecMgmt.mergeSFC(sfcs, schemaRef, keepAttributes, boundFile), fileOut, ".shp", true);
+		return CollecMgmt.exportSFC(CollecMgmt.mergeSFC(sfcs,  keepAttributes, boundFile), fileOut, ".shp", true);
 	}
-	
+
 	/**
 	 * clean the shapefile of feature which area is inferior to areaMin
-	 * 
+	 *
 	 * @param fileIn Input shapefile
-	 * @param areaMin
+	 * @param areaMin threshold of what is a tiny parcel
 	 * @return The {@link SimpleFeatureCollection} without tiny parcels
-	 * @throws IOException 
+	 * @throws IOException read shapefile
 	 */
 	public static File delTinyParcels(File fileIn, File fileOut, double areaMin) throws IOException {
 		ShapefileDataStore SDSParcel = new ShapefileDataStore(fileIn.toURI().toURL());
@@ -91,17 +82,17 @@ public class Shp {
 		SDSParcel.dispose();
 		return result;
 	}
-	
+
 	/**
 	 * Algorithm to spit a shapefile with a grid, cuting features by it and merge them all together. Erase every attributes.
-	 * 
+	 *
 	 * @param inFile
 	 *            Input shapeFile
 	 * @param outFile
 	 *            Output shapeFile
 	 * @param gridResolution
 	 *            Size of a side of the squared mesh
-	 * 
+	 *
 	 * @return a shapefile with the cuted features
 	 * @throws IOException
 	 */
@@ -120,7 +111,7 @@ public class Shp {
 		shpDSIn.dispose();
 		return result;
 	}
-	
+
 	public static File snapDatas(File fileIn, File bBoxFile, File fileOut) throws IOException {
 		// load the input from the general folder
 		ShapefileDataStore shpDSIn = new ShapefileDataStore(fileIn.toURI().toURL());
@@ -132,10 +123,10 @@ public class Shp {
 		shpDSIn.dispose();
 		return result;
 	}
-	
+
 	/**
 	 * copy the files of a shapefile to an other folder
-	 * 
+	 *
 	 * @param name
 	 *            Name of the shapefile
 	 * @param fromFolder
@@ -153,10 +144,10 @@ public class Shp {
 			}
 		}
 	}
-	
+
 	/**
 	 * delete the files of a shapefile to an other folder
-	 * 
+	 *
 	 * @param name
 	 *            name of the shapefile
 	 * @param fromFolder
@@ -189,7 +180,7 @@ public class Shp {
 			}
 		}
 	}
-	
+
 	public static File exportSFCtoSHP(SimpleFeatureCollection toExport, File fileOut, SimpleFeatureType ft, boolean overwrite)
 			throws IOException {
 		if (toExport.isEmpty()) {
@@ -207,7 +198,7 @@ public class Shp {
 			Shp.copyShp(fileName, fileName + "tmp", fileOut.getParentFile(), fileOut.getParentFile());
 			file2MergeIn.add(newFile);
 		}
-		
+
 		ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
 		Map<String, Serializable> params = new HashMap<>();
 		params.put("url", fileOut.toURI().toURL());

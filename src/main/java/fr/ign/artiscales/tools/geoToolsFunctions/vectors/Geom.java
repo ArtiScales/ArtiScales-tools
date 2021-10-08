@@ -76,7 +76,7 @@ public class Geom {
      * @throws IOException writing geo file
      */
     public static File exportGeom(List<? extends Geometry> geoms, File fileName) throws IOException {
-        return CollecMgmt.exportSFC(geomsToCollec(geoms, Schemas.getBasicSchemaMultiPolygon(CollecMgmt.getDefaultGeomName())), fileName);
+        return CollecMgmt.exportSFC(geomsToCollec(geoms, Schemas.getBasicMultiPolygonSchema(CollecMgmt.getDefaultGeomName())), fileName);
     }
 
     /**
