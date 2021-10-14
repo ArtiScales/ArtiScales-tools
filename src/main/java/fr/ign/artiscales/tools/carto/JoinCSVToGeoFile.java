@@ -53,7 +53,7 @@ public class JoinCSVToGeoFile {
     }
 
     /**
-     * Joining tabular informations of a .csv to a geoFile.
+     * Joining tabular information of a .csv to a geoFile.
      * Fields that have the same name won't be double - only the one from the geoFile will be kept.
      *
      * @param sfc          collection of features to join
@@ -123,7 +123,7 @@ public class JoinCSVToGeoFile {
                 for (String l : lastLine) { //copy lines
                     nbAttTmp++;
                     if (!skip && iToSkip.contains(nbAttTmp - nbAtt)) {
-                        skip = true; //if the value of the line is skiped, we rollback indices and don't check the next indice
+                        skip = true; //if the value of the line is skipped, we roll back indices and don't check the next indice
                         nbAttTmp--;
                     } else {
                         build.set(nbAttTmp - 1, l);

@@ -376,19 +376,19 @@ public class CsvOp extends Csv {
     }
 
     /**
-     * Change the first column of a .csv file with a new line by re-writing. Input and output files must be different
+     * Change the header of a .csv file with a new line by re-writing. Input and output files must be different.
      *
-     * @param csvFile  input .csv file
+     * @param inCsvFile  input .csv file
      * @param outFile  output .csv file
      * @param newFLine new header for the .csv
      * @return output file
      * @throws IOException reading and writing
      */
-    public static File renameFirstColumn(File csvFile, File outFile, String[] newFLine) throws IOException {
-        CSVReader r = Csv.getCSVReader(csvFile);
+    public static File renameFirstLine(File inCsvFile, File outFile, String[] newFLine) throws IOException {
+        CSVReader r = Csv.getCSVReader(inCsvFile);
         CSVWriter w = Csv.getCSVWriter(outFile);
         String[] fLine = r.readNext();
-        if (csvFile == outFile)
+        if (inCsvFile == outFile)
             System.out.println("renameFirstColumn: input and output files are the same. That could be smart but unfortunately function is not ready for it");
         if (fLine.length != newFLine.length)
             System.out.println("renameFirstColumn: different length between original and new first line");
