@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>fr.ign.artiscales.tools</groupId>
 	<artifactId>ArtiScales-tools</artifactId>
-	<version>0.3-SNAPSHOT</version>
+	<version>1.0</version>
 	<packaging>jar</packaging>
 
 	<properties>
