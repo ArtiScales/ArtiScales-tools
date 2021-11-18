@@ -40,10 +40,6 @@ public class Lines {
         return geom.getFactory().createMultiLineString(list.toArray(new LineString[list.size()]));
     }
 
-    public static MultiLineString getListLineStringAsMultiLS(List<LineString> list, GeometryFactory fact) {
-        return fact.createMultiLineString(list.toArray(new LineString[list.size()]));
-    }
-
     public static List<LineString> fromMultiToLineString(MultiLineString ml) {
         List<LineString> lL = new ArrayList<>();
         for (int i = 0; i < ml.getNumGeometries(); i++)
@@ -155,4 +151,30 @@ public class Lines {
         list.forEach(merger::add);
         return (LineString) merger.getMergedLineStrings().iterator().next();// FIXME we assume a lot here
     }
+
+    public static MultiLineString getListLineStringAsMultiLS(List<LineString> list, GeometryFactory fact) {
+        return fact.createMultiLineString(list.toArray(new LineString[list.size()]));
+    }
+
+    public static List<MultiLineString> regroupLineStrings(List<LineString> lineStrings, GeometryFactory gf) {
+        List<MultiLineString> curvesOutput = new ArrayList<>();
+        while (!lineStrings.isEmpty()) {
+            LineString currentLineString = lineStrings.remove(0);
+            List<LineString> currentMultiCurve = new ArrayList<>();
+            currentMultiCurve.add(currentLineString);
+            Geometry buffer = currentLineString.buffer(0.1);
+            for (int i = 0; i < lineStrings.size(); i++) {
+                if (buffer.intersects(lineStrings.get(i))) {
+                    // Adding line in MultiCurve
+                    currentMultiCurve.add(lineStrings.remove(i));
+                    i = -1;
+                    // Updating the buffer
+                    buffer = getListLineStringAsMultiLS(currentMultiCurve, gf).buffer(0.1);
+                }
+            }
+            curvesOutput.add(getListLineStringAsMultiLS(currentMultiCurve, gf));
+        }
+        return curvesOutput;
+    }
+
 }

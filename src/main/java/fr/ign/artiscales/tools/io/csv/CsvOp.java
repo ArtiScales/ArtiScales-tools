@@ -35,6 +35,26 @@ public class CsvOp extends Csv {
     }
 
     /**
+     * Get the number of occurrences for each unique values for a given field from a .csv file
+     *
+     * @param csvFile   csv file
+     * @param fieldName name of the field to sum values
+     * @return a list of unique values
+     */
+    public static HashMap<String, Integer> countFieldValue(File csvFile, String fieldName) throws IOException {
+        CSVReader r = getCSVReader(csvFile);
+        int i = Attribute.getIndice(r.readNext(), fieldName);
+        HashMap<String, Integer> result = new HashMap<>();
+        for (String[] l : r.readAll())
+            if (!result.containsKey(l[i]))
+                result.put(l[i], 1);
+            else
+                result.put(l[i], result.get(l[i]) + 1);
+        return result;
+    }
+
+
+    /**
      * Get the values of cells corresponding to the value of another field's cell.
      *
      * @param csvFile              CSV {@link File} with a comma as a separator
@@ -49,9 +69,33 @@ public class CsvOp extends Csv {
     }
 
     /**
+     * Return true if the combination of field's values are found in a CSV reader.
+     *
+     * @param r                     CSV reader with a header
+     * @param targetAttributeNames  names of the field that will be compared.
+     * @param targetAttributeValues values of the field that will be compared. Must be in the same order (and the same length) than the #targetAttributeNames.
+     * @return the values of the cell
+     * @throws IOException by CSVReader
+     */
+    public static boolean isCellsContainCorrespondingCombination(CSVReader r, String[] targetAttributeNames, String[] targetAttributeValues) throws IOException {
+        String[] fLine = r.readNext();
+        for (String[] line : r.readAll()) {
+            boolean add = true;
+            for (int i = 0; i < targetAttributeNames.length; i++)
+                if (!line[Attribute.getIndice(fLine, targetAttributeNames[i])].equals(targetAttributeValues[i])) {
+                    add = false;
+                    break;
+                }
+            if (add)
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * Get the value of a cell corresponding to the value of multiple field's cells.
      *
-     * @param csvFile               CSV {@link File} with a comma as a separator
+     * @param csvFile               CSV {@link File}
      * @param targetAttributeNames  name of the field that will be compared
      * @param targetAttributeValues values of the cells that will be compared
      * @param wantedAttributeName   name of the field of the wanted cell
@@ -96,6 +140,35 @@ public class CsvOp extends Csv {
                 result = line[Attribute.getIndice(fLine, wantedAttributeName)];
                 break;
             }
+        r.close();
+        return result;
+    }
+
+    /**
+     * Get the value of a cell corresponding to the value of another field's cell. Unique result, stop at first.
+     *
+     * @param csvFile              CSV {@link File} with a comma as a separator
+     * @param targetAttributeNames  names of the fields that will be compared
+     * @param targetAttributeValues values of the cells that will be compared
+     * @return the values of the cell
+     * @throws IOException by CSVReader
+     */
+    public static String[] getLine(File csvFile, String[] targetAttributeNames, String[] targetAttributeValues) throws IOException {
+        CSVReader r = getCSVReader(csvFile);
+        String[] fLine = r.readNext();
+        String[] result = new String[fLine.length];
+        for (String[] line : r.readAll()) {
+            boolean add = true;
+            for (int i = 0; i < targetAttributeNames.length; i++)
+                if (!line[Attribute.getIndice(fLine, targetAttributeNames[i])].equals(targetAttributeValues[i])) {
+                    add = false;
+                    break;
+                }
+            if (add) {
+                result = line;
+                break;
+            }
+        }
         r.close();
         return result;
     }
@@ -378,9 +451,9 @@ public class CsvOp extends Csv {
     /**
      * Change the header of a .csv file with a new line by re-writing. Input and output files must be different.
      *
-     * @param inCsvFile  input .csv file
-     * @param outFile  output .csv file
-     * @param newFLine new header for the .csv
+     * @param inCsvFile input .csv file
+     * @param outFile   output .csv file
+     * @param newFLine  new header for the .csv
      * @return output file
      * @throws IOException reading and writing
      */
@@ -463,16 +536,6 @@ public class CsvOp extends Csv {
         w.close();
         return outFile;
     }
-
-//    public static void main(String[] args) throws IOException {
-//        Csv.sep = ';';
-//        File last = CsvOp.sumCSVLine(
-//                CsvOp.filterCSV(
-//                        CsvOp.filterCSV(new File("/home/mc/Téléchargements/fr-esr-atlas_regional-effectifs-d-etudiants-inscrits.csv"), new File("/tmp/etu.csv"), "rentree", "2018"), new File("/tmp/paris5.csv"), "geo_nom", "Paris  5e"),
-//                new File("/tmp/effec.csv"), "effectifhdccpge", new String[]{"geo_nom", "regroupement"}, Arrays.asList("geo_nom", "regroupement", "rgp_formations_ou_etablissements"));
-//
-//
-//    }
 
     /**
      * This method will add the values of a given column of lines which given attributes are matching and keep the others designated values.

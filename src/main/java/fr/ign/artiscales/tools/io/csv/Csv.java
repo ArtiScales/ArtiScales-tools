@@ -16,7 +16,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class Csv {
-    public static Character sep = ',';
+    public static Character sep = ',', escape = CSVWriter.DEFAULT_ESCAPE_CHARACTER, quote = CSVWriter.DEFAULT_QUOTE_CHARACTER;
+    public static String lineEnd = CSVWriter.DEFAULT_LINE_END;
 
     /**
      * TODO merge the two function together
@@ -61,11 +62,23 @@ public class Csv {
         return true;
     }
 
+    /**
+     * Sometimes dummy data producers are variously using separators for the same data. This method will try to do what's best
+     *
+     * @param fLine Header of .csv is a clue
+     */
+    public static char setCharSepAutomaticaly(String fLine) {
+        if (fLine.split(",").length > fLine.split(";").length)
+            return ',';
+        else
+            return ';';
+    }
+
     public static CSVWriter getCSVWriter(File f) throws IOException {
         return getCSVWriter(f.getName().endsWith(".csv") ? f : new File(f.getAbsolutePath() + ".csv"), false);
     }
 
     public static CSVWriter getCSVWriter(File f, boolean append) throws IOException {
-        return new CSVWriter(new FileWriter(f, append), sep, CSVWriter.DEFAULT_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+        return new CSVWriter(new FileWriter(f, append), sep, quote, escape, lineEnd);
     }
 }

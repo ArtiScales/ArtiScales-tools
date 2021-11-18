@@ -241,20 +241,19 @@ public class Schemas {
     }
 
     /**
-     * not tested
+     * Set the attribute of the builder to theirs matching equivalent stored in a simpleFeature.
+     * Catch if an attribute of the simpleFeature doesn't have a matching equivalant in the builder.
      *
-     * @param sfb
-     * @param sf
-     * @return
+     * @param sfb input builder
+     * @param sf  input simpleFeature
      */
-    public static SimpleFeatureBuilder setFieldsToSFB(SimpleFeatureBuilder sfb, SimpleFeature sf) {
-        try {
-            for (int i = 0; i < sf.getFeatureType().getAttributeCount(); i++)
-                sfb.set(sf.getFeatureType().getType(i).getName(), sf.getAttribute(i));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return sfb;
+    public static void setFieldsToSFB(SimpleFeatureBuilder sfb, SimpleFeature sf) {
+        for (AttributeDescriptor attr : sf.getFeatureType().getAttributeDescriptors())
+            try {
+                sfb.set(attr.getLocalName(), sf.getAttribute(attr.getLocalName()));
+            } catch (IllegalArgumentException e) {
+//                System.out.println("setFieldsToSFB : no argument "+attr.getLocalName());
+            }
     }
 
     /**

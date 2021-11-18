@@ -19,28 +19,15 @@ public class ProfileUrbanFabric {
     static String profileFolder;
     String nameBuildingType;
     double maximalArea, minimalArea, minimalWidthContactRoad, laneWidth, streetWidth, maxDepth, maxDistanceForNearestRoad, maxWidth;
-    int streetLane, blockShape;
+    int streetLane, blockShape, approxNumberParcelPerBlock;
     double lenDriveway, noise, harmonyCoeff = 0.5;
 
-    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
-                              double smallStreetWidth, double largeStreetWidth, int largeStreetLevel, int blockShape) {
-        super();
-        this.nameBuildingType = nameBuildingType;
-        this.maximalArea = maximalArea;
-        this.minimalArea = minimalArea;
-        this.minimalWidthContactRoad = minimalWidthContactRoad;
-        this.laneWidth = smallStreetWidth;
-        this.streetWidth = largeStreetWidth;
-        this.streetLane = largeStreetLevel;
-        this.blockShape = blockShape;
-    }
-
     /**
-     * For every parameter use
+     * For every parameter use (or OBBThenSS)
      */
     public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
-                              double laneWidth, double streetWidth, int streetLane, int blockShape, double lenDriveway,
-                              double maxDepth, double maxDistanceForNearestRoad, double maxWidth) {
+                              double laneWidth, double streetWidth, int streetLane, int blockShape, double lenDriveway, double maxDepth,
+                              double maxDistanceForNearestRoad, double maxWidth, int approxNumberParcelPerBlock, double harmonyCoeff, double noise) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
@@ -54,12 +41,15 @@ public class ProfileUrbanFabric {
         this.maxDepth = maxDepth;
         this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
         this.maxWidth = maxWidth;
+        this.approxNumberParcelPerBlock = approxNumberParcelPerBlock;
+        this.harmonyCoeff = harmonyCoeff;
+        this.noise = noise;
     }
 
     /**
      * For Straight Skeleton
      */
-    public ProfileUrbanFabric(String nameBuildingType, double minimalArea, double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth, double streetWidth) {
+    public ProfileUrbanFabric(String nameBuildingType, double minimalArea, double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth, double streetWidth, double noise) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.minimalArea = minimalArea;
@@ -68,74 +58,85 @@ public class ProfileUrbanFabric {
         this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
         this.maxWidth = maxWidth;
         this.minimalWidthContactRoad = minWidth;
+        this.noise = noise;
     }
 
     /**
      * Builder for Oriented Bounding Box
      */
-    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double streetWidth, int largeStreetLevel, int blockShape) {
+    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad, double streetWidth, int streetLane, double laneWidth, int blockShape, double harmonyCoeff, double noise) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
         this.minimalArea = minimalArea;
-        this.minimalWidthContactRoad = maximalWidth;
+        this.minimalWidthContactRoad = minimalWidthContactRoad;
         this.streetWidth = streetWidth;
-        this.laneWidth = streetWidth;
-        this.streetLane = largeStreetLevel;
+        this.laneWidth = laneWidth;
+        this.streetLane = streetLane;
         this.blockShape = blockShape;
+        this.harmonyCoeff = harmonyCoeff;
+        this.noise = noise;
     }
 
     /**
-     * Builder for flag cut
+     * Builder for flag division
      */
-    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double lenDriveway) {
+    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double lenDriveway, double harmonyCoeff, double noise) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
         this.minimalArea = minimalArea;
         this.minimalWidthContactRoad = maximalWidth;
         this.lenDriveway = lenDriveway;
+        this.harmonyCoeff = harmonyCoeff;
+        this.noise = noise;
     }
 
     public ProfileUrbanFabric() {
     }
 
     public ProfileUrbanFabric(String[] firstLine, String[] line) {
-        int iMaximalArea = 999, iBlockShape = 999, iStreetLane = 999, iLaneWidth = 999,
-                iHarmonyCoeff = 999, iStreetWidth = 999, iMinimalWidthContactRoad = 999;
         for (int i = 0; i < firstLine.length; i++) {
             String index = firstLine[i];
             switch (index) {
                 case "maximalArea":
-                    iMaximalArea = i;
+                    this.maximalArea = Double.parseDouble(line[i]);
                     break;
                 case "blockShape":
-                    iBlockShape = i;
+                    this.blockShape = Integer.parseInt(line[i]);
                     break;
                 case "streetLane":
-                    iStreetLane = i;
+                    this.streetLane = Integer.parseInt(line[i]);
                     break;
                 case "laneWidth":
-                    iLaneWidth = i;
-                    break;
-                case "harmonyCoeff":
-                    iHarmonyCoeff = i;
+                    this.laneWidth = Double.parseDouble(line[i]);
                     break;
                 case "streetWidth":
-                    iLaneWidth = i;
+                    this.streetWidth = Double.parseDouble(line[i]);
                     break;
                 case "minimalWidthContactRoad":
-                    iMinimalWidthContactRoad = i;
+                    this.minimalWidthContactRoad = Double.parseDouble(line[i]);
+                    break;
+                case "harmonyCoeff":
+                    this.harmonyCoeff = Double.parseDouble(line[i]);
+                    break;
+                case "noise":
+                    this.noise = Double.parseDouble(line[i]);
+                    break;
+                case "maxDepth":
+                    this.maxDepth = Double.parseDouble(line[i]);
+                    break;
+                case "maxWidth":
+                    this.maxWidth = Double.parseDouble(line[i]);
+                    break;
+                case "maxDistanceForNearestRoad":
+                    this.maxDistanceForNearestRoad = Double.parseDouble(line[i]);
+                    break;
+                case "approxNumberParcelPerBlock":
+                    this.approxNumberParcelPerBlock = Integer.parseInt(line[i]);
                     break;
             }
         }
-        this.maximalArea = Double.parseDouble(line[iMaximalArea]);
-        this.minimalWidthContactRoad = Double.parseDouble(line[iMinimalWidthContactRoad]);
-        this.laneWidth = Double.parseDouble(line[iLaneWidth]);
-        this.streetWidth = Double.parseDouble(line[iLaneWidth]);
-        this.streetLane = Integer.parseInt(line[iStreetLane]);
-        this.blockShape = Integer.parseInt(line[iBlockShape]);
-        this.harmonyCoeff = Double.parseDouble(line[iHarmonyCoeff]);
     }
 
     public static String getProfileFolder() {
@@ -149,6 +150,10 @@ public class ProfileUrbanFabric {
         ProfileUrbanFabric profile = mapper.readValue(fileInputStream, ProfileUrbanFabric.class);
         fileInputStream.close();
         return profile;
+    }
+
+    public int getApproxNumberParcelPerBlock() {
+        return approxNumberParcelPerBlock;
     }
 
     public String getNameBuildingType() {
