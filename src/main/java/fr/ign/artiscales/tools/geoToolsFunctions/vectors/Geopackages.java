@@ -102,9 +102,10 @@ public class Geopackages {
         }
         List<SimpleFeatureCollection> sfcs = new ArrayList<>();
         for (File f : file2MergeIn) {
-            DataStore sds = getDataStore(f);
-            sfcs.add(DataUtilities.collection(sds.getFeatureSource(sds.getTypeNames()[0]).getFeatures()));
-            sds.dispose();
+            DataStore ds = getDataStore(f);
+            assert ds != null;
+            sfcs.add(DataUtilities.collection(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures()));
+            ds.dispose();
         }
         return CollecMgmt.exportSFC(CollecMgmt.mergeSFC(sfcs, keepAttributes, boundFile), fileOut, ".gpkg", true);
     }

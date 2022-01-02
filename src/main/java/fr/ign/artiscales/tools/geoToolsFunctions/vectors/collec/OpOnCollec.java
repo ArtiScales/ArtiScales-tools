@@ -25,10 +25,10 @@ import java.util.stream.Collectors;
 
 public class OpOnCollec {
 
-    public static void main(String[] args) throws IOException {
-        sortDiffGeom(new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/parcel2003.gpkg"),
-                new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/parcel2018.gpkg"),new File("/tmp"), true, true);
-    }
+//    public static void main(String[] args) throws IOException {
+//        sortDiffGeom(new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/parcel2003.gpkg"),
+//                new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/parcel2018.gpkg"),new File("/tmp"), true, true);
+//    }
 
     /**
      * Get statistics about a field of a collection

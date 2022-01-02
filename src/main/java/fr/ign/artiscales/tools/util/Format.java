@@ -16,7 +16,7 @@ public class Format {
      * @return the value
      */
     public static double getDoubleFromCommaFormattedString(SimpleFeature sf, String field) {
-        if (sf.getAttribute(field) == null)
+        if (sf == null || sf.getAttribute(field) == null)
             return 0.0;
         try {
             return (double) sf.getAttribute(field);
@@ -43,7 +43,7 @@ public class Format {
      * @return the value
      */
     public static float getFloatFromCommaFormattedString(SimpleFeature sf, String field) {
-        if (sf.getAttribute(field) == null)
+        if (sf == null || sf.getAttribute(field) == null)
             return 0.0f;
         try {
             return (float) sf.getAttribute(field);

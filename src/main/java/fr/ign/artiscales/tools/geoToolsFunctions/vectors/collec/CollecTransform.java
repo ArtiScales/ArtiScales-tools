@@ -240,7 +240,7 @@ public class CollecTransform {
             if (closest.size() > 0) {
                 if (closest.size() != 1)
                     System.out.println("getClostestFeat(): multiple entrances have been found at equally distance :" + closest);
-                return Arrays.stream(closest.toArray(new SimpleFeature[0])).findFirst().get();
+                return Arrays.stream(closest.toArray(new SimpleFeature[0])).findFirst().orElse(null);
             }
             x++;
         }
@@ -323,13 +323,14 @@ public class CollecTransform {
     }
 
     /**
-     * Make the intersection but for overlapping object, check if they are mostly included in the geometry (more than 50% of their footprint are inside geometry) or not
+     * Select geometries from a geometry collection that intersects a given polygon by more of their half.
+     * Geometries could be lost if they never have half of their area crossed by more than a half of an overlapping polygons todo fix that
      *
-     * @param lG          List of input geometries
-     * @param toIntersect Geometry to check relation with collection
-     * @return The selected collection
+     * @param lG          list of geometry
+     * @param toIntersect geometry
+     * @return collection of features that have at least their half intersecting the input polygon
      */
-    public static List<Geometry> selectIntersectMost(List<Geometry> lG, Geometry toIntersect) {
+    public static List<Geometry> selectMostlyIntersecting(List<Geometry> lG, Geometry toIntersect) {
         List<Geometry> result = new ArrayList<>();
         result.addAll(lG.stream().filter(toIntersect::contains).collect(Collectors.toList()));
         result.addAll(lG.stream().filter(toIntersect::overlaps).filter(x -> (x.intersection(toIntersect).getArea() / x.getArea()) > 0.5).collect(Collectors.toList()));
@@ -337,13 +338,14 @@ public class CollecTransform {
     }
 
     /**
-     * Make the intersection but for overlapping object, check if they are mostly included in the geometry (more than 50% of their footprint are inside geometry) or not
+     * Select features from a geometry collection that intersects a given polygon by more of their half.
+     * Geometries could be lost if they never have half of their area crossed by more than a half of an overlapping polygons todo fix that
      *
-     * @param SFCIn       input collection
-     * @param toIntersect Geometry to check relation with collection
-     * @return The selected collection
+     * @param SFCIn       collection of features
+     * @param toIntersect geometry
+     * @return collection of geometries that have at least their half intersecting the input polygon
      */
-    public static SimpleFeatureCollection selectIntersectMost(SimpleFeatureCollection SFCIn, Geometry toIntersect) {
+    public static SimpleFeatureCollection selectMostlyIntersecting(SimpleFeatureCollection SFCIn, Geometry toIntersect) {
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
         DefaultFeatureCollection df = new DefaultFeatureCollection();
         df.addAll(SFCIn.subCollection(ff.within(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(toIntersect))));
@@ -356,6 +358,43 @@ public class CollecTransform {
         }
         return df;
     }
+
+
+    /**
+     * Select the feature from a collection that intersects most a geometrical object.
+     * In case of an intersection that is equal between two features, one on them will be randomly returned.
+     *
+     * @param lG          List of input geometries
+     * @param toIntersect Geometry to check relation with collection
+     * @return The selected geometry
+     */
+    public static Geometry selectWhichIntersectMost(List<Geometry> lG, Geometry toIntersect) {
+        TreeMap<Double, Geometry> sortedResult = new TreeMap<>();
+        for (Geometry g : lG.stream().filter(g -> g.intersects(toIntersect)).collect(Collectors.toList()))
+            sortedResult.put(g.intersection(toIntersect).getArea(), g);
+        return sortedResult.lastEntry().getValue();
+    }
+
+    /**
+     * Select the feature from a collection that intersects most a geometrical object.
+     * In case of an intersection that is equal between two features, one on them will be randomly returned.
+     *
+     * @param SFCIn       input collection
+     * @param toIntersect Geometry to check relation with collection
+     * @return The mostly intersecting feature
+     */
+    public static SimpleFeature selectWhichIntersectMost(SimpleFeatureCollection SFCIn, Geometry toIntersect) {
+        FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+        TreeMap<Double, SimpleFeature> sortedResult = new TreeMap<>();
+        try (SimpleFeatureIterator it = SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(toIntersect))).features()) {
+            while (it.hasNext()) {
+                SimpleFeature sf = it.next();
+                sortedResult.put(((Geometry) sf.getDefaultGeometry()).intersection(toIntersect).getArea(), sf);
+            }
+        }
+        return sortedResult.lastEntry().getValue();
+    }
+
 
 //    /**
 //     * Sort a SimpleFeatureCollection by its feature's area (must be a collection of polygons). Uses a sorted collection and a stream method.

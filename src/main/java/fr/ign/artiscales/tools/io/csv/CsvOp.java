@@ -17,6 +17,10 @@ import java.util.List;
 
 public class CsvOp extends Csv {
 
+//    public static void main(String[] args) throws IOException, ParseException {
+//
+//    }
+
     /**
      * Get a list of unique values for a given field from a .csv file
      *
@@ -147,7 +151,7 @@ public class CsvOp extends Csv {
     /**
      * Get the value of a cell corresponding to the value of another field's cell. Unique result, stop at first.
      *
-     * @param csvFile              CSV {@link File} with a comma as a separator
+     * @param csvFile               CSV {@link File} with a comma as a separator
      * @param targetAttributeNames  names of the fields that will be compared
      * @param targetAttributeValues values of the cells that will be compared
      * @return the values of the cell
@@ -316,20 +320,6 @@ public class CsvOp extends Csv {
         return joinCSVs(csvBase, csvToJoin, fieldCsvBase, fieldCsvToJoin, addNoCorrespondance, listFieldsToJoin, doNotAddDoubledFields, fileOut);
     }
 
-//    public static void main(String[] args) throws IOException {
-//        Csv.sep = ';';
-//        File menIndifCSV = CsvOp.joinCSVs(new File("/home/mc/Nextcloud/boulot/inria/privee/EGT/lil-0883.csv/Csv/menages_dimanche.csv"),
-//                new File("/home/mc/Nextcloud/boulot/inria/privee/EGT/lil-0883.csv/Csv/personnes_dimanche.csv"),
-//                new String[]{"NQUEST"}, new String[]{"NQUEST"}, true, true, new File("/tmp/MenIndiv.csv"));
-//        File menIndivDeplCSV = CsvOp.joinCSVs(menIndifCSV,
-//                new File("/home/mc/Nextcloud/boulot/inria/privee/EGT/lil-0883.csv/Csv/deplacements_dimanche.csv"),
-//                new String[]{"NQUEST", "NP"}, new String[]{"NQUEST", "NP"}, true, true, new File("/tmp/MenIndivDepl.csv"));
-//        CsvOp.joinCSVs(menIndivDeplCSV,
-//                new File("/home/mc/Nextcloud/boulot/inria/privee/EGT/lil-0883.csv/Csv/trajets_dimanche.csv"),
-//                new String[]{"NQUEST", "NP", "ND"}, new String[]{"NQUEST", "NP", "ND"}, true, true, new File("/tmp/MenIndivDeplTraj.csv"));
-//
-//    }
-
     /**
      * Join to CSV by searching common values in predefined fields. The whole line of the <i>base</i> csv is copied and only the precised fields of the <i>toJoin</i> .csv are copied.
      *
@@ -449,6 +439,41 @@ public class CsvOp extends Csv {
     }
 
     /**
+     * Get only the wanted column of a .csv. Could easily be overload to select multiple column.
+     *
+     * @param csvFile     Input .csv
+     * @param outFile     Output .csv
+     * @param columnsName Name of columns to isolate
+     * @return the output file
+     * @throws IOException reading and writing
+     */
+    public static File isolateColumns(File csvFile, File outFile, List<String> columnsName) throws IOException {
+        CSVReader r = Csv.getCSVReader(csvFile);
+        CSVWriter w = Csv.getCSVWriter(outFile);
+        String[] fLine = r.readNext();
+//        List<Integer> iToKeep = columnsName.stream().mapToInt(name -> Attribute.getIndice(fLine, name)).collect(Collectors.toList());
+        List<Integer> iToKeep = new ArrayList<>();
+        for (String name : columnsName)
+            iToKeep.add(Attribute.getIndice(fLine, name));
+        int i = 0;
+        String[] newFLine = new String[iToKeep.size()];
+        for (int ii : iToKeep) {
+            newFLine[i++] = fLine[ii];
+        }
+        w.writeNext(newFLine);
+        for (String[] line : r.readAll()) { //there might be better ways to do that
+            String[] newLine = new String[iToKeep.size()];
+            int j = 0;
+            for (int ii : iToKeep)
+                newLine[j++] = line[ii];
+            w.writeNext(newLine);
+        }
+        r.close();
+        w.close();
+        return outFile;
+    }
+
+    /**
      * Change the header of a .csv file with a new line by re-writing. Input and output files must be different.
      *
      * @param inCsvFile input .csv file
@@ -505,6 +530,27 @@ public class CsvOp extends Csv {
      * @throws IOException reading and writing
      */
     public static File filterCSV(File csvFile, File outFile, String fieldNameFilter, String fieldValueFilter, String op) throws IOException {
+        return filterCSV(csvFile, outFile, fieldNameFilter, Arrays.asList(fieldValueFilter), op);
+    }
+
+    /**
+     * Filter lines from a .csv file by comparing values of a field to a given fixed values
+     *
+     * @param csvFile           .csv file
+     * @param outFile           file to write the output
+     * @param fieldNameFilter   name of the field for comparison
+     * @param fieldValuesFilter values of the field for which to compare the #fieldNameFilter values
+     * @param op                Kind of operation to make on the strings. Could be :
+     *                          <ul>
+     *                          <li><b>startsWith</b>: beginning of the string must match</li>
+     *                          <li><b>endsWith</b>: end of the string must match</li>
+     *                          <li><b>contains</b>: some place of the string must match</li>
+     *                          <li><b>any other key</b>: strings must be equals</li>
+     *                          </ul>
+     * @return the wrote #outFile
+     * @throws IOException reading and writing
+     */
+    public static File filterCSV(File csvFile, File outFile, String fieldNameFilter, List<String> fieldValuesFilter, String op) throws IOException {
         CSVReader r = Csv.getCSVReader(csvFile);
         CSVWriter w = Csv.getCSVWriter(outFile);
         String[] fLine = r.readNext();
@@ -515,22 +561,52 @@ public class CsvOp extends Csv {
             String[] line = it.next();
             switch (op) {
                 case "startsWith":
-                    if (line[i].startsWith(fieldValueFilter))
-                        w.writeNext(line);
+                    for (String fieldValueFilter : fieldValuesFilter)
+                        if (line[i].startsWith(fieldValueFilter)) {
+                            w.writeNext(line);
+                            break;
+                        }
                     break;
                 case "endsWith":
-                    if (line[i].endsWith(fieldValueFilter))
-                        w.writeNext(line);
+                    for (String fieldValueFilter : fieldValuesFilter)
+                        if (line[i].endsWith(fieldValueFilter)) {
+                            w.writeNext(line);
+                            break;
+                        }
                     break;
                 case "contains":
-                    if (line[i].contains(fieldValueFilter))
-                        w.writeNext(line);
+                    for (String fieldValueFilter : fieldValuesFilter)
+                        if (line[i].contains(fieldValueFilter)) {
+                            w.writeNext(line);
+                            break;
+                        }
                     break;
                 case "equals":
-                    if (line[i].equals(fieldValueFilter))
-                        w.writeNext(line);
+                    for (String fieldValueFilter : fieldValuesFilter)
+                        if (line[i].equals(fieldValueFilter)) {
+                            w.writeNext(line);
+                            break;
+                        }
                     break;
             }
+        }
+        r.close();
+        w.close();
+        return outFile;
+    }
+
+    public static File replaceValueInCSV(File csvFile, File outFile, String fieldNameFilter, String fieldValueToReplace, String replacement) throws IOException {
+        CSVReader r = Csv.getCSVReader(csvFile);
+        CSVWriter w = Csv.getCSVWriter(outFile);
+        String[] fLine = r.readNext();
+        w.writeNext(fLine);
+        int i = Attribute.getIndice(fLine, fieldNameFilter);
+        Iterator<String[]> it = r.iterator();
+        while (it.hasNext()) {
+            String[] line = it.next();
+            if (line[i].equals(fieldValueToReplace))
+                line[i] = replacement;
+            w.writeNext(line);
         }
         r.close();
         w.close();
