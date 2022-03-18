@@ -14,6 +14,7 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.referencing.FactoryException;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -191,8 +192,8 @@ public class Schemas {
      * @param attributeName name of the attribute
      * @return the SFC with a float column
      */
-    public static SimpleFeatureBuilder addFloatColToSFB(SimpleFeatureCollection sfcIn, String attributeName) {
-        return addColToSFB(sfcIn, attributeName, Float.class);
+    public static SimpleFeatureBuilder addFloatFieldToSFB(SimpleFeatureCollection sfcIn, String attributeName) {
+        return addFieldToSFB(sfcIn, attributeName, Float.class);
     }
 
     /**
@@ -202,21 +203,32 @@ public class Schemas {
      * @param attributeName name of the attribute
      * @return the SFC with a float column
      */
-    public static SimpleFeatureBuilder addIntColToSFB(SimpleFeatureCollection sfcIn, String attributeName) {
-        return addColToSFB(sfcIn, attributeName, Integer.class);
+    public static SimpleFeatureBuilder addIntFieldToSFB(SimpleFeatureCollection sfcIn, String attributeName) {
+        return addFieldToSFB(sfcIn, attributeName, Integer.class);
     }
 
     /**
      * Return a {@link SimpleFeatureBuilder} out of an existing {@link org.geotools.data.simple.SimpleFeatureCollection} and add a type attribute.
      *
-     * @param sfcIn
+     * @param sfcIn         model collection
      * @param attributeName name of the attribute
      * @param c             Java class
      * @return the SFC with a float column
      */
-    public static SimpleFeatureBuilder addColToSFB(SimpleFeatureCollection sfcIn, String attributeName, Class c) {
-        String[] name = {attributeName};
-        return addColsToSFB(sfcIn, name, c);
+    public static SimpleFeatureBuilder addFieldToSFB(SimpleFeatureCollection sfcIn, String attributeName, Class c) {
+        return addFieldToSFB(sfcIn.getSchema(), attributeName, c);
+    }
+
+    /**
+     * Return a {@link SimpleFeatureBuilder} out of an existing {@link org.geotools.data.simple.SimpleFeatureCollection} and add a type attribute.
+     *
+     * @param schema        input schema
+     * @param attributeName name of the attribute
+     * @param c             Java class
+     * @return the SFC with a float column
+     */
+    public static SimpleFeatureBuilder addFieldToSFB(SimpleFeatureType schema, String attributeName, Class c) {
+        return addFieldsToSFB(schema, new String[]{attributeName}, c);
     }
 
     /**
@@ -224,11 +236,24 @@ public class Schemas {
      *
      * @param sfcIn           collection with schema to copy
      * @param attributesNames name of the attributes (must be the same type)
-     * @param c               Java class
+     * @param c               Java class (must be understandable by geotools)
      * @return the SFC with a float column
      */
-    public static SimpleFeatureBuilder addColsToSFB(SimpleFeatureCollection sfcIn, String[] attributesNames, Class c) {
-        SimpleFeatureType schema = sfcIn.getSchema();
+    public static SimpleFeatureBuilder addFieldsToSFB(SimpleFeatureCollection sfcIn, String[] attributesNames, Class c) {
+        return addFieldsToSFB(sfcIn.getSchema(), attributesNames, c);
+    }
+
+    /**
+     * Return a {@link SimpleFeatureBuilder} out of an existing {@link org.geotools.data.simple.SimpleFeatureCollection} and add multiple attributes. All the attributes must have the same type.
+     *
+     * @param schema          schema to copy
+     * @param attributesNames name of the attributes (must be the same type)
+     * @param c               Java class (must be understandable by geotools)
+     * @return the SFC with a float column
+     */
+    public static SimpleFeatureBuilder addFieldsToSFB(SimpleFeatureType schema, String[] attributesNames, Class c) {
+        if (Schemas.isSchemaContainsAttributes(schema, attributesNames))
+            return new SimpleFeatureBuilder(schema);
         SimpleFeatureTypeBuilder sfTypeBuilder = new SimpleFeatureTypeBuilder();
         for (AttributeDescriptor attr : schema.getAttributeDescriptors())
             sfTypeBuilder.add(attr);
@@ -257,14 +282,26 @@ public class Schemas {
     }
 
     /**
+     * Check if the given schema contains the given field names.
+     *
+     * @param schema             SimpleFeatureType schema.
+     * @param attributeFiledName Arrays of name of the fields (must respect case).
+     * @return true if the collec contains the field names, false otherwise.
+     */
+    public static boolean isSchemaContainsAttributes(SimpleFeatureType schema, String[] attributeFiledName) {
+        return Arrays.stream(attributeFiledName).allMatch(att -> schema.getAttributeDescriptors().stream().anyMatch(ad -> ad.getName().toString().equals(att)));
+    }
+
+
+    /**
      * Check if the given schema contains the given field name.
      *
-     * @param schema             SimpleFeatureType schema
-     * @param attributeFiledName Name of the field (must respect case)
-     * @return true if the collec contains the field name, false otherwise
+     * @param schema             SimpleFeatureType schema.
+     * @param attributeFiledName Name of the field (must respect case).
+     * @return true if the collec contains the field name, false otherwise.
      */
     public static boolean isSchemaContainsAttribute(SimpleFeatureType schema, String attributeFiledName) {
-        return schema.getAttributeDescriptors().stream().anyMatch(s -> s.getName().toString().equals(attributeFiledName));
+        return isSchemaContainsAttributes(schema, new String[]{attributeFiledName});
     }
 
     public static String getEpsg() {

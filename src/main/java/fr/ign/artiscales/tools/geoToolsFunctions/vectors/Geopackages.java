@@ -73,6 +73,7 @@ public class Geopackages {
         Files.copy(existingGpkg.toPath(), new FileOutputStream(tmpFile));
         Files.delete(existingGpkg.toPath());
         DataStore ds = getDataStore(tmpFile);
+        assert ds != null;
         CollecMgmt.exportSFC(CollecMgmt.mergeSFC(Arrays.asList(toAdd, ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures()),
                 true, null), existingGpkg);
         ds.dispose();
@@ -84,24 +85,24 @@ public class Geopackages {
         return mergeGpkgFiles(file2MergeIn, f, null, true);
     }
 
-    public static File mergeGpkgFiles(List<File> file2MergeIn, File fileOut, File boundFile, boolean keepAttributes) throws IOException {
+    public static File mergeGpkgFiles(List<File> filesToMerge, File fileOut, File boundFile, boolean keepAttributes) throws IOException {
         // stupid basic checkout
-        if (file2MergeIn.isEmpty()) {
+        if (filesToMerge.isEmpty()) {
             System.out.println("mergeGpkgFiles: list empty, " + fileOut + " null");
             return null;
         }
-        // verify that every shapefile exists and remove them from the list if not
-        int nbFile = file2MergeIn.size();
-        for (int i = 0; i < nbFile; i++) {
-            if (!file2MergeIn.get(i).exists()) {
-                System.out.println(file2MergeIn.get(i) + " doesn't exists");
-                file2MergeIn.remove(i);
-                i--;
-                nbFile--;
-            }
+        // verify that every file exists and start a new function with clean list if not
+        if (filesToMerge.stream().anyMatch(f -> !f.exists())) {
+            List<File> rightListFile = new ArrayList<>();
+            for (File file : filesToMerge)
+                if (!file.exists())
+                    System.out.println(file + " doesn't exists");
+                else
+                    rightListFile.add(file);
+            return mergeGpkgFiles( rightListFile ,fileOut, boundFile, keepAttributes);
         }
-        List<SimpleFeatureCollection> sfcs = new ArrayList<>();
-        for (File f : file2MergeIn) {
+        List<SimpleFeatureCollection> sfcs = new ArrayList<>(filesToMerge.size());
+        for (File f : filesToMerge) {
             DataStore ds = getDataStore(f);
             assert ds != null;
             sfcs.add(DataUtilities.collection(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures()));

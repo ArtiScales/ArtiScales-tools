@@ -131,8 +131,8 @@ public class CollecMgmt {
      * </ul>
      *
      * @param sfcs           List of simplefeature to merge
-     * @param boundFile      apply a mask on the result
-     * @param keepAttributes keep every attribute. Must be the same schema between every files.
+     * @param boundFile      apply a mask on the result. Can be null.
+     * @param keepAttributes keep every attribute. Must be the same schema between every file.
      * @return the merged File
      * @throws IOException Reading, writing, or unknown extension
      */
@@ -158,34 +158,31 @@ public class CollecMgmt {
         for (SimpleFeatureCollection sfc : sfcs) {
             if (keepAttributes) {
                 SimpleFeatureBuilder defaultSFBuilder = new SimpleFeatureBuilder(schemaRef);
-                if (matchingFields.isEmpty()) // Same schema (or we assume that) : Merge the feature and assignate a new id number. If collections doesn't have the exactly same schema but the same number of attributes, we add every attribute regarding their position
-                    Arrays.stream(sfc.toArray(new SimpleFeature[0])).forEach(feat -> {
-                        Object[] attr = new Object[feat.getAttributeCount() - 1];
-                        for (int h = 1; h < feat.getAttributeCount(); h++)
-                            attr[h - 1] = feat.getAttribute(h);
-                        defaultSFBuilder.add(feat.getDefaultGeometry());
-                        newParcelCollection.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId(), attr));
-                    });
-                else { // we only keep matching fields
-                    Arrays.stream(sfc.toArray(new SimpleFeature[0])).forEach(feat -> {
-                        for (String field : finalMatchingFields) {
-                            defaultSFBuilder.set(field, feat.getAttribute(field));
-                        }
+                try (SimpleFeatureIterator it = sfc.features()) {
+                    while (it.hasNext()) {
+                        SimpleFeature feat = it.next();
+                        if (matchingFields.isEmpty())  // Same schema (or we assume that) : Merge the feature and assignate a new id number. If collections doesn't have the exactly same schema but the same number of attributes, we add every attribute regarding their position
+                            Schemas.setFieldsToSFB(defaultSFBuilder, feat);
+                        else  // we only keep matching fields
+                            for (String field : finalMatchingFields)
+                                defaultSFBuilder.set(field, feat.getAttribute(field));
                         newParcelCollection.add(defaultSFBuilder.buildFeature(Attribute.makeUniqueId()));
-                    });
+                    }
                 }
             } else { // if we don't want to keep attributes, we create features out of new features containing only geometry
                 SimpleFeatureBuilder basicSFBuilder = Schemas.getBasicSchema(schemaRef.getName().toString(), schemaRef.getGeometryDescriptor().getType().toString());
-                Arrays.stream(sfc.toArray(new SimpleFeature[0])).forEach(feat -> {
-                    basicSFBuilder.set(CollecMgmt.getDefaultGeomName(), feat.getDefaultGeometry());
-                    newParcelCollection.add(basicSFBuilder.buildFeature(Attribute.makeUniqueId()));
-                });
+                try (SimpleFeatureIterator it = sfc.features()) {
+                    while (it.hasNext()) {
+                        basicSFBuilder.set(CollecMgmt.getDefaultGeomName(), it.next().getDefaultGeometry());
+                        newParcelCollection.add(basicSFBuilder.buildFeature(Attribute.makeUniqueId()));
+                    }
+                }
             }
         }
-        SimpleFeatureCollection output = newParcelCollection.collection();
         if (boundFile != null && boundFile.exists())
-            output = CollecTransform.selectIntersection(output, boundFile);
-        return output;
+            return CollecTransform.selectIntersection(newParcelCollection, boundFile);
+        else
+            return newParcelCollection;
     }
 
     /**

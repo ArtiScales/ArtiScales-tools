@@ -44,15 +44,13 @@ public class Geom {
 //    }
 
     /**
-     * select and export a list of geometries from a simple feature collection
+     * Export a list of geometries from every SimpleFeature of a simple feature collection
      *
-     * @param collec input
+     * @param collec input collection of geometries
      * @return the list of the simple feature's geometries
      */
     public static List<Geometry> importListGeom(SimpleFeatureCollection collec) {
-        List<Geometry> result = new ArrayList<>();
-        Arrays.stream(collec.toArray(new SimpleFeature[0])).forEach(sf -> result.add((Geometry) sf.getDefaultGeometry()));
-        return result;
+        return Arrays.stream(collec.toArray(new SimpleFeature[0])).map(sf -> (Geometry) sf.getDefaultGeometry()).collect(Collectors.toList());
     }
 
     /**

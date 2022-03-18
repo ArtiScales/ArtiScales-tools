@@ -24,6 +24,7 @@ import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.TopologyException;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.AttributeDescriptor;
@@ -205,7 +206,7 @@ public class CollecTransform {
     }
 
     /**
-     * From a given collection, compute the ratio of surface of intersection regarding to a distinct geometry.
+     * From a given collection, compute the ratio of surface of intersection regarding a distinct geometry.
      *
      * @param inSFC            input collection
      * @param geomIntersection geometry to calculate the intersection with
@@ -224,8 +225,8 @@ public class CollecTransform {
     }
 
     /**
-     * Get the closest feature of a geometry from an input collection by checking meters by meters which feature is the closest.
-     * If multiple are found, return a random single feature.
+     * Get the closest feature of a geometry from an input collection by checking meters by meters which feature is the closest. Stop after a hundred meters.
+     * If multiple are found within the same meter, return a random single feature.
      *
      * @param collec   input collection
      * @param featGeom geometry to look around
@@ -235,7 +236,7 @@ public class CollecTransform {
         double x = 0;
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
         //we check meters by meters if there's entrances
-        while (x < 75) {
+        while (x < 100) {
             SimpleFeatureCollection closest = collec.subCollection(ff.dwithin(ff.property(collec.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(featGeom), x, "meters"));
             if (closest.size() > 0) {
                 if (closest.size() != 1)
@@ -264,7 +265,8 @@ public class CollecTransform {
                     if (((Geometry) feat.getDefaultGeometry()).getArea() > areaMin)
                         newParcel.add(feat);
                 } catch (NullPointerException np) {
-                    System.out.println("this feature has no gemoetry : TODO check if normal " + feat);
+                    System.out.println("this feature has no geometry : TODO check if normal " + feat);
+                    np.printStackTrace();
                 }
             }
         } catch (Exception problem) {
@@ -295,10 +297,13 @@ public class CollecTransform {
     public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, List<Geometry> lG, double distance) {
         DefaultFeatureCollection result = new DefaultFeatureCollection();
         for (Geometry g : lG)
-            Arrays.stream(selectIntersection(SFCIn, g, distance).toArray(new SimpleFeature[0])).forEach(sf -> {
-                if (!result.contains(sf))
-                    result.add(sf);
-            });
+            try (SimpleFeatureIterator it = selectIntersection(SFCIn, g, distance).features()) {
+                while (it.hasNext()) {
+                    SimpleFeature sf = it.next();
+                    if (!result.contains(sf))
+                        result.add(sf);
+                }
+            }
         return result;
     }
 
@@ -306,8 +311,7 @@ public class CollecTransform {
         if (distance == 0)
             return selectIntersection(collection, geom);
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
-        return collection.subCollection(ff.dwithin(ff.property(collection.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geom),
-                distance, SI.METRE.toString()));
+        return collection.subCollection(ff.dwithin(ff.property(collection.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geom), distance, SI.METRE.toString()));
     }
 
 
@@ -315,11 +319,14 @@ public class CollecTransform {
         return selectIntersection(SFCIn, (Geometry) feat.getDefaultGeometry());
     }
 
+
     public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, Geometry toIntersect) {
-        if (SFCIn == null || SFCIn.isEmpty())
-            return new DefaultFeatureCollection(); //TODO ais je defais ça avant ? checker
-        FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-        return SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(toIntersect)));
+        try {
+            FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+            return SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(toIntersect)));
+        } catch (NullPointerException np) {
+            return null;
+        }
     }
 
     /**
@@ -389,7 +396,7 @@ public class CollecTransform {
         try (SimpleFeatureIterator it = SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(toIntersect))).features()) {
             while (it.hasNext()) {
                 SimpleFeature sf = it.next();
-                sortedResult.put(((Geometry) sf.getDefaultGeometry()).intersection(toIntersect).getArea(), sf);
+                sortedResult.put(Objects.requireNonNull(Geom.safeIntersection((Geometry) sf.getDefaultGeometry(), toIntersect)).getArea(), sf);
             }
         }
         return sortedResult.lastEntry().getValue();
@@ -440,7 +447,7 @@ public class CollecTransform {
     }
 
     /**
-     * Sort a SimpleFeatureCollection by one of its numeric field. Uses a sorted collection and a stream method.
+     * Sort a SimpleFeatureCollection by one of its numeric field. Uses a sorted collection and a stream method. Works with String types (sort by alphabetical order).
      *
      * @param sFCToSort SimpleFeature
      * @param field     Name of the field to sort
@@ -450,8 +457,6 @@ public class CollecTransform {
     public static SimpleFeatureCollection sortSFCWithField(SimpleFeatureCollection sFCToSort, String field, boolean maxToMin) {
         if (sFCToSort.isEmpty() || !CollecMgmt.isCollecContainsAttribute(sFCToSort, field))
             return new DefaultFeatureCollection();
-        //todo add the check if is numeric
-//        if(sFCToSort.getSchema().getDescriptor(field).getType().
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
         SortByImpl[] sortOrder = {new SortByImpl(ff.property(field), maxToMin ? SortOrder.DESCENDING : SortOrder.ASCENDING)};
         return new SortedSimpleFeatureCollection(sFCToSort, sortOrder);
@@ -565,8 +570,8 @@ public class CollecTransform {
     }
 
     /**
-     * Get the value of a feature's field from a SimpleFeatureCollection that intersects a given Simplefeature (that is most of the time, a parcel or building). If the given
-     * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
+     * Get the value of a feature's field from a SimpleFeatureCollection that intersects a given geometry. If the given
+     * geometry is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
      *
      * @param geometry  input {@link Geometry}
      * @param sfc       Input {@link SimpleFeatureCollection}
@@ -574,79 +579,56 @@ public class CollecTransform {
      * @return the wanted filed from the (most) intersecting {@link SimpleFeature}}
      */
     public static String getIntersectingFieldFromSFC(Geometry geometry, SimpleFeatureCollection sfc, String fieldName) {
-        SimpleFeature feat = getIntersectingSimpleFeatureFromSFC(geometry, sfc);
+        SimpleFeature feat = getIntersectingSimpleFeatureFromSFC(geometry, sfc, null);
         return feat != null ? (String) feat.getAttribute(fieldName) : null;
     }
 
     /**
-     * Get the {@link SimpleFeature} out of a {@link SimpleFeatureCollection} that intersects a given Geometry (that is most of the time, a parcel or building). If the given
-     * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection.
+     * Get the {@link SimpleFeature} out of a {@link SimpleFeatureCollection} that intersects a given Geometry. If the given
+     * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection. Reduce the precision of the {@link Geometry}s
      *
      * @param geometry input {@link Geometry}
      * @param inputSFC input collection
      * @return the (most) intersecting {@link SimpleFeature}}
      */
+
     public static SimpleFeature getIntersectingSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC) {
-        try {
-            FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-            SortedMap<Double, SimpleFeature> index = new TreeMap<>();
-            SimpleFeatureCollection collec = inputSFC
-                    .subCollection(ff.intersects(ff.property(inputSFC.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
-            if (collec.isEmpty()) {
-                // logger.debug("intersection between " + geometry + " and " + parcels.getSchema().getName() + " null");
-                return null;
-            }
-            try (SimpleFeatureIterator collecIt = collec.features()) {
-                while (collecIt.hasNext()) {
-                    SimpleFeature theFeature = collecIt.next();
-                    Geometry theFeatureGeom = ((Geometry) theFeature.getDefaultGeometry()).buffer(1);
-                    if (theFeatureGeom.contains(geometry))
-                        return theFeature;
-                        // if the parcel is in between two features, we put the feature in a sorted collection
-                    else if (theFeatureGeom.intersects(geometry))
-                        index.put(Objects.requireNonNull(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, geometry))).getArea(), theFeature);
-                }
-            } catch (Exception problem) {
-                problem.printStackTrace();
-            }
-            return index.size() > 0 ? index.get(index.lastKey()) : null;
-        } catch (Exception e) {
-            return getIntersectingSimpleFeatureFromSFC(geometry, inputSFC, new PrecisionModel(10));
-        }
+        return getIntersectingSimpleFeatureFromSFC(geometry, inputSFC, null);
     }
 
     /**
-     * Get the {@link SimpleFeature} out of a {@link SimpleFeatureCollection} that intersects a given Geometry (that is most of the time, a parcel or building). If the given
+     * Get the {@link SimpleFeature} out of a {@link SimpleFeatureCollection} that intersects a given Geometry. If the given
      * feature is overlapping multiple SimpleFeatureCollection's features, we calculate which has the more area of intersection. Reduce the precision of the {@link Geometry}s
      *
      * @param geometry       input {@link Geometry}
      * @param inputSFC       input collection
-     * @param precisionModel precision of the intersection
+     * @param precisionModel precision of the intersection. Can be null
      * @return the (most) intersecting {@link SimpleFeature}}
      */
     public static SimpleFeature getIntersectingSimpleFeatureFromSFC(Geometry geometry, SimpleFeatureCollection inputSFC, PrecisionModel precisionModel) {
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-        Geometry givenFeatureGeom = GeometryPrecisionReducer.reduce(geometry, precisionModel);
+        if (precisionModel != null)
+            geometry = GeometryPrecisionReducer.reduce(geometry, precisionModel);
         SortedMap<Double, SimpleFeature> index = new TreeMap<>();
-        SimpleFeatureCollection collec = inputSFC
-                .subCollection(ff.intersects(ff.property(inputSFC.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
-        if (collec.isEmpty()) {
-            // logger.debug("intersection between " + geometry + " and " + parcels.getSchema().getName() + " null");
+        SimpleFeatureCollection intersection = inputSFC.subCollection(ff.intersects(ff.property(inputSFC.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
+        if (intersection.isEmpty())
             return null;
-        }
-        try (SimpleFeatureIterator collecIt = collec.features()) {
-            while (collecIt.hasNext()) {
-                SimpleFeature theFeature = collecIt.next();
-                Geometry theFeatureGeom = GeometryPrecisionReducer.reduce((Geometry) theFeature.getDefaultGeometry(), precisionModel).buffer(1);
-                if (theFeatureGeom.contains(givenFeatureGeom))
+        try (SimpleFeatureIterator intersectionIt = intersection.features()) {
+            while (intersectionIt.hasNext()) {
+                SimpleFeature theFeature = intersectionIt.next();
+                Geometry g = (Geometry) theFeature.getDefaultGeometry();
+                if (precisionModel != null)
+                    g = GeometryPrecisionReducer.reduce(g, precisionModel);
+                if (g.contains(geometry)) // if the target geometry is contained into the observed feature, we stop everything and return the observed feature.
                     return theFeature;
-                    // if the parcel is in between two features, we put the feature in a sorted
-                    // collection
-                else if (theFeatureGeom.intersects(givenFeatureGeom))
-                    index.put(Objects.requireNonNull(Geom.scaledGeometryReductionIntersection(Arrays.asList(theFeatureGeom, givenFeatureGeom))).getArea(), theFeature);
+                else if (g.intersects(geometry)) // if the target geometry is in between two features, we put the feature in a sorted collection with the length of the intersection.
+                    index.put(Objects.requireNonNull(Geom.scaledGeometryReductionIntersection(Arrays.asList(g, geometry))).getArea(), theFeature);
             }
-        } catch (Exception problem) {
-            problem.printStackTrace();
+        } catch (TopologyException topologyException) {
+            if (precisionModel != null)
+                topologyException.printStackTrace();
+            else
+                return getIntersectingSimpleFeatureFromSFC(geometry, inputSFC, new PrecisionModel(10));
         }
         return index.size() > 0 ? index.get(index.lastKey()) : null;
     }

@@ -17,10 +17,6 @@ import java.util.List;
 
 public class CsvOp extends Csv {
 
-//    public static void main(String[] args) throws IOException, ParseException {
-//
-//    }
-
     /**
      * Get a list of unique values for a given field from a .csv file
      *
@@ -530,7 +526,7 @@ public class CsvOp extends Csv {
      * @throws IOException reading and writing
      */
     public static File filterCSV(File csvFile, File outFile, String fieldNameFilter, String fieldValueFilter, String op) throws IOException {
-        return filterCSV(csvFile, outFile, fieldNameFilter, Arrays.asList(fieldValueFilter), op);
+        return filterCSV(csvFile, outFile, fieldNameFilter, List.of(fieldValueFilter), op);
     }
 
     /**

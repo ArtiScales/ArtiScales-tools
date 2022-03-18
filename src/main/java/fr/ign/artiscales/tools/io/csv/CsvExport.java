@@ -416,4 +416,22 @@ public class CsvExport extends Csv {
         }
         w.close();
     }
+
+    /**
+     * Export a simple matrix to be read with python/Julia
+     * @param matrixValue tab
+     * @param fileOut .txt file
+     * @throws IOException writing file
+     */
+    public static void exportMatrix(double[][] matrixValue, File fileOut) throws IOException {
+        CSVWriter w = new CSVWriter(new FileWriter(fileOut.getName().endsWith(".txt") ?fileOut : new File(fileOut.getParentFile(), fileOut.getName() + ".txt") , false),
+                ' ', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.NO_ESCAPE_CHARACTER, lineEnd);
+        for (int i = 0; i < matrixValue.length; i++) {
+            String[] line = new String[matrixValue.length];
+            for (int j = 0; j < line.length; j++)
+                line[j] = String.valueOf(matrixValue[i][j]);
+            w.writeNext(line);
+        }
+        w.close();
+    }
 }

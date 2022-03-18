@@ -105,7 +105,7 @@ public class Polygons {
     public static Polygon polygonUnion(List<Polygon> list, GeometryPrecisionReducer reducer) {
         if (list.isEmpty())
             return null;
-        Geometry p = new CascadedPolygonUnion(list.stream().filter(Objects::nonNull).map(reducer::reduce).collect(Collectors.toList())).union();
+        Geometry p = new CascadedPolygonUnion(list.stream().filter(Objects::nonNull).map(reducer::reduce).toList()).union();
         try {
            return (Polygon) p;
        }
