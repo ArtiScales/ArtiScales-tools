@@ -20,14 +20,14 @@ public class ProfileUrbanFabric {
     String nameBuildingType;
     double maximalArea, minimalArea, minimalWidthContactRoad, laneWidth, streetWidth, maxDepth, maxDistanceForNearestRoad, maxWidth;
     int streetLane, blockShape, approxNumberParcelPerBlock;
-    double lenDriveway, noise, harmonyCoeff = 0.5;
+    double lenDriveway, irregularityCoeff, harmonyCoeff = 0.5;
 
     /**
      * For every parameter use (or OBBThenSS)
      */
     public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
                               double laneWidth, double streetWidth, int streetLane, int blockShape, double lenDriveway, double maxDepth,
-                              double maxDistanceForNearestRoad, double maxWidth, int approxNumberParcelPerBlock, double harmonyCoeff, double noise) {
+                              double maxDistanceForNearestRoad, double maxWidth, int approxNumberParcelPerBlock, double harmonyCoeff, double irregularityCoeff) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
@@ -43,13 +43,13 @@ public class ProfileUrbanFabric {
         this.maxWidth = maxWidth;
         this.approxNumberParcelPerBlock = approxNumberParcelPerBlock;
         this.harmonyCoeff = harmonyCoeff;
-        this.noise = noise;
+        this.irregularityCoeff = irregularityCoeff;
     }
 
     /**
      * For Straight Skeleton
      */
-    public ProfileUrbanFabric(String nameBuildingType, double minimalArea, double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth, double streetWidth, double noise) {
+    public ProfileUrbanFabric(String nameBuildingType, double minimalArea, double maxDepth, double maxDistanceForNearestRoad, double minWidth, double maxWidth, double streetWidth, double irregularityCoeff) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.minimalArea = minimalArea;
@@ -58,13 +58,13 @@ public class ProfileUrbanFabric {
         this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
         this.maxWidth = maxWidth;
         this.minimalWidthContactRoad = minWidth;
-        this.noise = noise;
+        this.irregularityCoeff = irregularityCoeff;
     }
 
     /**
      * Builder for Oriented Bounding Box
      */
-    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad, double streetWidth, int streetLane, double laneWidth, int blockShape, double harmonyCoeff, double noise) {
+    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad, double streetWidth, int streetLane, double laneWidth, int blockShape, double harmonyCoeff, double irregularityCoeff) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
@@ -75,13 +75,13 @@ public class ProfileUrbanFabric {
         this.streetLane = streetLane;
         this.blockShape = blockShape;
         this.harmonyCoeff = harmonyCoeff;
-        this.noise = noise;
+        this.irregularityCoeff = irregularityCoeff;
     }
 
     /**
      * Builder for flag division
      */
-    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double lenDriveway, double harmonyCoeff, double noise) {
+    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double lenDriveway, double harmonyCoeff, double irregularityCoeff) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
@@ -89,7 +89,7 @@ public class ProfileUrbanFabric {
         this.minimalWidthContactRoad = maximalWidth;
         this.lenDriveway = lenDriveway;
         this.harmonyCoeff = harmonyCoeff;
-        this.noise = noise;
+        this.irregularityCoeff = irregularityCoeff;
     }
 
     public ProfileUrbanFabric() {
@@ -121,7 +121,7 @@ public class ProfileUrbanFabric {
                     this.harmonyCoeff = Double.parseDouble(line[i]);
                     break;
                 case "noise":
-                    this.noise = Double.parseDouble(line[i]);
+                    this.irregularityCoeff = Double.parseDouble(line[i]);
                     break;
                 case "maxDepth":
                     this.maxDepth = Double.parseDouble(line[i]);
@@ -231,12 +231,12 @@ public class ProfileUrbanFabric {
         return f;
     }
 
-    public double getNoise() {
-        return noise;
+    public double getIrregularityCoeff() {
+        return irregularityCoeff;
     }
 
-    public void setNoise(double noise) {
-        this.noise = noise;
+    public void setIrregularityCoeff(double irregularityCoeff) {
+        this.irregularityCoeff = irregularityCoeff;
     }
 
     public double getHarmonyCoeff() {

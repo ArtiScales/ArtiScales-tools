@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Geom {
 //	public static void main(String[] args) throws Exception {
@@ -143,18 +142,13 @@ public class Geom {
     public static Geometry unionPrecisionReduce(List<Geometry> collection, int scale) {
         if (collection.size() == 1)
             return GeometryPrecisionReducer.reduce(collection.get(0), new PrecisionModel(scale));
-        GeometryFactory factory = new GeometryFactory();
-        GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(
-                collection.stream().map(g -> GeometryPrecisionReducer.reduce(g, new PrecisionModel(scale))).collect(Collectors.toList()));
-        return geometryCollection.union();
+        return new GeometryFactory().buildGeometry(
+                collection.stream().map(g -> GeometryPrecisionReducer.reduce(g, new PrecisionModel(scale))).collect(Collectors.toList())).union();
     }
 
     public static Geometry unionPrecisionReduce(SimpleFeatureCollection collection, double scale) {
-        GeometryFactory factory = new GeometryFactory();
-        Stream<Geometry> s = Arrays.stream(collection.toArray(new SimpleFeature[collection.size()])).map(
-                sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(scale)));
-        GeometryCollection geometryCollection = (GeometryCollection) factory.buildGeometry(Arrays.asList(s.toArray()));
-        return geometryCollection.union();
+        return new GeometryFactory().buildGeometry(Arrays.stream(collection.toArray(new SimpleFeature[collection.size()])).map(
+                sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(scale))).toList()).union();
     }
 
     public static Geometry safeUnion(Geometry g1, Geometry g2) {
@@ -186,28 +180,16 @@ public class Geom {
             return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(a)), new ArrayList<>(Collections.singletonList(b)));
         } catch (TopologyException tp) {
             try {
-                PrecisionModel pm = new PrecisionModel(1000);
-                Geometry aReduced = GeometryPrecisionReducer.reduce(a, pm);
-                Geometry bReduced = GeometryPrecisionReducer.reduce(b, pm);
-                return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(aReduced)), new ArrayList<>(Collections.singletonList(bReduced)));
+                return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(GeometryPrecisionReducer.reduce(a, new PrecisionModel(1000)))), new ArrayList<>(Collections.singletonList(GeometryPrecisionReducer.reduce(b, new PrecisionModel(1000)))));
             } catch (TopologyException tp2) {
                 try {
-                    PrecisionModel pm = new PrecisionModel(1000);
-                    Geometry aReduced = GeometryPrecisionReducer.reduce(a, pm);
-                    Geometry bReduced = GeometryPrecisionReducer.reduce(b, pm);
-                    return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(aReduced)), new ArrayList<>(Collections.singletonList(bReduced)));
+                    return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(GeometryPrecisionReducer.reduce(a, new PrecisionModel(100)))), new ArrayList<>(Collections.singletonList(GeometryPrecisionReducer.reduce(b, new PrecisionModel(100)))));
                 } catch (TopologyException tp3) {
                     try {
-                        PrecisionModel pm = new PrecisionModel(1000);
-                        Geometry aReduced = GeometryPrecisionReducer.reduce(a, pm);
-                        Geometry bReduced = GeometryPrecisionReducer.reduce(b, pm);
-                        return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(aReduced)), new ArrayList<>(Collections.singletonList(bReduced)));
+                        return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(GeometryPrecisionReducer.reduce(a, new PrecisionModel(10)))), new ArrayList<>(Collections.singletonList(GeometryPrecisionReducer.reduce(b, new PrecisionModel(10)))));
                     } catch (TopologyException tp4) {
                         try {
-                            PrecisionModel pm = new PrecisionModel(1000);
-                            Geometry aReduced = GeometryPrecisionReducer.reduce(a, pm);
-                            Geometry bReduced = GeometryPrecisionReducer.reduce(b, pm);
-                            return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(aReduced)), new ArrayList<>(Collections.singletonList(bReduced)));
+                            return FeaturePolygonizer.getDifference(new ArrayList<>(Collections.singletonList(GeometryPrecisionReducer.reduce(a, new PrecisionModel(1)))), new ArrayList<>(Collections.singletonList(GeometryPrecisionReducer.reduce(b, new PrecisionModel(1)))));
                         } catch (TopologyException tp5) {
                             return null;
                         }
@@ -269,27 +251,31 @@ public class Geom {
         if (collection.size() == 1)
             return (Geometry) collection.features().next().getDefaultGeometry();
         try {
-            return unionPrecisionReduce(collection, 10000);
-
-//            return combineIntoOneGeometry(Arrays.stream(collection.toArray(new SimpleFeature[collection.size()])).map(
-//                    sf -> (Geometry) sf.getDefaultGeometry()).collect(Collectors.toList())) ; todo try to union without simplyfinging geoemtries. see https://docs.geotools.org/stable/userguide/library/jts/combine.html
-        } catch (TopologyException e0) {
+            GeometryCollection geometryCollection = (GeometryCollection) new GeometryFactory().buildGeometry(
+                    Arrays.stream(collection.toArray(new SimpleFeature[collection.size()]))
+                            .map(sf -> (Geometry) sf.getDefaultGeometry()).toList()); //also see https://docs.geotools.org/stable/userguide/library/jts/combine.html
+            return geometryCollection.union();
+        } catch (TopologyException eOrigin) {
             try {
-                return unionPrecisionReduce(collection, 1000);
-            } catch (TopologyException e) {
+                return unionPrecisionReduce(collection, 10000);
+            } catch (TopologyException e0) {
                 try {
-                    return unionPrecisionReduce(collection, 100);
-                } catch (TopologyException ee) {
+                    return unionPrecisionReduce(collection, 1000);
+                } catch (TopologyException e) {
                     try {
-                        return unionPrecisionReduce(collection, 10);
-                    } catch (TopologyException eee) {
+                        return unionPrecisionReduce(collection, 100);
+                    } catch (TopologyException ee) {
                         try {
-                            return unionPrecisionReduce(collection, 2);
-                        } catch (TopologyException eeee) {
+                            return unionPrecisionReduce(collection, 10);
+                        } catch (TopologyException eee) {
                             try {
-                                return unionPrecisionReduce(collection, 0.1);
-                            } catch (TopologyException eeeee) {
-                                return unionPrecisionReduce(collection, 0.001);
+                                return unionPrecisionReduce(collection, 2);
+                            } catch (TopologyException eeee) {
+                                try {
+                                    return unionPrecisionReduce(collection, 0.1);
+                                } catch (TopologyException eeeee) {
+                                    return unionPrecisionReduce(collection, 0.001);
+                                }
                             }
                         }
                     }

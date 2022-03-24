@@ -118,8 +118,7 @@ public class OpOnCollec {
      */
     public static boolean isFeatIntersectsSFC(SimpleFeature inputFeat, SimpleFeatureCollection inputSFC) {
         Geometry geom = (Geometry) inputFeat.getDefaultGeometry();
-        // import of the cells of MUP-City outputs
-        try (SimpleFeatureIterator cellsCollectionIt = CollecTransform.selectIntersection(inputSFC, geom).features()) {
+        try (SimpleFeatureIterator cellsCollectionIt = Objects.requireNonNull(CollecTransform.selectIntersection(inputSFC, geom)).features()) {
             while (cellsCollectionIt.hasNext())
                 if (((Geometry) cellsCollectionIt.next().getDefaultGeometry()).intersects(geom))
                     return true;

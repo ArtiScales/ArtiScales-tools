@@ -43,7 +43,7 @@ public class CsvExport extends Csv {
      *
      * @param rootFolder
      * @param outFile
-     * @throws IOException
+     * @throws IOException delete and writing or reading files
      */
     public static File mergeCSVFiles(File rootFolder, File outFile) throws IOException {
         if (outFile.exists())
@@ -92,13 +92,12 @@ public class CsvExport extends Csv {
     /**
      * Generates a .csv file out of a {@link HashMap}. Used mainly for the MUP-City particular evaluation analysis
      *
-     * @param results
+     * @param results collection to write
      * @param folderOut Folder where the .csv file is created
      * @param name      Name of the .csv file
-     * @throws IOException
+     * @throws IOException  writing file
      */
-    public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double[]>> results, String name, String firstLine, File folderOut)
-            throws IOException {
+    public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double[]>> results, String name, String firstLine, File folderOut) throws IOException {
         File fileName = new File(folderOut + "/" + name + ".csv");
         FileWriter writer = new FileWriter(fileName, true);
         for (String tab : results.keySet()) {
@@ -123,7 +122,7 @@ public class CsvExport extends Csv {
      * @param results
      * @param folderOut Folder where the .csv file is created
      * @param name      Name of the .csv file
-     * @throws IOException
+     * @throws IOException writing file
      */
     public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double>> results, File folderOut, String name) throws IOException {
         File fileName = new File(folderOut + "/" + name + ".csv");
@@ -144,10 +143,10 @@ public class CsvExport extends Csv {
     /**
      * This method is supposed to generate latex tabs but not real sure that works @TODO to test
      *
-     * @param results
+     * @param results collection to write
      * @param folderOut Folder where the .csv file is created
      * @param name      Name of the .csv file
-     * @throws IOException
+     * @throws IOException  writing file
      */
     public static File generateLatexMultTab(HashMap<String, HashMap<String, Double>> results, File folderOut, String name) throws IOException {
         File fileName = new File(folderOut + "/" + name + ".txt");
@@ -172,7 +171,7 @@ public class CsvExport extends Csv {
      * @param folderOut Folder where the .csv file is created
      * @param name      Name of the .csv file
      * @param firstCol  Header of the .csv file (can be null)
-     * @throws IOException
+     * @throws IOException writing file
      */
     public static File generateCsvFile(HashMap<String, double[]> cellRepet, File folderOut, String name, String[] firstCol) throws IOException {
         return generateCsvFile(cellRepet, name, folderOut, firstCol, true);
@@ -186,7 +185,7 @@ public class CsvExport extends Csv {
      * @param folderOut folder where the .csv file is created
      * @param firstCol  header of the .csv file (can be null)
      * @param append    in the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one.
-     * @throws IOException
+     * @throws IOException writing file
      */
     public static File generateCsvFile(HashMap<String, double[]> data, String name, File folderOut, String[] firstCol, boolean append)
             throws IOException {
@@ -209,10 +208,9 @@ public class CsvExport extends Csv {
      * @param name      Name of the .csv file
      * @param append    In the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one.
      * @param firstCol  Header of the .csv file (can be null)
-     * @throws IOException
+     * @throws IOException writing file
      */
-    public static File generateCsvFile(HashMap<String, String[]> data, File folderOut, String name, boolean append, String[] firstCol)
-            throws IOException {
+    public static File generateCsvFile(HashMap<String, String[]> data, File folderOut, String name, boolean append, String[] firstCol) throws IOException {
         HashMap<String, Object[]> result = new HashMap<>();
         for (String key : data.keySet()) {
             String[] line = data.get(key);
@@ -230,7 +228,7 @@ public class CsvExport extends Csv {
      * @param name      Name of the .csv file
      * @param folderOut Folder where the .csv file is created
      * @param firstCol  Header of the .csv file (can be null)
-     * @throws IOException
+     * @throws IOException writing file
      */
     public static File generateCsvFile(HashMap<String, Object[]> cellRepet, String name, File folderOut, String[] firstCol) throws IOException {
         return generateCsvFile(cellRepet, folderOut, name, firstCol, true);
@@ -254,10 +252,9 @@ public class CsvExport extends Csv {
      * @param firstCol  Header of the .csv file (can be null)
      * @param append    In the case an already existing .csv file exists: if true, the new data are append to it. If false, the new table overwritte the old one.
      * @return The exported File
-     * @throws IOException
+     * @throws IOException writing file
      */
-    public static File generateCsvFile(HashMap<String, Object[]> cellRepet, File folderOut, String name, String[] firstCol, boolean append)
-            throws IOException {
+    public static File generateCsvFile(HashMap<String, Object[]> cellRepet, File folderOut, String name, String[] firstCol, boolean append) throws IOException {
         StringBuilder fLine = new StringBuilder();
         if (firstCol != null) {
             fLine = new StringBuilder(firstCol[0]);

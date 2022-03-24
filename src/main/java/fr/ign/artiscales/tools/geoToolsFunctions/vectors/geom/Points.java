@@ -19,8 +19,7 @@ public class Points {
     public static Coordinate project(Coordinate p, LineString l) {
         List<Pair<Coordinate, Double>> list = new ArrayList<>();
         for (int i = 0; i < l.getNumPoints() - 1; i++) {
-            LineSegment segment = new LineSegment(l.getCoordinateN(i), l.getCoordinateN(i + 1));
-            Coordinate proj = segment.closestPoint(p);
+            Coordinate proj = new LineSegment(l.getCoordinateN(i), l.getCoordinateN(i + 1)).closestPoint(p);
             list.add(new ImmutablePair<>(proj, proj.distance(p)));
         }
         return Objects.requireNonNull(list.stream().min(Comparator.comparing(Pair::getRight)).orElse(null)).getLeft();

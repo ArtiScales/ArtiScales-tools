@@ -455,8 +455,7 @@ public class CollecMgmt {
         String typeName = newDataStore.getTypeNames()[0];
         SimpleFeatureSource featureSource = newDataStore.getFeatureSource(typeName);
 
-        if (featureSource instanceof SimpleFeatureStore) {
-            SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
+        if (featureSource instanceof SimpleFeatureStore featureStore) {
             featureStore.setTransaction(transaction);
             try {
                 SimpleFeatureCollection features = toExport.subCollection(new Filter() {

@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class Polygons {
     public static DefaultFeatureCollection addSimplePolygonialGeometries(SimpleFeatureBuilder sfBuilder, String geometryOutputName, List<Geometry> geoms) {
@@ -62,7 +61,8 @@ public class Polygons {
      * @return the {@link Geometry} as a {@link Polygon}
      */
     public static Polygon getPolygon(Geometry geom) {
-        return (Polygon) Geom.getBiggestIntersectingGeometry(getPolygons(geom), geom);
+        List<Polygon> lP = getPolygons(geom);
+        return lP.size() == 1 ? lP.get(0) : (Polygon) Geom.getBiggestIntersectingGeometry(lP, geom);
     }
 
     /**
@@ -107,17 +107,16 @@ public class Polygons {
             return null;
         Geometry p = new CascadedPolygonUnion(list.stream().filter(Objects::nonNull).map(reducer::reduce).toList()).union();
         try {
-           return (Polygon) p;
-       }
-       catch (Exception e){
-           System.out.println("Polygons.polygonUnion() : cannot return MultiPolygon " + p);
-           Polygon largest = (Polygon) p.getGeometryN(0);
-           for (int i = 1; i < p.getNumGeometries(); i++)
-               if (p.getGeometryN(i).getArea() > largest.getArea())
-                   largest = (Polygon) p.getGeometryN(i);
-           System.out.println("Return the largest polygon : "+largest);
-           return largest;
-       }
+            return (Polygon) p;
+        } catch (Exception e) {
+            System.out.println("Polygons.polygonUnion() : cannot return MultiPolygon " + p);
+            Polygon largest = (Polygon) p.getGeometryN(0);
+            for (int i = 1; i < p.getNumGeometries(); i++)
+                if (p.getGeometryN(i).getArea() > largest.getArea())
+                    largest = (Polygon) p.getGeometryN(i);
+            System.out.println("Return the largest polygon : " + largest);
+            return largest;
+        }
     }
 
     /**

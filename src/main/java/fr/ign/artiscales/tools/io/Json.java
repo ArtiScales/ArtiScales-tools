@@ -40,7 +40,7 @@ public class Json {
         JsonFactory factory = new JsonFactory();
         JsonParser parser = factory.createParser(in);
         JsonToken token = parser.nextToken();
-        HashMap<String, Object> firstObject = new HashMap<String, Object>();
+        HashMap<String, Object> firstObject = new HashMap<>();
         boolean write = false;
         String firstObjectName = "";
         try {
