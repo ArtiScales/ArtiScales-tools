@@ -20,6 +20,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Methods for managing lines.
+ *
+ * @author Julien Perret
+ * @author Mickaël Brasebin
+ * @author Maxime Colomb
+ */
 public class Lines {
     public static MultiLineString generateLineStringFromPolygon(Geometry geom) {
         Polygon poly = Polygons.getPolygon(geom);

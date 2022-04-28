@@ -9,22 +9,6 @@ import java.util.Objects;
  * Usual classes for dealing with french administration
  */
 public class FrenchAdmin {
- /*   public static void main(String[] args) {
-        long t, t1 = 0, t2 = 0;
-
-        for (int i = 0; i < 50; i++) {
-            t = System.currentTimeMillis();
-            convertZipToInsee("42400");
-            t1 += System.currentTimeMillis() - t;
-
-
-            t = System.currentTimeMillis();
-            convertZipToInsee("42400");
-            t2 += System.currentTimeMillis() - t;
-        }
-        System.out.println("Benchmarking\n\tMethod 1 took + " + t1 + " ms\n\tMethod 2 took " + t2 + " ms");
-    }*/
-
     /**
      * Convert a zip code to an insee code.
      *
@@ -55,5 +39,29 @@ public class FrenchAdmin {
             e.printStackTrace();
             return "";
         }
+    }
+
+    public static String getNameRegionFromCode(String codeRegion) {
+        return switch (codeRegion) {
+            case "01" -> "Guadeloupe";
+            case "02" -> "Martinique";
+            case "03" -> "Guyane";
+            case "04" -> "La Réunion";
+            case "06" -> "Mayotte";
+            case "11" -> "Île-de-France";
+            case "24" -> "Centre-Val de Loire";
+            case "27" -> "Bourgogne-Franche-Comté";
+            case "28" -> "Normandie";
+            case "32" -> "Nord-Pas-de-Calais-Picardie";
+            case "44" -> "Alsace-Champagne-Ardenne-Lorraine";
+            case "52" -> "Pays de la Loire";
+            case "53" -> "Bretagne";
+            case "75" -> "Aquitaine-Limousin-Poitou-Charentes";
+            case "76" -> "Languedoc-Roussillon-Midi-Pyrénées";
+            case "84" -> "Auvergne-Rhône-Alpes";
+            case "93" -> "Provence-Alpes-Côte d'Azur";
+            case "94" -> "Corse";
+            default -> throw new IllegalArgumentException("getNameRegionFromCode() : unknown code");
+        };
     }
 }
