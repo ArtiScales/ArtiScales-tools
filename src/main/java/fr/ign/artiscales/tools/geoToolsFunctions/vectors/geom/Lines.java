@@ -170,7 +170,8 @@ public class Lines {
             List<LineString> currentMultiCurve = new ArrayList<>();
             currentMultiCurve.add(currentLineString);
             Geometry buffer = currentLineString.buffer(0.1);
-            for (int i = 0; i < lineStrings.size(); i++) {
+            int nbLS = lineStrings.size();
+            for (int i = 0; i < nbLS; i++) {
                 if (buffer.intersects(lineStrings.get(i))) {
                     // Adding line in MultiCurve
                     currentMultiCurve.add(lineStrings.remove(i));

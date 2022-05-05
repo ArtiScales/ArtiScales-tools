@@ -29,7 +29,7 @@ public class Csv {
     public static CSVReader getCSVReader(File f) throws IOException {
         CSVReader r = new CSVReaderBuilder(new FileReader(f)).withCSVParser(new CSVParserBuilder().withSeparator(sep).build()).build();
         if (r.readNext().length == 1)
-            System.out.println("CSV header has a length of 1. Maybe separator's wrong");
+            System.out.println("CSV header has a length of 1. Maybe separator's wrong (for now it's '"+sep+"').");
         r.close();
         return new CSVReaderBuilder(new FileReader(f)).withCSVParser(new CSVParserBuilder().withSeparator(sep).build()).build();
     }

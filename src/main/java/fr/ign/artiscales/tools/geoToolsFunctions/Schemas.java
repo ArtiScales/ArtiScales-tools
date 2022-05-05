@@ -320,7 +320,8 @@ public class Schemas {
      */
     public static List<String> getMatchingFields(List<SimpleFeatureCollection> sfcs) {
         List<String> result = sfcs.get(0).getSchema().getAttributeDescriptors().stream().map(AttributeDescriptor::getLocalName).collect(Collectors.toList());
-        for (int i = 1; i < sfcs.size(); i++)
+        int nbSF = sfcs.size();
+        for (int i = 1; i < nbSF; i++)
             sfcs.get(i).getSchema().getAttributeDescriptors().stream().filter(a -> !result.contains(a.getLocalName())).forEach(a -> result.remove(a.getLocalName()));
         return result;
     }

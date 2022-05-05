@@ -102,32 +102,37 @@ public class Geom {
     public static Geometry scaledGeometryReductionIntersection(List<Geometry> geoms) {
         try {
             Geometry geomResult = geoms.get(0);
-            for (int i = 1; i < geoms.size(); i++)
+            int nbGeom = geoms.size();
+            for (int i = 1; i < nbGeom; i++)
                 geomResult = geomResult.intersection(geoms.get(i));
             return geomResult;
         } catch (TopologyException e) {
             try {
                 Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(2));
-                for (int i = 1; i < geoms.size(); i++)
+                int nbGeom = geoms.size();
+                for (int i = 1; i < nbGeom; i++)
                     geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(2)));
                 return geomResult;
             } catch (TopologyException ex) {
                 try {
                     Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(10));
-                    for (int i = 1; i < geoms.size(); i++)
+                    int nbGeom = geoms.size();
+                    for (int i = 1; i < nbGeom; i++)
                         geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(10)));
                     return geomResult;
                 } catch (TopologyException ee) {
                     try {
                         Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(100));
-                        for (int i = 1; i < geoms.size(); i++)
+                        int nbGeom = geoms.size();
+                        for (int i = 1; i < nbGeom; i++)
                             geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(100)));
                         return geomResult;
                     } catch (TopologyException eee) {
                         try {
                             System.out.println("last hope for precision reduction");
                             Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(1000));
-                            for (int i = 1; i < geoms.size(); i++)
+                            int nbGeom = geoms.size();
+                            for (int i = 1; i < nbGeom; i++)
                                 geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(1000)));
                             return geomResult;
                         } catch (TopologyException eeee) {
