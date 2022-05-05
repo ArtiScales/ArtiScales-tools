@@ -61,7 +61,7 @@ public class FrenchAdmin {
             case "84" -> "Auvergne-Rhône-Alpes";
             case "93" -> "Provence-Alpes-Côte d'Azur";
             case "94" -> "Corse";
-            default -> throw new IllegalArgumentException("getNameRegionFromCode() : unknown code");
+            default -> throw new IllegalArgumentException("getNameRegionFromCode() : unknown code ("+codeRegion+")");
         };
     }
 }

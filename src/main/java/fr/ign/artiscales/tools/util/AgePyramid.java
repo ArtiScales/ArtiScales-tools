@@ -15,14 +15,26 @@ import java.util.Random;
 /**
  * Model the probability of age regarding an input age pyramid.
  * Metropolitan France is the default file, but it easily can be changed with the {@link #setAgePyramidFile(File)} method.
+ * Regional pyramid for multiple dates can be found here : https://www.insee.fr/fr/outil-interactif/5014911/pyramide.htm#!y=2017&v=2&t=2&c=11
  */
 
 public class AgePyramid {
     public static final String probaFieldName = "proba";
     public static final String ageFieldName = "age";
     private static final IdentityHashMap<Integer, Float> data = new IdentityHashMap<>(106);
-    private static InputStream agePyramidFile = AgePyramid.class.getClassLoader().getResourceAsStream("pyramide-des-ages-2017.csv");
+    private static InputStream agePyramidFile = AgePyramid.class.getClassLoader().getResourceAsStream("pyramide_des_ages_2017_FrMetro.csv");
     private static boolean init = false;
+    private static int maxAge;
+
+    /**
+     * Select a predefined French region for its age pyramid.
+     *
+     * @param region region number (see {@link FrenchAdmin#getNameRegionFromCode(String)}
+     */
+    public static void setRegionalPyramid(String region) {
+        agePyramidFile = AgePyramid.class.getClassLoader().getResourceAsStream("pyramide_des_ages_2017_reg-" + region + ".csv");
+        init = false;
+    }
 
     /**
      * Set new .csv file. Must have a ',' separator and fields <i>age</i> and <i>proba</i>.
@@ -47,12 +59,13 @@ public class AgePyramid {
         final String[] fLine = r.readNext();
         for (String[] l : r.readAll())
             data.put(Integer.parseInt(l[Attribute.getIndice(fLine, ageFieldName)]), Float.parseFloat(l[Attribute.getIndice(fLine, probaFieldName)]));
+        maxAge = data.size() - 1;
         r.close();
         init = true;
     }
 
     /**
-     * Get a pseudo-random age between included bounds (between 0 and 105 years old)
+     * Get a pseudo-random age between included bounds (between 0 and the maximal age)
      *
      * @param boundInf inferior bound
      * @param boundSup superior bound
@@ -64,14 +77,20 @@ public class AgePyramid {
 
 
     /**
-     * Get a pseudo-random age between an inferior bounds and people aged 105 years old
+     * Get a pseudo-random age between an inferior bounds and people aged of the maximal age
      *
      * @param boundInf        inferior bound
      * @param includeBoundInf is the inferior bound included ?
      * @return one single age
      */
     public static int getRandomAge(int boundInf, boolean includeBoundInf) {
-        return getRandomAge(boundInf, includeBoundInf, 105, true);
+        if (!init)
+            try {
+                init();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        return getRandomAge(boundInf, includeBoundInf, maxAge, true);
     }
 
     /**
@@ -91,12 +110,13 @@ public class AgePyramid {
         if (boundInf >= boundSup)
             throw new IllegalArgumentException("getRandomAge() : Inf bound is inferior or equal to sup bound");
 
-        if ((includeBoundSup ? boundSup : boundSup - 1) > 105) {
-            System.out.println("getRandomAge() : Superior bound exeeded the maximal age (which is 105). Age put down to that (included)");
-            boundSup = 105;
+        if ((includeBoundSup ? boundSup : boundSup - 1) > maxAge) {
+            System.out.println("getRandomAge() : Superior bound exceeded the maximal age (which is " + maxAge + "). Age put down to that (included)");
+            boundSup = maxAge;
             includeBoundSup = true;
         }
         final float[] probas = fillProba(boundInf, includeBoundInf, boundSup, includeBoundSup);
+//        final Float[] probas = fillProba(boundInf, includeBoundInf, boundSup, includeBoundSup);
         final float rnd = new Random().nextFloat();
         float sumProba = 0f;
         for (float f : probas)
@@ -119,15 +139,15 @@ public class AgePyramid {
         return probas;
     }
 
-//not faster
+////not faster
 //    private static Float[] fillProba(int boundInf, boolean includeBoundInf, int boundSup, boolean includeBoundSup) {
 //        return data.keySet().stream().filter(age -> age > (includeBoundInf ? boundInf - 1 : boundInf) && age < (includeBoundSup ? boundSup + 1 : boundSup)).map(data::get).toArray(Float[]::new);
 //    }
 
-/*    public static void main(String[] args) {
-        long time = System.currentTimeMillis();
-        for (int i = 0; i < 10000000; i++)
-            getRandomAge(50, 60);
-        System.out.println(System.currentTimeMillis() - time);
-    }*/
+//    public static void main(String[] args) throws FileNotFoundException {
+//        long time = System.currentTimeMillis();
+//        for (int i = 0; i < 1000000; i++)
+//            System.out.println(getRandomAge(95, 99));
+//        System.out.println(System.currentTimeMillis() - time);
+//    }
 }
