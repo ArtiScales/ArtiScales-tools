@@ -384,22 +384,38 @@ public class CollecTransform {
 
     /**
      * Select the feature from a collection that intersects most a geometrical object.
-     * In case of an intersection that is equal between two features, one on them will be randomly returned.
+     * In case of an intersection that is equal between two features, one on them will be randomly returned
      *
      * @param SFCIn       input collection
      * @param toIntersect Geometry to check relation with collection
      * @return The mostly intersecting feature
      */
     public static SimpleFeature selectWhichIntersectMost(SimpleFeatureCollection SFCIn, Geometry toIntersect) {
+        return selectWhichIntersectMost(SFCIn, toIntersect, 0d, false);
+    }
+
+    /**
+     * Select the feature from a collection that intersects most a geometrical object.
+     * In case of an intersection that is equal between two features, one on them will be randomly returned
+     *
+     * @param SFCIn                input collection
+     * @param toIntersect          Geometry to check relation with collection
+     * @param threshold            minimal percentage of intersection between the geometry and any element of the collection to be considered intersecting (if 0d ,this parameter is ignored)
+     * @param applyRatioOnGeometry Is the previous ration applied on the geometry (<i>true</i>) or on the compared elements (<i>false</i>)? First case suits better if compared elements are bigger than the main geometry.
+     * @return The mostly intersecting feature
+     */
+    public static SimpleFeature selectWhichIntersectMost(SimpleFeatureCollection SFCIn, Geometry toIntersect, double threshold, boolean applyRatioOnGeometry) {
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
         TreeMap<Double, SimpleFeature> sortedResult = new TreeMap<>();
         try (SimpleFeatureIterator it = SFCIn.subCollection(ff.intersects(ff.property(SFCIn.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(toIntersect))).features()) {
             while (it.hasNext()) {
                 SimpleFeature sf = it.next();
-                sortedResult.put(Objects.requireNonNull(Geom.safeIntersection((Geometry) sf.getDefaultGeometry(), toIntersect)).getArea(), sf);
+                double intersectionPercentage = Objects.requireNonNull(Geom.safeIntersection((Geometry) sf.getDefaultGeometry(), toIntersect)).getArea() / (applyRatioOnGeometry ? toIntersect.getArea() : ((Geometry) sf.getDefaultGeometry()).getArea());
+                if (threshold == 0d || intersectionPercentage > threshold)
+                    sortedResult.put(intersectionPercentage, sf);
             }
         }
-        return sortedResult.lastEntry().getValue();
+        return sortedResult.isEmpty() ? null : sortedResult.lastEntry().getValue();
     }
 
 

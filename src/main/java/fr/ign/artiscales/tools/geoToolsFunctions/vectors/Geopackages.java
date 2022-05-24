@@ -19,19 +19,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 public class Geopackages {
 
-//	public static void main(String[] args) throws IOException {
-//		try {
-//			ArrayList<File> fs = new ArrayList<File>();
-//			for (File f : (new File("/tmp/CampSkeletonValues")).listFiles())
-//				if (f.getName().endsWith(".gpkg"))
-//					fs.add(f);
-//			mergeGpkgFiles(fs, new File("/tmp/merged"));
-//		}catch (Error e) {
-//			
-//		}
-//	}
+//    public static void main(String[] args) throws IOException {
+//        mergeGpkgFiles((Arrays.stream(new File("/home/mcolomb/INRIA/popSynth/Paris/").listFiles()).filter(f -> f.getName().startsWith("Individual")).toList()), new File("/tmp/merged.gpkg"), null, true, true);
+//    }
 
     public static DataStore getDataStore(URL url) throws IOException {
         HashMap<String, Object> map = new HashMap<>();
@@ -86,6 +79,10 @@ public class Geopackages {
     }
 
     public static File mergeGpkgFiles(List<File> filesToMerge, File fileOut, File boundFile, boolean keepAttributes) throws IOException {
+        return mergeGpkgFiles(filesToMerge, fileOut, boundFile, keepAttributes, false);
+    }
+
+    public static File mergeGpkgFiles(List<File> filesToMerge, File fileOut, File boundFile, boolean keepAttributes, boolean largeFiles) throws IOException {
         // stupid basic checkout
         if (filesToMerge.isEmpty()) {
             System.out.println("mergeGpkgFiles: list empty, " + fileOut + " null");
@@ -93,21 +90,34 @@ public class Geopackages {
         }
         // verify that every file exists and start a new function with clean list if not
         if (filesToMerge.stream().anyMatch(f -> !f.exists())) {
-            List<File> rightListFile = new ArrayList<>();
-            for (File file : filesToMerge)
-                if (!file.exists())
-                    System.out.println(file + " doesn't exists");
-                else
-                    rightListFile.add(file);
-            return mergeGpkgFiles( rightListFile ,fileOut, boundFile, keepAttributes);
+            filesToMerge.stream().filter(f -> !f.exists()).forEach(file -> System.out.println(file + " doesn't exists"));
+            return mergeGpkgFiles(filesToMerge.stream().filter(File::exists).toList(), fileOut, boundFile, keepAttributes);
         }
-        List<SimpleFeatureCollection> sfcs = new ArrayList<>(filesToMerge.size());
-        for (File f : filesToMerge) {
-            DataStore ds = getDataStore(f);
-            assert ds != null;
-            sfcs.add(DataUtilities.collection(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures()));
-            ds.dispose();
+        if (!largeFiles) {
+            List<SimpleFeatureCollection> sfcs = new ArrayList<>(filesToMerge.size());
+            for (File f : filesToMerge) {
+                DataStore ds = getDataStore(f);
+                assert ds != null;
+                sfcs.add(DataUtilities.collection(ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures()));
+                ds.dispose();
+            }
+            return CollecMgmt.exportSFC(CollecMgmt.mergeSFC(sfcs, keepAttributes, boundFile), fileOut, ".gpkg", true);
+        } else {
+            SimpleFeatureCollection sfc = null;
+            for (File f : filesToMerge) {
+                DataStore ds = getDataStore(f);
+                assert ds != null;
+                if (sfc == null)
+                    sfc = ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures();
+                else {
+                    DataStore dsAlreadyMerged = CollecMgmt.getDataStore(fileOut);
+                    sfc = CollecMgmt.mergeSFC(Arrays.asList(dsAlreadyMerged.getFeatureSource(dsAlreadyMerged.getTypeNames()[0]).getFeatures(), ds.getFeatureSource(ds.getTypeNames()[0]).getFeatures()), keepAttributes, boundFile);
+                    dsAlreadyMerged.dispose();
+                }
+                CollecMgmt.exportSFC(sfc, fileOut, ".gpkg", true);
+                ds.dispose();
+            }
+            return fileOut;
         }
-        return CollecMgmt.exportSFC(CollecMgmt.mergeSFC(sfcs, keepAttributes, boundFile), fileOut, ".gpkg", true);
     }
 }
