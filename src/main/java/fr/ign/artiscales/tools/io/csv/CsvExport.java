@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,17 +42,24 @@ public class CsvExport extends Csv {
     /**
      * Merge every .csv file contained into a folder and its subfolders with a recursive method. Must have the same header.
      *
-     * @param rootFolder
-     * @param outFile
+     * @param rootFolder folder containing some .csvfiles
+     * @param outFile    path to the merged file. Will be overwritten.
+     * @return the written outFile
      * @throws IOException delete and writing or reading files
      */
     public static File mergeCSVFiles(File rootFolder, File outFile) throws IOException {
         if (outFile.exists())
             Files.delete(outFile.toPath());
-        List<File> listCSV = getCSVFiles(rootFolder);
-        return mergeCSVFiles(listCSV, outFile);
+        return mergeCSVFiles(getCSVFiles(rootFolder), outFile);
     }
 
+    /**
+     * Get every .csv files from a folder and it ssubfolder.
+     * Uses a recursive method.
+     *
+     * @param folder root folder from where the serach comes from
+     * @return the found list of .csv files
+     */
     public static List<File> getCSVFiles(File folder) {
         List<File> result = new ArrayList<>();
         for (File f : Objects.requireNonNull(folder.listFiles()))
@@ -63,11 +71,12 @@ public class CsvExport extends Csv {
     }
 
     /**
-     * Merge a given list of .csv files. Only the first header is pasted (and all files must have one).
+     * Merge a given list of .csv files. Lines are added under next lines.
+     * Only the first header is pasted (and all files must have one).
      *
-     * @param filesToMerge
-     * @param outFile
-     * @return the outFile param where a merged .csv file should have been generated
+     * @param filesToMerge list of .csv files to merge together. They assume to have the same header.
+     * @param outFile      path to the merged file. Will be overwritten.
+     * @return the written outFile
      * @throws IOException reading or writing file
      */
     public static File mergeCSVFiles(List<File> filesToMerge, File outFile) throws IOException {
@@ -92,13 +101,13 @@ public class CsvExport extends Csv {
     /**
      * Generates a .csv file out of a {@link HashMap}. Used mainly for the MUP-City particular evaluation analysis
      *
-     * @param results collection to write
+     * @param results   collection to write
      * @param folderOut Folder where the .csv file is created
      * @param name      Name of the .csv file
-     * @throws IOException  writing file
+     * @throws IOException writing file
      */
     public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double[]>> results, String name, String firstLine, File folderOut) throws IOException {
-        File fileName = new File(folderOut + "/" + name + ".csv");
+        File fileName = new File(folderOut + "/" + name + (name.endsWith(".csv") ? "" : ".csv"));
         FileWriter writer = new FileWriter(fileName, true);
         for (String tab : results.keySet()) {
             HashMap<String, Double[]> intResult = results.get(tab);
@@ -125,7 +134,7 @@ public class CsvExport extends Csv {
      * @throws IOException writing file
      */
     public static File generateCsvFileMultTab(HashMap<String, HashMap<String, Double>> results, File folderOut, String name) throws IOException {
-        File fileName = new File(folderOut + "/" + name + ".csv");
+        File fileName = new File(folderOut + "/" + name + (name.endsWith(".csv") ? "" : ".csv"));
         FileWriter writer = new FileWriter(fileName, true);
         for (String tab : results.keySet()) {
             HashMap<String, Double> intResult = results.get(tab);
@@ -143,10 +152,10 @@ public class CsvExport extends Csv {
     /**
      * This method is supposed to generate latex tabs but not real sure that works @TODO to test
      *
-     * @param results collection to write
+     * @param results   collection to write
      * @param folderOut Folder where the .csv file is created
      * @param name      Name of the .csv file
-     * @throws IOException  writing file
+     * @throws IOException writing file
      */
     public static File generateLatexMultTab(HashMap<String, HashMap<String, Double>> results, File folderOut, String name) throws IOException {
         File fileName = new File(folderOut + "/" + name + ".txt");
@@ -279,7 +288,7 @@ public class CsvExport extends Csv {
      * @param cellRepet Values are a double table (they are then converted in Object[])
      * @param name      name of the .csv file
      * @param folderOut folder where the .csv file is created
-     * @throws IOException
+     * @throws IOException write file
      */
     public static File generateCsvFileCol(HashMap<String, double[]> cellRepet, String name, File folderOut) throws IOException {
         HashMap<String, Object[]> result = new HashMap<>();
@@ -294,54 +303,44 @@ public class CsvExport extends Csv {
 
     /**
      * Merge every columns of multiple .csv files by their first column reference.
+     * Respect column orders (by file, then inside files)
      *
      * @param listFiles list of files to merge
      * @param folderOut where to finally write the merged .csv
      * @param name      name of the merged file
      * @return merged .csv
-     * @throws IOException
+     * @throws IOException write file
      */
-    public static File mergeCsvFilesCol(List<File> listFiles, File folderOut, String name, boolean ordered) throws IOException {
+    public static File mergeColumnsOfCsvFiles(List<File> listFiles, File folderOut, String name) throws IOException {
         // test
         for (File f : listFiles)
             if (!f.getName().endsWith(".csv")) {
                 System.out.println(f + " is not a .csv. Rename it if your sure it is. Return null");
                 return null;
             }
-        if (ordered) {
-            // check that every files has the same line amount
-            int length = (getCSVReader(listFiles.get(0))).readAll().size();
-            for (File f : listFiles)
-                if (getCSVReader(f).readAll().size() != length)
-                    System.out.println("mergeCsvFilesCol doesn't have the same size column. You may have a problem, tabs are unlikely to have the same order, and would prefer use the ordered=false argument");
-            boolean coordinates = true;
-            HashMap<String, Object[]> mergedCSV = new HashMap<>();
-            for (File f : listFiles) {
-                CSVReader csvr = getCSVReader(f);
-                String[] attrNames = csvr.readNext();
-                if (coordinates) {
-                    Object[] obj = new Object[length];
-                    int i = 0;
-                    for (String[] l : csvr.readAll())
-                        obj[i++] = l[0];
-                    mergedCSV.put(String.valueOf(attrNames[0]), obj);
-                    csvr = getCSVReader(f);
-                    csvr.readNext();
-                    coordinates = false;
-                }
-                for (int j = 1; j < attrNames.length; j++) {
-                    Object[] obj = new Object[length];
-                    int i = 0;
-                    for (String[] l : csvr.readAll())
-                        obj[i++] = l[j];
-                    mergedCSV.put(String.valueOf(attrNames[j]), obj);
-                }
+        // check that every files has the same line amount
+        int length = (getCSVReader(listFiles.get(0))).readAll().size();
+        for (File f : listFiles)
+            if (getCSVReader(f).readAll().size() != length) {
+                System.out.println("mergeColumnsOfCsvFiles() doesn't have the same size column. You might have a problem in the merge");
+                length = Math.max(getCSVReader(f).readAll().size(), length);
             }
-            return generateCsvFileCol(mergedCSV, folderOut, name);
-        } else {
-            System.out.println("Not ordered data's not implemented yet");
-            return null;
+        LinkedList<Object[]> mergedCSV = new LinkedList<>();
+        for (File f : listFiles) {
+            CSVReader csvr = getCSVReader(f);
+            String[] fLine = csvr.readNext();
+            csvr.close();
+            for (int i = 0; i < fLine.length; i++) {
+                CSVReader csvrTemp = getCSVReader(f);
+                Object[] lineCol = new Object[length];
+                int j = 0;
+                for (Object[] line : csvrTemp.readAll())
+                    lineCol[j++] = line[i] == null ? "" : line[i];
+                mergedCSV.add(lineCol);
+                csvrTemp.close();
+            }
         }
+        return generateCsvFileCol(mergedCSV, folderOut, name);
     }
 
     /**
@@ -349,10 +348,11 @@ public class CsvExport extends Csv {
      *
      * @param cellRepet Values are an Object table
      * @param folderOut Folder where the .csv file is created
-     * @param name      Name of the .csv file * @throws IOException
+     * @param name      Name of the .csv file
+     * @throws IOException write file
      */
     public static File generateCsvFileCol(HashMap<String, Object[]> cellRepet, File folderOut, String name) throws IOException {
-        File fileName = new File(folderOut + "/" + name + ".csv");
+        File fileName = new File(folderOut + "/" + name + (name.endsWith(".csv") ? "" : ".csv"));
         FileWriter writer = new FileWriter(fileName, false);
         // selec the longest tab
         int longestTab = 0;
@@ -370,6 +370,35 @@ public class CsvExport extends Csv {
                 } catch (ArrayIndexOutOfBoundsException a) {
                     writer.append(",");
                     // normal that it gets Arrays exceptions.
+                }
+            writer.append("\n");
+        }
+        writer.close();
+        return fileName;
+    }
+
+    /**
+     * Generate a .csv file out of a hashtable. Data are dispalyed in colomn and each key is placed in the header
+     *
+     * @param cellRepet Values are an Object table
+     * @param folderOut Folder where the .csv file is created
+     * @param name      Name of the .csv file
+     * @throws IOException write file
+     */
+    public static File generateCsvFileCol(LinkedList<Object[]> cellRepet, File folderOut, String name) throws IOException {
+        File fileName = new File(folderOut + "/" + name + (name.endsWith(".csv") ? "" : ".csv"));
+        FileWriter writer = new FileWriter(fileName, false);
+        // selec the longest tab
+        int longestTab = 0;
+        for (Object[] tab : cellRepet)
+            if (tab.length > longestTab)
+                longestTab = tab.length;
+        for (int i = 0; i < longestTab; i++) {
+            for (Object[] line : cellRepet)
+                try {
+                    writer.append(String.valueOf(line[i])).append(",");
+                } catch (ArrayIndexOutOfBoundsException a) { // normal that it gets Arrays exceptions.
+                    writer.append(",");
                 }
             writer.append("\n");
         }
@@ -416,17 +445,18 @@ public class CsvExport extends Csv {
 
     /**
      * Export a simple matrix to be read with python/Julia
+     *
      * @param matrixValue tab
-     * @param fileOut .txt file
+     * @param fileOut     .txt file
      * @throws IOException writing file
      */
     public static void exportMatrix(double[][] matrixValue, File fileOut) throws IOException {
-        CSVWriter w = new CSVWriter(new FileWriter(fileOut.getName().endsWith(".txt") ?fileOut : new File(fileOut.getParentFile(), fileOut.getName() + ".txt") , false),
+        CSVWriter w = new CSVWriter(new FileWriter(fileOut.getName().endsWith(".txt") ? fileOut : new File(fileOut.getParentFile(), fileOut.getName() + ".txt"), false),
                 ' ', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.NO_ESCAPE_CHARACTER, lineEnd);
-        for (int i = 0; i < matrixValue.length; i++) {
+        for (double[] doubles : matrixValue) {
             String[] line = new String[matrixValue.length];
             for (int j = 0; j < line.length; j++)
-                line[j] = String.valueOf(matrixValue[i][j]);
+                line[j] = String.valueOf(doubles[j]);
             w.writeNext(line);
         }
         w.close();

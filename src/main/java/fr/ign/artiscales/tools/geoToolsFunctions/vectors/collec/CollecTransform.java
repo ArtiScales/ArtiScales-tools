@@ -76,7 +76,7 @@ public class CollecTransform {
      */
     public static SimpleFeature unionSFC(SimpleFeatureCollection collec) {
         SimpleFeatureBuilder builder = Schemas.getSFBSchemaWithMultiPolygon(collec.getSchema());
-        builder.set(collec.getSchema().getGeometryDescriptor().getLocalName(), Geom.unionSFC(collec));
+        builder.set(collec.getSchema().getGeometryDescriptor().getLocalName(), Geom.safeUnion(collec));
         return builder.buildFeature(Attribute.makeUniqueId());
     }
 
@@ -527,7 +527,7 @@ public class CollecTransform {
     public static SimpleFeatureCollection getSFCfromSFCIntersection(SimpleFeatureCollection inputSFC, SimpleFeatureCollection comparisonSFC) {
         DefaultFeatureCollection result = new DefaultFeatureCollection();
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-        Geometry geometry = Geom.unionSFC(comparisonSFC);
+        Geometry geometry = Geom.safeUnion(comparisonSFC);
         SimpleFeatureCollection collec = inputSFC.subCollection(ff.intersects(ff.property(inputSFC.getSchema().getGeometryDescriptor().getLocalName()), ff.literal(geometry)));
         if (collec.isEmpty())
             return null;
@@ -573,7 +573,7 @@ public class CollecTransform {
         try (SimpleFeatureIterator iterator = gridFeatures.features()) {
             while (iterator.hasNext()) {
                 SimpleFeature featureGrid = iterator.next();
-                Geometry diffGeom = Geom.scaledGeometryReductionIntersection(Arrays.asList(Geom.unionGeom(Arrays.stream(in.subCollection(ff.bbox(ff.property(geomName), featureGrid.getBounds())).toArray(new SimpleFeature[0])).map(g -> (Geometry) g.getDefaultGeometry()).collect(Collectors.toList())), (Geometry) featureGrid.getDefaultGeometry()));
+                Geometry diffGeom = Geom.safeIntersection(Arrays.asList(Geom.unionGeom(Arrays.stream(in.subCollection(ff.bbox(ff.property(geomName), featureGrid.getBounds())).toArray(new SimpleFeature[0])).map(g -> (Geometry) g.getDefaultGeometry()).collect(Collectors.toList())), (Geometry) featureGrid.getDefaultGeometry())); //todo toArray takes lot of time. Find another solution ?
                 if (diffGeom != null && !diffGeom.isEmpty()) {
                     finalFeatureBuilder.set(geomName, diffGeom);
                     dfCuted.add(finalFeatureBuilder.buildFeature(Attribute.makeUniqueId()));
@@ -638,7 +638,7 @@ public class CollecTransform {
                 if (g.contains(geometry)) // if the target geometry is contained into the observed feature, we stop everything and return the observed feature.
                     return theFeature;
                 else if (g.intersects(geometry)) // if the target geometry is in between two features, we put the feature in a sorted collection with the length of the intersection.
-                    index.put(Objects.requireNonNull(Geom.scaledGeometryReductionIntersection(Arrays.asList(g, geometry))).getArea(), theFeature);
+                    index.put(Objects.requireNonNull(Geom.safeIntersection(Arrays.asList(g, geometry))).getArea(), theFeature);
             }
         } catch (TopologyException topologyException) {
             if (precisionModel != null)
