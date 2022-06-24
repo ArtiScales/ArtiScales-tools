@@ -180,30 +180,6 @@ public class Geom {
         return false;
     }
 
-    public static boolean safeTouches(Geometry g1, Geometry g2) {
-        try {
-            return g1.touches(g2);
-        } catch (TopologyException tp) {
-            try {
-                return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(1000)).touches(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(1000)));
-            } catch (TopologyException tp2) {
-                try {
-                    return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(100)).touches(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(100)));
-                } catch (TopologyException tp3) {
-                    try {
-                        return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(10)).touches(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(10)));
-                    } catch (TopologyException tp4) {
-                        try {
-                            return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(1)).touches(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(1)));
-                        } catch (TopologyException tp5) {
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     public static boolean safeIntersect(Geometry g1, Geometry g2) {
         try {
             return g1.intersects(g2);
