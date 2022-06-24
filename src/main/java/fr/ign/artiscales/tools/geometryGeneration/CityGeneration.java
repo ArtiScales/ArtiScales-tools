@@ -103,7 +103,7 @@ public class CityGeneration {
      * @return a {@link SimpleFeatureCollection} of urban block
      */
     public static SimpleFeatureCollection createUrbanBlock(SimpleFeatureCollection parcel, boolean doBuffer) {
-        Geometry bigGeom = Geom.unionSFC(parcel);
+        Geometry bigGeom = Geom.safeUnion(parcel);
         if (doBuffer)
             bigGeom = bigGeom.buffer(1.1).buffer(-1.1);
         return createUrbanBlock(bigGeom);
@@ -130,7 +130,7 @@ public class CityGeneration {
      * @return the border without the inside geometry
      */
     public static Geometry createBufferBorder(SimpleFeatureCollection in) {
-        Geometry hull = Geom.unionSFC(in).buffer(20).buffer(-20);
+        Geometry hull = Geom.safeUnion(in).buffer(20).buffer(-20);
         List<Geometry> list = Arrays.asList(hull, hull.buffer(50));
         return Geom.unionGeom(FeaturePolygonizer.getPolygons(list).stream().filter(x -> !hull.buffer(1).contains(x)).collect(Collectors.toList()));
     }

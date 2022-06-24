@@ -203,7 +203,7 @@ public class Rasters {
      */
     public static void crop(File fileToCut, File envelope, File fileOut) throws IOException {
         DataStore envDS = CollecMgmt.getDataStore(envelope);
-        writeGeotiff(Rasters.importRaster(fileToCut, Geom.unionSFC(envDS.getFeatureSource(envDS.getTypeNames()[0]).getFeatures())), fileOut);
+        writeGeotiff(Rasters.importRaster(fileToCut, Geom.safeUnion(envDS.getFeatureSource(envDS.getTypeNames()[0]).getFeatures())), fileOut);
         envDS.dispose();
     }
 

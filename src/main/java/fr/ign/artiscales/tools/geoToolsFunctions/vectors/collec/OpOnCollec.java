@@ -180,7 +180,7 @@ public class OpOnCollec {
                 try (SimpleFeatureIterator itParcelIntersectRef = parcelsCompIntersectRef.features()) {
                     while (itParcelIntersectRef.hasNext()) {
                         Geometry g = (Geometry) itParcelIntersectRef.next().getDefaultGeometry();
-                        double inter = Objects.requireNonNull(Geom.scaledGeometryReductionIntersection(Arrays.asList(geomPRef, g))).getArea();
+                        double inter = Objects.requireNonNull(Geom.safeIntersection(Arrays.asList(geomPRef, g))).getArea();
                         // if there are parcel intersection and a similar area, we conclude that parcel haven't changed. We put it in the \"same\" collection and stop the search
                         if ((inter > 0.95 * geomArea && inter < 1.05 * geomArea) || hausSim.measure(g, geomPRef) > 0.95) {
                             same.add(pRef);
