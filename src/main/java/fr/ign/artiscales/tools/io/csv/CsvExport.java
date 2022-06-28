@@ -2,6 +2,7 @@ package fr.ign.artiscales.tools.io.csv;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.io.File;
@@ -23,7 +24,6 @@ import java.util.Objects;
 public class CsvExport extends Csv {
 
     public static boolean needFLine = true;
-
 
     /**
      * Export a {@link DescriptiveStatistics} ofject to a .csv tab
@@ -128,7 +128,7 @@ public class CsvExport extends Csv {
     /**
      * Generates a .csv file out of a {@link HashMap}. Used mainly for the MUP-City analysis objects RasterMergeResult
      *
-     * @param results
+     * @param results   data to write
      * @param folderOut Folder where the .csv file is created
      * @param name      Name of the .csv file
      * @throws IOException writing file
@@ -305,14 +305,15 @@ public class CsvExport extends Csv {
      * Merge every columns of multiple .csv files by their first column reference.
      * Respect column orders (by file, then inside files)
      *
-     * @param listFiles list of files to merge
-     * @param folderOut where to finally write the merged .csv
-     * @param name      name of the merged file
+     * @param listFiles            list of files to merge
+     * @param folderOut            where to finally write the merged .csv
+     * @param name                 name of the merged file
+     * @param columnNameValueToAdd pairs of name/values to add to each merged csv. Values will be constant and the order they are placed in the list must correspond to the merged files.
+     *                             Column(s) are added before the .csv values.
      * @return merged .csv
      * @throws IOException write file
      */
-
-    public static File mergeColumnsOfCsvFiles(List<File> listFiles, File folderOut, String name) throws IOException {
+    public static File mergeColumnsOfCsvFiles(List<File> listFiles, File folderOut, String name, Pair<String, LinkedList<String>>... columnNameValueToAdd) throws IOException {
         // test
         for (File f : listFiles)
             if (!f.getName().endsWith(".csv")) {
@@ -327,10 +328,20 @@ public class CsvExport extends Csv {
                 length = Math.max(getCSVReader(f).readAll().size(), length);
             }
         LinkedList<Object[]> mergedCSV = new LinkedList<>();
-        for (File f : listFiles) {
+        for (int fi = 0; fi < listFiles.size(); fi++) {
+            File f = listFiles.get(fi);
             CSVReader csvr = getCSVReader(f);
             String[] fLine = csvr.readNext();
             csvr.close();
+            // add constant columns
+            for (Pair<String, LinkedList<String>> pair : columnNameValueToAdd) {
+                Object[] lineCol = new Object[length];
+                lineCol[0] = pair.getKey();
+                for (int k = 1; k < length; k++)
+                    lineCol[k] = pair.getValue().get(fi);
+                mergedCSV.add(lineCol);
+            }
+            //add .csv columns
             for (int i = 0; i < fLine.length; i++) {
                 CSVReader csvrTemp = getCSVReader(f);
                 Object[] lineCol = new Object[length];
