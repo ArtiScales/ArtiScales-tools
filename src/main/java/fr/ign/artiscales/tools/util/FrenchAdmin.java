@@ -1,6 +1,6 @@
 package fr.ign.artiscales.tools.util;
 
-import fr.ign.artiscales.tools.io.csv.CsvOp;
+import fr.ign.artiscales.tools.io.csv.CsvGetter;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -17,7 +17,7 @@ public class FrenchAdmin {
      */
     public static String convertZipToInsee(String zip) {
         try {
-            return CsvOp.getCell(Objects.requireNonNull(FrenchAdmin.class.getClassLoader().getResourceAsStream("zipCommInsee21.csv")), "Code_postal", zip, "Code_commune_INSEE");
+            return CsvGetter.getCell(Objects.requireNonNull(FrenchAdmin.class.getClassLoader().getResourceAsStream("zipCommInsee21.csv")), "Code_postal", zip, "Code_commune_INSEE");
         } catch (IOException e) {
             System.out.println("Zip not found in base");
             e.printStackTrace();
@@ -33,7 +33,7 @@ public class FrenchAdmin {
      */
     public static String convertInseeToZip(String insee) {
         try {
-            return CsvOp.getCell(Objects.requireNonNull(FrenchAdmin.class.getClassLoader().getResourceAsStream("zipCommInsee21.csv")), "Code_commune_INSEE", insee, "Code_postal");
+            return CsvGetter.getCell(Objects.requireNonNull(FrenchAdmin.class.getClassLoader().getResourceAsStream("zipCommInsee21.csv")), "Code_commune_INSEE", insee, "Code_postal");
         } catch (IOException e) {
             System.out.println("INSEE number not found in base");
             e.printStackTrace();
