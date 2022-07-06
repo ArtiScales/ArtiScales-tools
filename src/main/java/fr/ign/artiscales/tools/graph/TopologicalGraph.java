@@ -59,7 +59,7 @@ public class TopologicalGraph {
   }
 
   public List<Edge> edgesOf(Node node, List<Edge> edges) {
-    return edges.stream().filter(e -> (e.getOrigin() == node || e.getTarget() == node)).toList();
+    return edges.stream().filter(e -> (e.getOrigin() == node || e.getTarget() == node)).collect(Collectors.toList());
   }
 
   public Edge next(Node node, Edge edge, List<Edge> edges) {

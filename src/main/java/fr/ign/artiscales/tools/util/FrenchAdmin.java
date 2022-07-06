@@ -42,26 +42,27 @@ public class FrenchAdmin {
     }
 
     public static String getNameRegionFromCode(String codeRegion) {
-        return switch (codeRegion) {
-            case "01" -> "Guadeloupe";
-            case "02" -> "Martinique";
-            case "03" -> "Guyane";
-            case "04" -> "La Réunion";
-            case "06" -> "Mayotte";
-            case "11" -> "Île-de-France";
-            case "24" -> "Centre-Val de Loire";
-            case "27" -> "Bourgogne-Franche-Comté";
-            case "28" -> "Normandie";
-            case "32" -> "Nord-Pas-de-Calais-Picardie";
-            case "44" -> "Alsace-Champagne-Ardenne-Lorraine";
-            case "52" -> "Pays de la Loire";
-            case "53" -> "Bretagne";
-            case "75" -> "Aquitaine-Limousin-Poitou-Charentes";
-            case "76" -> "Languedoc-Roussillon-Midi-Pyrénées";
-            case "84" -> "Auvergne-Rhône-Alpes";
-            case "93" -> "Provence-Alpes-Côte d'Azur";
-            case "94" -> "Corse";
-            default -> throw new IllegalArgumentException("getNameRegionFromCode() : unknown code ("+codeRegion+")");
+         switch (codeRegion) {
+            case "01" : return  "Guadeloupe";
+            case "02" : return  "Martinique";
+            case "03" : return  "Guyane";
+            case "04" : return  "La Réunion";
+            case "06" : return  "Mayotte";
+            case "11" : return  "Île-de-France";
+            case "24" : return  "Centre-Val de Loire";
+            case "27" : return  "Bourgogne-Franche-Comté";
+            case "28" : return  "Normandie";
+            case "32" : return  "Nord-Pas-de-Calais-Picardie";
+            case "44" : return  "Alsace-Champagne-Ardenne-Lorraine";
+            case "52" : return  "Pays de la Loire";
+            case "53" : return  "Bretagne";
+            case "75" : return  "Aquitaine-Limousin-Poitou-Charentes";
+            case "76" : return  "Languedoc-Roussillon-Midi-Pyrénées";
+            case "84" : return  "Auvergne-Rhône-Alpes";
+            case "93" : return  "Provence-Alpes-Côte d'Azur";
+            case "94" : return  "Corse";
         };
+        throw new IllegalArgumentException("getNameRegionFromCode() : unknown code ("+codeRegion+")");
+
     }
 }

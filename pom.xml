@@ -8,8 +8,8 @@
 	<packaging>jar</packaging>
 
 	<properties>
-		<maven.compiler.source>16</maven.compiler.source>
-		<maven.compiler.target>16</maven.compiler.target>
+		<maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<geotools.version>23.5</geotools.version>
 	</properties>
@@ -47,10 +47,10 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>2.4</version>
 				<configuration>
-					<compilerVersion>1.8</compilerVersion>
-					<source>16</source>
+					<compilerVersion>11</compilerVersion>
+					<source>11</source>
 <!--					<complianceLevel>1.8</complianceLevel>-->
-					<target>16</target>
+					<target>11</target>
 					<includes>
 						<include>**/*</include>
 					</includes>
@@ -185,16 +185,10 @@
 				<enabled>true</enabled>
 			</releases>
 		</repository>
-		<repository>
-			<id>ign-snapshots</id>
-			<name>Cogit Snapshots Repository</name>
-			<url>https://forge-cogit.ign.fr/nexus/content/repositories/snapshots/</url>
-		</repository>
-		<repository>
-			<id>ign-releases</id>
-			<name>Cogit Releases Repository</name>
-			<url>https://forge-cogit.ign.fr/nexus/content/repositories/releases/</url>
-		</repository>
+		  <repository>
+		    <id>gitlab-maven</id>
+		    <url>https://gitlab.inria.fr/api/v4/projects/39368/packages/maven</url>
+		  </repository>
 	</repositories>
 	<reporting>
 		<plugins>
@@ -219,15 +213,13 @@
 		</plugins>
 	</reporting>
 	<distributionManagement>
-		<repository>
-			<id>ign-releases</id>
-			<name>Nexus Releases Repository</name>
-			<url>https://forge-cogit.ign.fr/nexus/content/repositories/releases</url>
-		</repository>
-		<snapshotRepository>
-			<id>ign-snapshots</id>
-			<name>Nexus Snapshots Repository</name>
-			<url>https://forge-cogit.ign.fr/nexus/content/repositories/snapshots/</url>
-		</snapshotRepository>
+	  <repository>
+	    <id>gitlab-maven</id>
+	    <url>https://gitlab.inria.fr/api/v4/projects/39368/packages/maven</url> 
+	  </repository>
+	  <snapshotRepository>
+	    <id>gitlab-maven</id>
+	    <url>https://gitlab.inria.fr/api/v4/projects/39368/packages/maven</url> 
+	</snapshotRepository>
 	</distributionManagement>
 </project>

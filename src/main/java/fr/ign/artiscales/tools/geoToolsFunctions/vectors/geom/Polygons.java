@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class Polygons {
     public static DefaultFeatureCollection addSimplePolygonialGeometries(SimpleFeatureBuilder sfBuilder, String geometryOutputName, List<Geometry> geoms) {
@@ -105,7 +106,7 @@ public class Polygons {
     public static Polygon polygonUnion(List<Polygon> list, GeometryPrecisionReducer reducer) {
         if (list.isEmpty())
             return null;
-        Geometry p = new CascadedPolygonUnion(list.stream().filter(Objects::nonNull).map(reducer::reduce).toList()).union();
+        Geometry p = new CascadedPolygonUnion(list.stream().filter(Objects::nonNull).map(reducer::reduce).collect(Collectors.toList())).union();
         try {
             return (Polygon) p;
         } catch (Exception e) {

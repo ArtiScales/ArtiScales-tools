@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 public class Geopackages {
@@ -91,7 +92,7 @@ public class Geopackages {
         // verify that every file exists and start a new function with clean list if not
         if (filesToMerge.stream().anyMatch(f -> !f.exists())) {
             filesToMerge.stream().filter(f -> !f.exists()).forEach(file -> System.out.println(file + " doesn't exists"));
-            return mergeGpkgFiles(filesToMerge.stream().filter(File::exists).toList(), fileOut, boundFile, keepAttributes);
+            return mergeGpkgFiles(filesToMerge.stream().filter(File::exists).collect(Collectors.toList()), fileOut, boundFile, keepAttributes);
         }
         if (!largeFiles) {
             List<SimpleFeatureCollection> sfcs = new ArrayList<>(filesToMerge.size());

@@ -129,7 +129,7 @@ public class Geom {
 
     public static Geometry unionPrecisionReduce(SimpleFeatureCollection collection, double scale) {
         return new GeometryFactory().buildGeometry(Arrays.stream(collection.toArray(new SimpleFeature[collection.size()])).map(
-                sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(scale))).toList()).union();
+                sf -> GeometryPrecisionReducer.reduce((Geometry) sf.getDefaultGeometry(), new PrecisionModel(scale))).collect(Collectors.toList())).union();
     }
 
     public static Geometry safeUnion(Geometry g1, Geometry g2) {
@@ -224,7 +224,7 @@ public class Geom {
         try {
             return new GeometryFactory().buildGeometry(
                     Arrays.stream(collection.toArray(new SimpleFeature[collection.size()]))
-                            .map(sf -> (Geometry) sf.getDefaultGeometry()).toList()).union();
+                            .map(sf -> (Geometry) sf.getDefaultGeometry()).collect(Collectors.toList())).union();
         } catch (TopologyException tp) {
             double precision = 10000;
             while (precision >= 1) {
