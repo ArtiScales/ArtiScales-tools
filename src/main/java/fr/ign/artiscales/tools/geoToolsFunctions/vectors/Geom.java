@@ -101,7 +101,8 @@ public class Geom {
     public static Geometry safeIntersection(List<Geometry> geoms) {
         try {
             Geometry geomResult = geoms.get(0);
-            for (int i = 1; i < geoms.size(); i++)
+            int nbGeom = geoms.size();
+            for (int i = 1; i < nbGeom; i++)
                 geomResult = geomResult.intersection(geoms.get(i));
             return geomResult;
         } catch (TopologyException tp) {
@@ -109,7 +110,8 @@ public class Geom {
             while (precision >= 1) {
                 try {
                     Geometry geomResult = GeometryPrecisionReducer.reduce(geoms.get(0), new PrecisionModel(precision));
-                    for (int i = 1; i < geoms.size(); i++)
+                    int nbGeom = geoms.size();
+                    for (int i = 1; i < nbGeom; i++)
                         geomResult = geomResult.intersection(GeometryPrecisionReducer.reduce(geoms.get(i), new PrecisionModel(precision)));
                     return geomResult;
                 } catch (TopologyException ignored) {
