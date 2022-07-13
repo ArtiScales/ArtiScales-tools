@@ -54,8 +54,6 @@
 					<includes>
 						<include>**/*</include>
 					</includes>
-					<excludes>
-					</excludes>
 				</configuration>
 			</plugin>
 			<plugin>

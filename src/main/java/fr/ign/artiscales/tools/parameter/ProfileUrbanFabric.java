@@ -152,6 +152,34 @@ public class ProfileUrbanFabric {
         return profile;
     }
 
+    public void setMinimalWidthContactRoad(double minimalWidthContactRoad) {
+        this.minimalWidthContactRoad = minimalWidthContactRoad;
+    }
+
+    public void setMaxDistanceForNearestRoad(double maxDistanceForNearestRoad) {
+        this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
+    }
+
+    public void setMaxWidth(double maxWidth) {
+        this.maxWidth = maxWidth;
+    }
+
+    public void setStreetLane(int streetLane) {
+        this.streetLane = streetLane;
+    }
+
+    public void setApproxNumberParcelPerBlock(int approxNumberParcelPerBlock) {
+        this.approxNumberParcelPerBlock = approxNumberParcelPerBlock;
+    }
+
+    public void setLenDriveway(double lenDriveway) {
+        this.lenDriveway = lenDriveway;
+    }
+
+    public void setLaneWidth(double laneWidth) {
+        this.laneWidth = laneWidth;
+    }
+
     public int getApproxNumberParcelPerBlock() {
         return approxNumberParcelPerBlock;
     }
@@ -218,9 +246,23 @@ public class ProfileUrbanFabric {
 
     @Override
     public String toString() {
-        return "ProfileBuilding " + nameBuildingType + " [maximalArea=" + maximalArea + ", minimalArea=" + minimalArea + ", minimalWidthContactRoad="
-                + minimalWidthContactRoad + ", smallStreetWidth=" + laneWidth + ", largeStreetWidth=" + streetWidth + ", largeStreetLevel="
-                + streetLane + ", decompositionLevelWithoutStreet=" + blockShape + ", lenDriveway=" + lenDriveway + "]";
+        return "ProfileUrbanFabric{" +
+                "nameBuildingType='" + nameBuildingType + '\'' +
+                ", maximalArea=" + maximalArea +
+                ", minimalArea=" + minimalArea +
+                ", minimalWidthContactRoad=" + minimalWidthContactRoad +
+                ", laneWidth=" + laneWidth +
+                ", streetWidth=" + streetWidth +
+                ", maxDepth=" + maxDepth +
+                ", maxDistanceForNearestRoad=" + maxDistanceForNearestRoad +
+                ", maxWidth=" + maxWidth +
+                ", streetLane=" + streetLane +
+                ", blockShape=" + blockShape +
+                ", approxNumberParcelPerBlock=" + approxNumberParcelPerBlock +
+                ", lenDriveway=" + lenDriveway +
+                ", irregularityCoeff=" + irregularityCoeff +
+                ", harmonyCoeff=" + harmonyCoeff +
+                '}';
     }
 
     public File exportToJSON(File f) throws IOException {

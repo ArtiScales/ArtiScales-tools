@@ -73,7 +73,6 @@ public class OpOnCollec {
      * @return the number of feature which attribute matches the given value
      */
     public static int getCollectionAttributeCount(SimpleFeatureCollection sfc, String attributeName, String attribute) {
-//		return Arrays.stream(sfc.toArray(new SimpleFeature[0])).filter(feat -> String.valueOf(feat.getAttribute(attributeName)).equals(attribute)).count();
         return getCollectionAttributeCount(sfc, attributeName, attribute, CommonFactoryFinder.getFilterFactory2());
     }
 
@@ -87,7 +86,6 @@ public class OpOnCollec {
      */
 
     public static int getCollectionAttributeCount(SimpleFeatureCollection sfc, String attributeName, String attribute, FilterFactory2 ff) {
-//		return Arrays.stream(sfc.toArray(new SimpleFeature[0])).filter(feat -> String.valueOf(feat.getAttribute(attributeName)).equals(attribute)).count();
         return sfc.subCollection(ff.like(ff.property(attributeName), attribute)).size();
     }
 
