@@ -29,7 +29,7 @@ public class Csv {
     public static CSVReader getCSVReader(File f) throws IOException {
         CSVReader r = new CSVReaderBuilder(new FileReader(f)).withCSVParser(new CSVParserBuilder().withSeparator(sep).build()).build();
         if (r.readNext().length == 1)
-            System.out.println("CSV header has a length of 1. Maybe separator's wrong (for now it's '"+sep+"').");
+            System.out.println("CSV header has a length of 1. Maybe separator's wrong (for now it's '" + sep + "').");
         r.close();
         return new CSVReaderBuilder(new FileReader(f)).withCSVParser(new CSVParserBuilder().withSeparator(sep).build()).build();
     }
@@ -44,12 +44,7 @@ public class Csv {
     public static CSVReader getCSVReader(InputStream input) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         input.transferTo(baos);
-        InputStream firstClone = new ByteArrayInputStream(baos.toByteArray());
-        InputStream secondClone = new ByteArrayInputStream(baos.toByteArray());
-        if (isCSvRightFormat(firstClone))
-            return new CSVReaderBuilder(new BufferedReader(new InputStreamReader(secondClone))).withCSVParser(new CSVParserBuilder().withSeparator(sep).build()).build();
-        else
-            return null;
+        return isCSvRightFormat(new ByteArrayInputStream(baos.toByteArray())) ? new CSVReaderBuilder(new BufferedReader(new InputStreamReader(new ByteArrayInputStream(baos.toByteArray())))).withCSVParser(new CSVParserBuilder().withSeparator(sep).build()).build() : null;
     }
 
     private static boolean isCSvRightFormat(InputStream br) throws IOException {

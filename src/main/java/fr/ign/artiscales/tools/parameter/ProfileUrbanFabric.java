@@ -20,13 +20,13 @@ public class ProfileUrbanFabric {
     String nameBuildingType;
     double maximalArea, minimalArea, minimalWidthContactRoad, laneWidth, streetWidth, maxDepth, maxDistanceForNearestRoad, maxWidth;
     int streetLane, blockShape, approxNumberParcelPerBlock;
-    double lenDriveway, irregularityCoeff, harmonyCoeff = 0.5;
+    double drivewayWidth, irregularityCoeff, harmonyCoeff = 0.5;
 
     /**
      * For every parameter use (or OBBThenSS)
      */
     public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double minimalWidthContactRoad,
-                              double laneWidth, double streetWidth, int streetLane, int blockShape, double lenDriveway, double maxDepth,
+                              double laneWidth, double streetWidth, int streetLane, int blockShape, double drivewayWidth, double maxDepth,
                               double maxDistanceForNearestRoad, double maxWidth, int approxNumberParcelPerBlock, double harmonyCoeff, double irregularityCoeff) {
         super();
         this.nameBuildingType = nameBuildingType;
@@ -37,7 +37,7 @@ public class ProfileUrbanFabric {
         this.streetWidth = streetWidth;
         this.streetLane = streetLane;
         this.blockShape = blockShape;
-        this.lenDriveway = lenDriveway;
+        this.drivewayWidth = drivewayWidth;
         this.maxDepth = maxDepth;
         this.maxDistanceForNearestRoad = maxDistanceForNearestRoad;
         this.maxWidth = maxWidth;
@@ -81,13 +81,13 @@ public class ProfileUrbanFabric {
     /**
      * Builder for flag division
      */
-    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double lenDriveway, double harmonyCoeff, double irregularityCoeff) {
+    public ProfileUrbanFabric(String nameBuildingType, double maximalArea, double minimalArea, double maximalWidth, double drivewayWidth, double harmonyCoeff, double irregularityCoeff) {
         super();
         this.nameBuildingType = nameBuildingType;
         this.maximalArea = maximalArea;
         this.minimalArea = minimalArea;
         this.minimalWidthContactRoad = maximalWidth;
-        this.lenDriveway = lenDriveway;
+        this.drivewayWidth = drivewayWidth;
         this.harmonyCoeff = harmonyCoeff;
         this.irregularityCoeff = irregularityCoeff;
     }
@@ -172,8 +172,8 @@ public class ProfileUrbanFabric {
         this.approxNumberParcelPerBlock = approxNumberParcelPerBlock;
     }
 
-    public void setLenDriveway(double lenDriveway) {
-        this.lenDriveway = lenDriveway;
+    public void setDrivewayWidth(double drivewayWidth) {
+        this.drivewayWidth = drivewayWidth;
     }
 
     public void setLaneWidth(double laneWidth) {
@@ -216,8 +216,8 @@ public class ProfileUrbanFabric {
         this.blockShape = blockShape;
     }
 
-    public double getLenDriveway() {
-        return lenDriveway;
+    public double getDrivewayWidth() {
+        return drivewayWidth;
     }
 
     public double getLaneWidth() {
@@ -259,7 +259,7 @@ public class ProfileUrbanFabric {
                 ", streetLane=" + streetLane +
                 ", blockShape=" + blockShape +
                 ", approxNumberParcelPerBlock=" + approxNumberParcelPerBlock +
-                ", lenDriveway=" + lenDriveway +
+                ", lenDriveway=" + drivewayWidth +
                 ", irregularityCoeff=" + irregularityCoeff +
                 ", harmonyCoeff=" + harmonyCoeff +
                 '}';
