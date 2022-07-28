@@ -198,6 +198,22 @@ public class Geom {
         return false;
     }
 
+    public static boolean safeWithin(Geometry g1, Geometry g2) {
+        try {
+            return g1.within(g2);
+        } catch (TopologyException tp) {
+            double precision = 10000;
+            while (precision >= 1) {
+                try {
+                    return GeometryPrecisionReducer.reduce(g1, new PrecisionModel(precision)).within(GeometryPrecisionReducer.reduce(g2, new PrecisionModel(precision)));
+                } catch (TopologyException ignored) {
+                }
+                precision = precision / 10;
+            }
+        }
+        return false;
+    }
+
     public static Geometry safeIntersection(Geometry g1, Geometry g2) {
         try {
             return g1.intersection(g2);
@@ -217,8 +233,8 @@ public class Geom {
     /**
      * also see https://docs.geotools.org/stable/userguide/library/jts/combine.html
      *
-     * @param collection
-     * @return
+     * @param collection input collection to union
+     * @return the geoetry of the union
      */
     public static Geometry safeUnion(SimpleFeatureCollection collection) {
         if (collection.size() == 1)

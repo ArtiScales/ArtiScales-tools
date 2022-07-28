@@ -48,9 +48,10 @@ import java.util.stream.Collectors;
 public class CollecTransform {
 
 //    public static void main(String[] args) throws IOException {
-//        DataStore dsP = CollecMgmt.getDataStore(new File("/tmp/b.gpkg"));
-//        DataStore dsM = CollecMgmt.getDataStore(new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/parcel2003.gpkg"));
-//        CollecMgmt.exportSFC(selectIntersection(dsP.getFeatureSource(dsP.getTypeNames()[0]).getFeatures(), dsM.getFeatureSource(dsM.getTypeNames()[0]).getFeatures()), new File("/home/mc/workspace/parcelmanager/src/main/resources/ParcelComparison/building2003.gpkg"));
+//        DataStore dsM = CollecMgmt.getDataStore(new File("/tmp/dad.gpkg"));
+//        DataStore dsP = CollecMgmt.getDataStore(new File("/tmp/inter.gpkg"));
+//        CollecMgmt.exportSFC(selectIntersection(dsP.getFeatureSource(dsP.getTypeNames()[0]).getFeatures(), dsM.getFeatureSource(dsM.getTypeNames()[0]).getFeatures(),10),
+//                new File("/tmp/result.gpkg"));
 //        dsP.dispose();
 //        dsM.dispose();
 //    }
@@ -289,6 +290,9 @@ public class CollecTransform {
     public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, SimpleFeatureCollection toIntersectSFC) {
         return selectIntersection(SFCIn, Geom.importListGeom(toIntersectSFC));
     }
+    public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, SimpleFeatureCollection toIntersectSFC, double distance) {
+        return selectIntersection(SFCIn, Geom.importListGeom(toIntersectSFC), distance);
+    }
 
     public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection SFCIn, List<Geometry> lG) {
         return selectIntersection(SFCIn, lG, 0);
@@ -307,6 +311,19 @@ public class CollecTransform {
         return result;
     }
 
+    public static List<? extends Geometry> selectIntersection(List<? extends Geometry> lIn, Geometry g, double distance) {
+        Geometry buffered = g.buffer(distance);
+        return lIn.stream().filter(gg -> gg.intersects(buffered)).collect(Collectors.toList());
+    }
+
+    /**
+     * Select a set of features included and from a given distance of a given geometry
+     *
+     * @param collection set of features to select
+     * @param geom       given intersected geometry
+     * @param distance   distance on which features will be included. Can be 0.
+     * @return a collection with the same schema as input.
+     */
     public static SimpleFeatureCollection selectIntersection(SimpleFeatureCollection collection, Geometry geom, double distance) {
         if (distance == 0)
             return selectIntersection(collection, geom);
