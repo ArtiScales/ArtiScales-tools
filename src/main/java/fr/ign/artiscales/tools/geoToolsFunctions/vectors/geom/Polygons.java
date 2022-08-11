@@ -100,13 +100,15 @@ public class Polygons {
 
     public static Polygon polygonUnionWithoutHoles(List<Polygon> list, GeometryPrecisionReducer reducer) {
         Polygon union = polygonUnion(list, reducer);
-        return Objects.requireNonNull(union).getFactory().createPolygon(union.getExteriorRing().getCoordinates());
+        return union == null ? null : union.getFactory().createPolygon(union.getExteriorRing().getCoordinates());
     }
 
     public static Polygon polygonUnion(List<Polygon> list, GeometryPrecisionReducer reducer) {
         if (list.isEmpty())
             return null;
         Geometry p = new CascadedPolygonUnion(list.stream().filter(Objects::nonNull).map(reducer::reduce).collect(Collectors.toList())).union();
+        if (p == null) // case polygon disapear coz of its reduction
+            return (Polygon) new CascadedPolygonUnion(list.stream().filter(Objects::nonNull).collect(Collectors.toList())).union();
         try {
             return (Polygon) p;
         } catch (Exception e) {
